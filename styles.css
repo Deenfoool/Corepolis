@@ -49,7 +49,7 @@ h1{font-size:22px;letter-spacing:.12em;margin:2px 0 0}
 }
 .dock-title{display:flex;align-items:center;justify-content:space-between;margin:0 4px 8px;font-size:10px;letter-spacing:.16em;color:#a8c9bd}
 .dock-title small{font-size:9px;letter-spacing:.03em;color:#657d75}
-.build-buttons{display:grid;grid-template-columns:repeat(7,1fr);gap:7px}
+.build-buttons{display:grid;grid-template-columns:repeat(8,1fr);gap:7px}
 .build-card{
   border:1px solid rgba(139,255,214,.10);background:rgba(255,255,255,.025);color:#d9f7ec;
   border-radius:11px;padding:9px 8px;text-align:left;cursor:pointer;min-height:72px;transition:.18s
