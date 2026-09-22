@@ -28,7 +28,7 @@
 - [x] House card
 - [x] Market adjacency engine
 - [x] Lumbermill adjacency engine
-- [x] Mine adjacency engine
+- [x] Quarry production card
 - [x] Placement pop animations
 - [x] Island expansion rise animation
 - [x] Field collapse animation
@@ -40,6 +40,14 @@
 - [x] Per-building construction animations
 - [x] House smoke, market halo, lumbermill saw and mine lamp idle effects
 - [x] High-quality HUD and card-hand visual pass
+- [x] Wood and Stone resource counters
+- [x] Two-step Tree/Lumbermill resource cycle
+- [x] Two-step Rock/Quarry resource cycle
+- [x] Per-resource 1/2 processing marker
+- [x] Shared-resource depletion by overlapping producers
+- [x] Producer self-replacement to close a full local cycle
+- [x] Producer teardown frees its own tile
+- [x] Large extraction cycles reward bonus cards
 - [x] Objective progress meter and richer field status chips
 - [ ] Browser play-test and balance pass
 

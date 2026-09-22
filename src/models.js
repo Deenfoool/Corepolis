@@ -10,7 +10,7 @@ export const ASSETS = {
   house: `${KAYKIT_ROOT}/buildings/green/building_home_A_green.gltf`,
   market: `${KAYKIT_ROOT}/buildings/green/building_market_green.gltf`,
   lumbermill: `${KAYKIT_ROOT}/buildings/green/building_lumbermill_green.gltf`,
-  mine: `${KAYKIT_ROOT}/buildings/green/building_mine_green.gltf`,
+  quarry: `${KAYKIT_ROOT}/buildings/green/building_mine_green.gltf`,
 };
 
 export const ASSET_LICENSE = {

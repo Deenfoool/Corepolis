@@ -41,16 +41,25 @@ The prototype proves the key rule using one building:
 
 This keeps placement free while preserving a strong optimization puzzle: ordinary four-piece groups compact automatically, while the four mill-side positions deliberately wait for the building upgrade trigger.
 
-## Settlement buildings
-
-The first non-farm cards use the same adjacency language:
+## Settlement and production buildings
 
 - **House** — a basic settlement building and a target for market adjacency.
 - **Market** — scores more for every neighboring House; two or more nearby houses also grant a card.
-- **Lumbermill** — scores more for nearby Trees; two or more nearby trees grant a card.
-- **Mine** — scores more for nearby Rocks; two or more nearby rock cells grant a card.
+- **Lumbermill** — processes adjacent Trees.
+- **Quarry** — processes adjacent Rocks.
 
-These are intentionally simple engines: the player gets immediate value but is rewarded for planning clusters rather than placing buildings anywhere without thought.
+### Two-step resource extraction
+
+Trees and Rocks are setup resources, not filler cards.
+
+1. Placing the matching producer next to a resource performs its first processing step.
+2. The player immediately gains one unit of Wood or Stone.
+3. The resource stays on the map and is visibly marked `1/2`.
+4. If a different matching producer later touches the same resource, that is its second processing step: the resource disappears, the cell is freed, and the player gains score plus another material unit.
+5. Alternatively, playing a second Lumbermill/Quarry card directly on top of an existing matching producer closes that producer's whole local cycle: every adjacent matching resource is processed to completion, the producer itself disappears, and its tile becomes free.
+6. Closing a large cycle grants bonus cards: 3+ depleted cells gives one card; 5+ gives two.
+
+This creates deliberate overlap puzzles: two producers can share one resource without deleting every resource around either building. Only cells that reach their second matching processing step are exhausted.
 
 ## World manipulation
 

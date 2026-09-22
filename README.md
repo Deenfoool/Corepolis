@@ -14,10 +14,10 @@ The current vertical slice combines field merging, the windmill combo and the fi
 4. The collapse target is always the oldest / first field piece in that connected four-piece group; the other three cells become free again and the player receives score plus a bonus card.
 5. Fields directly beside the windmill are the exception: they build from 1/4 to 4/4 and wait instead of auto-collapsing.
 6. When all four windmill-side fields reach 4/4, a `New Windmill` card triggers the large combo and accelerates the blades.
-7. House, Market, Lumbermill and Mine cards provide building adjacency engines.
+7. House and Market provide settlement adjacency, while Lumbermill and Quarry run two-step resource extraction loops.
 8. World actions now have placement pops, expanding-land rise, collapse motion, reward bursts, rings and combo pulses.
 
-The same rule language is intended to grow into lumbermills, mines, markets and other spatial production chains.
+Trees and rocks are now productive setup cards rather than dead draws: a first nearby producer yields material and marks the resource 1/2; a second producer contact or the same producer card played on top closes the cycle, removes the depleted resource and grants score.
 
 ## Deployment
 

@@ -82,7 +82,8 @@ const ui={
   loadingScreen:$('#loading-screen'),loadingBar:$('#loading-bar'),loadingProgress:$('#loading-progress'),
   loadingDetail:$('#loading-detail'),hand:$('#hand'),handCount:$('#hand-count'),
   selectionHint:$('#selection-hint'),harvestScore:$('#harvest-score'),comboCount:$('#combo-count'),
-  landCount:$('#land-count'),objectiveTitle:$('#objective-title'),objectiveCopy:$('#objective-copy'),
+  landCount:$('#land-count'),woodCount:$('#wood-count'),stoneCount:$('#stone-count'),
+  objectiveTitle:$('#objective-title'),objectiveCopy:$('#objective-copy'),
   fieldStatus:$('#field-status'),toast:$('#toast'),tileInfo:$('#tile-info'),
   tileTitle:$('#tile-title'),tileCopy:$('#tile-copy'),objectiveProgress:$('#objective-progress'),
   objectiveProgressLabel:$('#objective-progress-label')
@@ -95,6 +96,7 @@ const state={
   nextCardId:1,
   nextFieldOrder:1,
   harvestScore:0,
+  resources:{wood:0,stone:0},
   comboCount:0,
   millLevel:1,
   millCell:'0,0',
@@ -228,8 +230,8 @@ function animateBuildingConstruction(t,type,m){
   const baseScale=m.scale.clone();
   const baseY=m.position.y;
   const baseRot=m.rotation.y;
-  spawnRing(t.visual.position.clone(),type==='mine'?0x9ca8a6:type==='lumbermill'?0xb88a52:0xe8cc74);
-  spawnBurst(t.visual.position.clone(),type==='mine'?0xaab0a7:0xe2c66f,type==='market'?16:11);
+  spawnRing(t.visual.position.clone(),type==='quarry'?0x9ca8a6:type==='lumbermill'?0xb88a52:0xe8cc74);
+  spawnBurst(t.visual.position.clone(),type==='quarry'?0xaab0a7:0xe2c66f,type==='market'?16:11);
 
   if(type==='house'){
     m.scale.set(baseScale.x*.18,baseScale.y*.05,baseScale.z*.18);
@@ -290,6 +292,7 @@ function registerBuildingAmbient(t,type,m){
       smoke.add(puff);
     }
     t.visual.add(smoke);
+    t.ambientObjects.push(smoke);
     state.ambientActors.push({type:'smoke',object:smoke,phase:(t.x*13+t.z*7)*.2});
   }
   if(type==='market'){
@@ -300,6 +303,7 @@ function registerBuildingAmbient(t,type,m){
     halo.rotation.x=Math.PI/2;
     halo.position.y=2.15;
     t.visual.add(halo);
+    t.ambientObjects.push(halo);
     state.ambientActors.push({type:'marketHalo',object:halo,phase:(t.x+t.z)*.45});
   }
   if(type==='lumbermill'){
@@ -310,19 +314,22 @@ function registerBuildingAmbient(t,type,m){
     saw.rotation.z=Math.PI/2;
     saw.position.set(.85,.72,.74);
     t.visual.add(saw);
+    t.ambientObjects.push(saw);
     state.ambientActors.push({type:'saw',object:saw,phase:0});
   }
-  if(type==='mine'){
+  if(type==='quarry'){
     const lamp=new THREE.PointLight(0xffd27a,1.05,4.2,2);
     lamp.position.set(.25,.86,.32);
     t.visual.add(lamp);
+    t.ambientObjects.push(lamp);
     const bulb=new THREE.Mesh(
       new THREE.SphereGeometry(.085,8,6),
       new THREE.MeshBasicMaterial({color:0xffda83})
     );
     bulb.position.copy(lamp.position);
     t.visual.add(bulb);
-    state.ambientActors.push({type:'mineLamp',object:lamp,phase:(t.x*5-t.z*3)*.35});
+    t.ambientObjects.push(bulb);
+    state.ambientActors.push({type:'quarryLamp',object:lamp,phase:(t.x*5-t.z*3)*.35});
   }
 }
 
@@ -344,7 +351,7 @@ function updateAmbientActors(time,dt){
       actor.object.material.opacity=.25+Math.sin(time*.003+actor.phase)*.08;
     }else if(actor.type==='saw'){
       actor.object.rotation.x+=dt*2.6;
-    }else if(actor.type==='mineLamp'){
+    }else if(actor.type==='quarryLamp'){
       actor.object.intensity=.75+Math.sin(time*.004+actor.phase)*.18;
     }
   }
@@ -419,7 +426,8 @@ function addLand(x,z){
   const k=key(x,z);
   if(state.land.has(k))return state.land.get(k);
   const t={
-    x,z,key:k,type:'empty',stage:0,visual:tileMesh(x,z),content:null,fieldOrder:null
+    x,z,key:k,type:'empty',stage:0,visual:tileMesh(x,z),content:null,fieldOrder:null,
+    resourceSources:new Set(),resourceMarker:null,ambientObjects:[]
   };
   state.land.set(k,t);
   world.add(t.visual);
@@ -430,9 +438,20 @@ function clearContent(t){
     if(t.content.parent)t.content.parent.remove(t.content);
     t.content=null;
   }
+  if(t.resourceMarker){
+    if(t.resourceMarker.parent)t.resourceMarker.parent.remove(t.resourceMarker);
+    t.resourceMarker.material?.map?.dispose?.();
+    t.resourceMarker.material?.dispose?.();
+    t.resourceMarker=null;
+  }
+  for(const object of t.ambientObjects||[]){
+    if(object?.parent)object.parent.remove(object);
+  }
+  t.ambientObjects=[];
   t.type='empty';
   t.stage=0;
   t.fieldOrder=null;
+  t.resourceSources=new Set();
 }
 function badge(stage){
   const c=document.createElement('canvas');
@@ -455,6 +474,39 @@ function badge(stage){
   const s=new THREE.Sprite(new THREE.SpriteMaterial({map:tx,transparent:true}));
   s.scale.set(.9,.9,.9);
   return s;
+}
+function resourceProgressMarker(type){
+  const c=document.createElement('canvas');
+  c.width=192;c.height=96;
+  const x=c.getContext('2d');
+  x.fillStyle='rgba(255,250,226,.96)';
+  x.strokeStyle=type==='tree'?'#7b9b5d':'#78817e';
+  x.lineWidth=7;
+  x.beginPath();
+  x.roundRect(8,8,176,80,28);
+  x.fill();x.stroke();
+  x.fillStyle='#42513f';
+  x.font='900 34px system-ui';
+  x.textAlign='center';x.textBaseline='middle';
+  x.fillText(type==='tree'?'🪓  1 / 2':'⛏  1 / 2',96,49);
+  const tx=new THREE.CanvasTexture(c);
+  tx.colorSpace=THREE.SRGBColorSpace;
+  const marker=new THREE.Sprite(new THREE.SpriteMaterial({map:tx,transparent:true,depthTest:false}));
+  marker.scale.set(1.8,.9,1);
+  marker.position.set(0,2.55,0);
+  return marker;
+}
+function updateResourceMarker(t){
+  if(t.resourceMarker){
+    if(t.resourceMarker.parent)t.resourceMarker.parent.remove(t.resourceMarker);
+    t.resourceMarker.material?.map?.dispose?.();
+    t.resourceMarker.material?.dispose?.();
+    t.resourceMarker=null;
+  }
+  if((t.type==='tree'||t.type==='rock')&&t.resourceSources?.size===1){
+    t.resourceMarker=resourceProgressMarker(t.type);
+    t.visual.add(t.resourceMarker);
+  }
 }
 function fieldVisual(stage,synergy=false){
   const g=new THREE.Group();
@@ -496,15 +548,17 @@ async function modelOn(t,id,size,yaw=0,animated=false){
 async function setTree(t,animated=false){
   clearContent(t);
   t.type='tree';
+  t.resourceSources=new Set();
   await modelOn(t,((t.x+t.z)&1)?'treeA':'treeB',2.6,t.x*.9+t.z*1.4,animated);
 }
 async function setRock(t,animated=false){
   clearContent(t);
   t.type='rock';
+  t.resourceSources=new Set();
   await modelOn(t,((t.x-t.z)&1)?'rockA':'rockC',2.4,t.x*1.3-t.z,animated);
 }
-const BUILDING_ASSET={house:'house',market:'market',lumbermill:'lumbermill',mine:'mine'};
-const BUILDING_SIZE={house:3.45,market:3.75,lumbermill:3.9,mine:3.55};
+const BUILDING_ASSET={house:'house',market:'market',lumbermill:'lumbermill',quarry:'quarry'};
+const BUILDING_SIZE={house:3.45,market:3.75,lumbermill:3.9,quarry:3.55};
 async function setBuilding(t,type,animated=false){
   clearContent(t);
   t.type=type;
@@ -537,6 +591,133 @@ function nearby(t,type,radius=1){
   }
   return count;
 }
+
+const PRODUCER_RESOURCE={
+  lumbermill:{tileType:'tree',resource:'wood',label:'древесины',color:0xb98552},
+  quarry:{tileType:'rock',resource:'stone',label:'камня',color:0x8d9692}
+};
+function resourceCellsAround(t,tileType){
+  const cells=[];
+  for(let dx=-1;dx<=1;dx++)for(let dz=-1;dz<=1;dz++){
+    if(!dx&&!dz)continue;
+    const cell=state.land.get(key(t.x+dx,t.z+dz));
+    if(cell?.type===tileType)cells.push(cell);
+  }
+  return cells;
+}
+function addMaterial(resource,amount,position){
+  state.resources[resource]+=amount;
+  if(position)spawnBurst(position,resource==='wood'?0xb98552:0x9aa19d,7);
+  status();
+}
+async function depleteResource(resourceTile,producerTile,producerType){
+  const cfg=PRODUCER_RESOURCE[producerType];
+  if(!cfg||resourceTile.type!==cfg.tileType)return 0;
+  const object=resourceTile.content;
+  const start=resourceTile.visual.position.clone().add(new THREE.Vector3(0,.48,0));
+  const target=producerTile.visual.position.clone().add(new THREE.Vector3(0,.82,0));
+
+  if(resourceTile.resourceMarker){
+    if(resourceTile.resourceMarker.parent)resourceTile.resourceMarker.parent.remove(resourceTile.resourceMarker);
+    resourceTile.resourceMarker.material?.map?.dispose?.();
+    resourceTile.resourceMarker.material?.dispose?.();
+    resourceTile.resourceMarker=null;
+  }
+
+  if(object){
+    world.attach(object);
+    const baseScale=object.scale.clone();
+    const baseRot=object.rotation.y;
+    await tween(.5,p=>{
+      object.position.lerpVectors(start,target,easeInOut(p));
+      object.position.y+=Math.sin(p*Math.PI)*.72;
+      object.scale.copy(baseScale).multiplyScalar(1-p*.72);
+      object.rotation.y=baseRot+p*Math.PI*.8;
+    },t=>t);
+    if(object.parent)object.parent.remove(object);
+  }
+
+  resourceTile.content=null;
+  resourceTile.type='empty';
+  resourceTile.stage=0;
+  resourceTile.fieldOrder=null;
+  resourceTile.resourceSources=new Set();
+  state.harvestScore+=45;
+  spawnRing(resourceTile.visual.position.clone(),cfg.color);
+  return 1;
+}
+async function processProducerPlacement(producerTile,producerType){
+  const cfg=PRODUCER_RESOURCE[producerType];
+  if(!cfg)return{touched:0,depleted:0};
+  const targets=resourceCellsAround(producerTile,cfg.tileType);
+  let touched=0,depleted=0;
+  const pending=[];
+
+  for(const resourceTile of targets){
+    if(resourceTile.resourceSources.has(producerTile.key))continue;
+    resourceTile.resourceSources.add(producerTile.key);
+    touched++;
+    addMaterial(cfg.resource,1,resourceTile.visual.position.clone());
+
+    if(resourceTile.resourceSources.size>=2){
+      pending.push(depleteResource(resourceTile,producerTile,producerType).then(v=>{depleted+=v;}));
+    }else{
+      updateResourceMarker(resourceTile);
+      pulse(resourceTile.content,.38,.13);
+    }
+  }
+
+  await Promise.all(pending);
+  status();
+  return{touched,depleted};
+}
+async function resolveProducer(producerTile,producerType){
+  const cfg=PRODUCER_RESOURCE[producerType];
+  if(!cfg)return;
+  state.inputLocked=true;
+  const targets=resourceCellsAround(producerTile,cfg.tileType);
+
+  for(const resourceTile of targets){
+    addMaterial(cfg.resource,1,resourceTile.visual.position.clone());
+  }
+
+  let depleted=0;
+  await Promise.all(targets.map(resourceTile=>
+    depleteResource(resourceTile,producerTile,producerType).then(v=>{depleted+=v;})
+  ));
+
+  const building=producerTile.content;
+  if(building){
+    const baseScale=building.scale.clone();
+    await tween(.38,p=>{
+      building.scale.copy(baseScale).multiplyScalar(Math.max(.04,1-p));
+      building.rotation.y+=.08;
+      building.position.y-=.018;
+    });
+  }
+
+  const producerPosition=producerTile.visual.position.clone();
+  clearContent(producerTile);
+  state.harvestScore+=55+depleted*25;
+  state.comboCount++;
+
+  let bonusCards=0;
+  if(depleted>=3)bonusCards=1;
+  if(depleted>=5)bonusCards=2;
+  if(bonusCards){
+    grantCards(bonusCards);
+    spawnCardBurst(producerPosition,bonusCards);
+  }
+
+  spawnRing(producerPosition,cfg.color);
+  spawnBurst(producerPosition,cfg.color,16);
+  status();
+  toast(depleted
+    ?`Цикл завершён: истощено ${depleted} клеток, производство исчезло${bonusCards?`, +${bonusCards} карта`:''}.`
+    :'Производство разобрано, но рядом не осталось подходящего ресурса.');
+  state.inputLocked=false;
+}
+
 function normalFieldNeighbors(t){
   return DIRECTIONS
     .map(d=>state.land.get(key(t.x+d.dx,t.z+d.dz)))
@@ -718,6 +899,8 @@ function renderHand(){
 }
 function status(){
   ui.harvestScore.textContent=state.harvestScore.toLocaleString('ru-RU');
+  if(ui.woodCount)ui.woodCount.textContent=state.resources.wood.toLocaleString('ru-RU');
+  if(ui.stoneCount)ui.stoneCount.textContent=state.resources.stone.toLocaleString('ru-RU');
   ui.comboCount.textContent=state.comboCount;
   ui.landCount.textContent=state.land.size;
   const names={north:'Север',east:'Восток',south:'Юг',west:'Запад'};
@@ -749,17 +932,26 @@ function tileInfo(t){
     ui.tileInfo.classList.add('hidden');
     return;
   }
-  const names={empty:'Свободная земля',tree:'Лес',rock:'Камни',field:'Поле',mill:'Мельница',house:'Дом',market:'Рынок',lumbermill:'Лесопилка',mine:'Шахта'};
+  const names={
+    empty:'Свободная земля',tree:'Лес',rock:'Камни',field:'Поле',mill:'Мельница',
+    house:'Дом',market:'Рынок',lumbermill:'Лесопилка',quarry:'Каменоломня'
+  };
   ui.tileTitle.textContent=names[t.type];
   if(t.type==='field'){
     ui.tileCopy.textContent=isMillZone(t)
       ?`Поле у мельницы: ${t.stage}/4. Оно не схлопывается автоматически и ждёт апгрейда мельницы.`
       :'Обычная часть поля. Соедините её по стороне ещё с тремя частями любой формы.';
+  }else if(t.type==='tree'||t.type==='rock'){
+    const progress=t.resourceSources?.size||0;
+    ui.tileCopy.textContent=`${t.type==='tree'?'Лес':'Камни'}: обработка ${progress}/2. Первая обработка даёт ресурс, вторая освобождает клетку.`;
+  }else if(t.type==='lumbermill'||t.type==='quarry'){
+    ui.tileCopy.textContent='Положите такую же карту поверх постройки, чтобы завершить цикл: истощить соседнее сырьё, получить награду и освободить клетку производства.';
   }else{
     ui.tileCopy.textContent=`Клетка ${t.x}, ${t.z}.`;
   }
   ui.tileInfo.classList.remove('hidden');
 }
+
 async function harvest(){
   state.inputLocked=true;
   state.comboCount++;
@@ -851,41 +1043,57 @@ async function apply(card,t){
     return;
   }
 
-  if(['house','market','lumbermill','mine'].includes(card.type)){
-    if(t.type!=='empty')return toast('Для здания нужна свободная клетка.');
-    let score=25,bonusCards=0,message='Здание построено.';
-    if(card.type==='house'){
-      score=30;
-      message='Дом построен. Рынок рядом с домами будет выгоднее.';
+  if(['house','market','lumbermill','quarry'].includes(card.type)){
+    const isProducer=card.type==='lumbermill'||card.type==='quarry';
+
+    if(isProducer&&t.type===card.type){
+      spend(card.id);
+      await resolveProducer(t,card.type);
+      return;
     }
+
+    if(t.type!=='empty')return toast('Для здания нужна свободная клетка.');
+
+    if(card.type==='house'){
+      await setBuilding(t,card.type,true);
+      state.harvestScore+=30;
+      spend(card.id);
+      spawnBurst(t.visual.position.clone(),0xf0d67c,10);
+      status();
+      return toast('Дом построен. Рынок рядом с домами будет выгоднее.');
+    }
+
     if(card.type==='market'){
       const houses=nearby(t,'house');
-      score=45+houses*45;
-      bonusCards=houses>=2?1:0;
-      message=`Рынок: ${houses} домов рядом, +${score} очков.`;
+      const score=45+houses*45;
+      const bonusCards=houses>=2?1:0;
+      await setBuilding(t,card.type,true);
+      state.harvestScore+=score;
+      spend(card.id);
+      if(bonusCards){
+        grantCards(bonusCards);
+        spawnCardBurst(t.visual.position.clone(),bonusCards);
+      }
+      spawnBurst(t.visual.position.clone(),0xf0d67c,10);
+      status();
+      return toast(`Рынок: ${houses} домов рядом, +${score} очков.${bonusCards?' +1 карта.':''}`);
     }
-    if(card.type==='lumbermill'){
-      const trees=nearby(t,'tree');
-      score=40+trees*35;
-      bonusCards=trees>=2?1:0;
-      message=`Лесопилка: ${trees} деревьев рядом, +${score} очков.`;
-    }
-    if(card.type==='mine'){
-      const rocks=nearby(t,'rock');
-      score=45+rocks*40;
-      bonusCards=rocks>=2?1:0;
-      message=`Шахта: ${rocks} залежей рядом, +${score} очков.`;
-    }
+
     await setBuilding(t,card.type,true);
-    state.harvestScore+=score;
     spend(card.id);
-    if(bonusCards){
-      grantCards(bonusCards);
-      spawnCardBurst(t.visual.position.clone(),bonusCards);
-    }
-    spawnBurst(t.visual.position.clone(),0xf0d67c,10);
+    const result=await processProducerPlacement(t,card.type);
+    spawnBurst(t.visual.position.clone(),card.type==='lumbermill'?0xb98552:0x8d9692,12);
     status();
-    return toast(message+(bonusCards?' +1 карта.':''));
+
+    if(!result.touched){
+      return toast(card.type==='lumbermill'
+        ?'Лесопилка построена, но рядом пока нет леса.'
+        :'Каменоломня построена, но рядом пока нет камней.');
+    }
+    if(result.depleted){
+      return toast(`Обработано ${result.touched} клеток; ${result.depleted} уже видели второе производство и исчезли.`);
+    }
+    return toast(`Первая обработка: +${result.touched} ${card.type==='lumbermill'?'древесины':'камня'}. Сырьё помечено 1/2.`);
   }
 }
 
@@ -954,7 +1162,7 @@ renderer.domElement.onpointermove=e=>{
     hoverMarker.visible=true;
     hoverMarker.position.set(t.visual.position.x,.17,t.visual.position.z);
     const card=state.hand.find(c=>c.id===state.selectedCardId);
-    const valid=!card||card.type==='clear'?true:t.type==='empty'||card.type==='field'&&t.type==='field'||card.type==='millUpgrade'&&t.type==='mill';
+    const valid=!card||card.type==='clear'?true:t.type==='empty'||card.type==='field'&&t.type==='field'||card.type==='millUpgrade'&&t.type==='mill'||(card.type==='lumbermill'||card.type==='quarry')&&t.type===card.type;
     hoverMarker.material.color.setHex(valid?0xf6df86:0xd97b6f);
     hoverMarker.material.opacity=valid?.24:.16;
   }else{
@@ -998,14 +1206,14 @@ function tick(time){
 
 async function boot(){
   seed();
-  ['field','field','expand','house','lumbermill'].forEach(t=>state.hand.push(draw(t)));
+  ['tree','lumbermill','rock','quarry','field'].forEach(t=>state.hand.push(draw(t)));
   renderHand();
   status();
   const loading=preload();
   await decorate();
   await loading;
   status();
-  toast('Любые 4 соединённые части поля схлопнутся в самую первую.');
+  toast('Лес и камни теперь — сырьё: первая обработка даёт ресурс, вторая освобождает клетку.');
 }
 boot().catch(e=>{
   console.error(e);
