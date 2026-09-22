@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="theme-color" content="#8dc9d7" />
-  <title>Corepolis — Island Cards Prototype</title>
+  <title>Corepolis — Island Card Builder</title>
   <link rel="stylesheet" href="./styles.css" />
   <script type="importmap">
   {
@@ -19,32 +19,49 @@
   <div id="app">
     <div id="loading-screen" class="loading-screen" aria-live="polite">
       <div class="loading-card">
-        <div class="eyebrow">COREPOLIS</div>
-        <strong>Создаём остров</strong>
+        <div class="loading-brand">
+          <span class="brand-gem">C</span>
+          <div>
+            <div class="eyebrow">COREPOLIS</div>
+            <strong>Поднимаем остров из воды</strong>
+          </div>
+        </div>
         <p id="loading-detail">Загружаем игровые ассеты…</p>
         <div class="loading-track"><i id="loading-bar"></i></div>
-        <span id="loading-progress">0 / 0</span>
+        <div class="loading-foot"><span>WORLD ASSETS</span><b id="loading-progress">0 / 0</b></div>
       </div>
     </div>
 
     <canvas id="game"></canvas>
 
     <header class="topbar panel">
-      <div>
-        <div class="eyebrow">ISLAND CARD BUILDER · PROTOTYPE</div>
-        <h1>COREPOLIS</h1>
+      <div class="brand-lockup">
+        <span class="brand-gem">C</span>
+        <div>
+          <div class="eyebrow">ISLAND CARD BUILDER</div>
+          <h1>COREPOLIS</h1>
+        </div>
       </div>
       <div class="resource-row">
-        <div><span>Очки</span><strong id="harvest-score">0</strong></div>
-        <div><span>Комбо</span><strong id="combo-count">0</strong></div>
-        <div><span>Земля</span><strong id="land-count">0</strong></div>
+        <div class="resource-chip"><span class="resource-icon">✦</span><span><small>ОЧКИ</small><strong id="harvest-score">0</strong></span></div>
+        <div class="resource-chip"><span class="resource-icon">◇</span><span><small>КОМБО</small><strong id="combo-count">0</strong></span></div>
+        <div class="resource-chip"><span class="resource-icon">▦</span><span><small>ЗЕМЛЯ</small><strong id="land-count">0</strong></span></div>
       </div>
     </header>
 
     <aside class="objective panel">
-      <div class="eyebrow">ТЕКУЩАЯ ЦЕЛЬ</div>
-      <h2 id="objective-title">Соединяйте любые 4 части поля</h2>
+      <div class="panel-heading">
+        <span class="section-icon">◎</span>
+        <div>
+          <div class="eyebrow">ЦЕЛЬ</div>
+          <h2 id="objective-title">Соединяйте любые 4 части поля</h2>
+        </div>
+      </div>
       <p id="objective-copy">Форма не важна: линия, угол, зигзаг — без мельницы 4 связанные части схлопываются в самую первую.</p>
+      <div class="objective-meter">
+        <div class="objective-meter-head"><span>Мельница</span><b id="objective-progress-label">0 / 16</b></div>
+        <div class="objective-track"><i id="objective-progress"></i></div>
+      </div>
       <div class="field-status" id="field-status"></div>
     </aside>
 
@@ -52,23 +69,28 @@
 
     <section class="hand-wrap">
       <div class="hand-meta panel">
-        <span><b id="hand-count">0</b> карт в руке</span>
+        <div class="hand-label"><span class="section-icon">▰</span><b>РУКА</b><span class="hand-count"><b id="hand-count">0</b> карт</span></div>
         <span id="selection-hint">Выберите карту</span>
       </div>
       <div id="hand" class="hand" aria-label="Рука карт"></div>
     </section>
 
     <div class="camera-help panel">
-      <span><b>LMB</b> применить карту</span>
-      <span><b>RMB</b> двигать</span>
-      <span><b>Wheel</b> масштаб</span>
-      <span><b>Q / E</b> вращать</span>
-      <span><b>Esc</b> убрать карту</span>
+      <span><kbd>LMB</kbd> карта</span>
+      <span><kbd>RMB</kbd> панорама</span>
+      <span><kbd>Wheel</kbd> зум</span>
+      <span><kbd>Q / E</kbd> поворот</span>
+      <span><kbd>Esc</kbd> отмена</span>
     </div>
 
     <aside id="tile-info" class="tile-info panel hidden">
-      <div class="eyebrow">КЛЕТКА</div>
-      <h2 id="tile-title"></h2>
+      <div class="panel-heading">
+        <span class="section-icon">⌖</span>
+        <div>
+          <div class="eyebrow">ОБЪЕКТ</div>
+          <h2 id="tile-title"></h2>
+        </div>
+      </div>
       <p id="tile-copy"></p>
     </aside>
   </div>

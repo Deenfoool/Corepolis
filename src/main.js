@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { MapControls } from 'three/addons/controls/MapControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { CARD_DEFS, DECK_WEIGHTS, DIRECTIONS, GRID } from './config.js';
 import { ASSETS } from './models.js';
 
@@ -61,6 +62,13 @@ const waterPlane=new THREE.Mesh(
   new THREE.PlaneGeometry(140,140),
   new THREE.MeshBasicMaterial({transparent:true,opacity:0,depthWrite:false})
 );
+const hoverMarker=new THREE.Mesh(
+  new RoundedBoxGeometry(GRID.tileSize*.9,.08,GRID.tileSize*.9,3,.18),
+  new THREE.MeshBasicMaterial({color:0xf6df86,transparent:true,opacity:.28,depthWrite:false})
+);
+hoverMarker.visible=false;
+hoverMarker.position.y=.17;
+scene.add(hoverMarker);
 waterPlane.rotation.x=-Math.PI/2;
 waterPlane.position.y=-.54;
 scene.add(waterPlane);
@@ -76,7 +84,8 @@ const ui={
   selectionHint:$('#selection-hint'),harvestScore:$('#harvest-score'),comboCount:$('#combo-count'),
   landCount:$('#land-count'),objectiveTitle:$('#objective-title'),objectiveCopy:$('#objective-copy'),
   fieldStatus:$('#field-status'),toast:$('#toast'),tileInfo:$('#tile-info'),
-  tileTitle:$('#tile-title'),tileCopy:$('#tile-copy')
+  tileTitle:$('#tile-title'),tileCopy:$('#tile-copy'),objectiveProgress:$('#objective-progress'),
+  objectiveProgressLabel:$('#objective-progress-label')
 };
 
 const state={
@@ -92,6 +101,7 @@ const state={
   millBlades:[],
   bladeBoost:0,
   tweens:[],
+  ambientActors:[],
   inputLocked:false
 };
 
@@ -202,11 +212,142 @@ function spawnCardBurst(position,count=1){
 }
 function animateLandRise(tile){
   const targetY=tile.visual.position.y;
+  const baseScale=tile.visual.scale.clone();
   tile.visual.position.y=targetY-1.5;
+  tile.visual.scale.set(baseScale.x*.82,baseScale.y*.5,baseScale.z*.82);
   spawnRing(tile.visual.position.clone().setY(0),0x8fd56f);
-  return tween(.48,p=>{
+  return tween(.6,p=>{
     tile.visual.position.y=THREE.MathUtils.lerp(targetY-1.5,targetY,easeOut(p));
-  });
+    const swell=.82+.18*easeOut(p)+Math.sin(p*Math.PI)*.04;
+    tile.visual.scale.set(baseScale.x*swell,THREE.MathUtils.lerp(baseScale.y*.5,baseScale.y,easeOut(p)),baseScale.z*swell);
+  }).then(()=>tile.visual.scale.copy(baseScale));
+}
+
+function animateBuildingConstruction(t,type,m){
+  if(!m)return Promise.resolve();
+  const baseScale=m.scale.clone();
+  const baseY=m.position.y;
+  const baseRot=m.rotation.y;
+  spawnRing(t.visual.position.clone(),type==='mine'?0x9ca8a6:type==='lumbermill'?0xb88a52:0xe8cc74);
+  spawnBurst(t.visual.position.clone(),type==='mine'?0xaab0a7:0xe2c66f,type==='market'?16:11);
+
+  if(type==='house'){
+    m.scale.set(baseScale.x*.18,baseScale.y*.05,baseScale.z*.18);
+    m.position.y=baseY-.25;
+    return tween(.72,p=>{
+      const q=easeOut(p);
+      const overshoot=1+Math.sin(p*Math.PI)*.07;
+      m.scale.set(baseScale.x*(.18+.82*q)*overshoot,baseScale.y*(.05+.95*q),baseScale.z*(.18+.82*q)*overshoot);
+      m.position.y=THREE.MathUtils.lerp(baseY-.25,baseY,q);
+      m.rotation.y=baseRot+Math.sin((1-p)*Math.PI*2)*.045*(1-p);
+    }).then(()=>{m.scale.copy(baseScale);m.position.y=baseY;m.rotation.y=baseRot;});
+  }
+
+  if(type==='market'){
+    m.scale.set(baseScale.x*.18,baseScale.y*.25,baseScale.z*.18);
+    m.position.y=baseY-.12;
+    return tween(.76,p=>{
+      const q=easeOut(p);
+      m.scale.set(baseScale.x*(.18+.82*q),baseScale.y*(.25+.75*q),baseScale.z*(.18+.82*q));
+      m.position.y=THREE.MathUtils.lerp(baseY-.12,baseY,q);
+      m.rotation.y=baseRot+(1-q)*.28;
+    }).then(()=>{m.scale.copy(baseScale);m.position.y=baseY;m.rotation.y=baseRot;});
+  }
+
+  if(type==='lumbermill'){
+    m.position.y=baseY+2.4;
+    m.rotation.y=baseRot-.48;
+    m.scale.copy(baseScale).multiplyScalar(.88);
+    return tween(.62,p=>{
+      const q=easeInOut(p);
+      m.position.y=THREE.MathUtils.lerp(baseY+2.4,baseY,q);
+      m.rotation.y=THREE.MathUtils.lerp(baseRot-.48,baseRot,q);
+      m.scale.copy(baseScale).multiplyScalar(.88+.12*q+Math.sin(p*Math.PI)*.035);
+    }).then(()=>{
+      m.scale.copy(baseScale);m.position.y=baseY;m.rotation.y=baseRot;
+      spawnBurst(t.visual.position.clone(),0xc59b62,14);
+    });
+  }
+
+  m.position.y=baseY-1.1;
+  m.scale.set(baseScale.x*.78,baseScale.y*.72,baseScale.z*.78);
+  return tween(.78,p=>{
+    const q=easeOut(p);
+    m.position.y=THREE.MathUtils.lerp(baseY-1.1,baseY,q);
+    const grow=.78+.22*q+Math.sin(p*Math.PI)*.045;
+    m.scale.set(baseScale.x*grow,baseScale.y*(.72+.28*q),baseScale.z*grow);
+  }).then(()=>{m.scale.copy(baseScale);m.position.y=baseY;spawnBurst(t.visual.position.clone(),0x8c8175,18);});
+}
+
+function registerBuildingAmbient(t,type,m){
+  if(!m)return;
+  if(type==='house'){
+    const smoke=new THREE.Group();
+    for(let i=0;i<4;i++){
+      const mat=new THREE.MeshBasicMaterial({color:0xf0eee4,transparent:true,opacity:.18,depthWrite:false});
+      const puff=new THREE.Mesh(new THREE.SphereGeometry(.11+i*.018,8,6),mat);
+      puff.position.set(.35,1.9+i*.18,.12);
+      smoke.add(puff);
+    }
+    t.visual.add(smoke);
+    state.ambientActors.push({type:'smoke',object:smoke,phase:(t.x*13+t.z*7)*.2});
+  }
+  if(type==='market'){
+    const halo=new THREE.Mesh(
+      new THREE.TorusGeometry(.62,.04,8,36),
+      new THREE.MeshBasicMaterial({color:0xf2cf67,transparent:true,opacity:.34,depthWrite:false})
+    );
+    halo.rotation.x=Math.PI/2;
+    halo.position.y=2.15;
+    t.visual.add(halo);
+    state.ambientActors.push({type:'marketHalo',object:halo,phase:(t.x+t.z)*.45});
+  }
+  if(type==='lumbermill'){
+    const saw=new THREE.Mesh(
+      new THREE.CylinderGeometry(.38,.38,.055,20),
+      new THREE.MeshStandardMaterial({color:0xb6b1a2,metalness:.35,roughness:.55})
+    );
+    saw.rotation.z=Math.PI/2;
+    saw.position.set(.85,.72,.74);
+    t.visual.add(saw);
+    state.ambientActors.push({type:'saw',object:saw,phase:0});
+  }
+  if(type==='mine'){
+    const lamp=new THREE.PointLight(0xffd27a,1.05,4.2,2);
+    lamp.position.set(.25,.86,.32);
+    t.visual.add(lamp);
+    const bulb=new THREE.Mesh(
+      new THREE.SphereGeometry(.085,8,6),
+      new THREE.MeshBasicMaterial({color:0xffda83})
+    );
+    bulb.position.copy(lamp.position);
+    t.visual.add(bulb);
+    state.ambientActors.push({type:'mineLamp',object:lamp,phase:(t.x*5-t.z*3)*.35});
+  }
+}
+
+function updateAmbientActors(time,dt){
+  for(const actor of state.ambientActors){
+    if(!actor.object?.parent)continue;
+    if(actor.type==='smoke'){
+      actor.object.children.forEach((puff,i)=>{
+        const phase=(time*.00035+actor.phase+i*.22)%1;
+        puff.position.y=.55+phase*.95;
+        puff.position.x=.1+Math.sin(time*.0012+i)*.08;
+        const s=.7+phase*.65;
+        puff.scale.setScalar(s);
+        if(puff.material)puff.material.opacity=.22*(1-phase);
+      });
+    }else if(actor.type==='marketHalo'){
+      actor.object.rotation.z+=dt*.65;
+      actor.object.position.y=1.12+Math.sin(time*.002+actor.phase)*.055;
+      actor.object.material.opacity=.25+Math.sin(time*.003+actor.phase)*.08;
+    }else if(actor.type==='saw'){
+      actor.object.rotation.x+=dt*2.6;
+    }else if(actor.type==='mineLamp'){
+      actor.object.intensity=.75+Math.sin(time*.004+actor.phase)*.18;
+    }
+  }
 }
 
 function shadows(root){
@@ -247,21 +388,31 @@ function tileMesh(x,z){
   const g=new THREE.Group();
   g.position.copy(pos(x,z));
   g.userData.cellKey=key(x,z);
+  const shade=((x*11+z*17)%7-3)*.012;
+  const soilColor=new THREE.Color(0x84683f).offsetHSL(0,0,shade*.5);
+  const grassColor=new THREE.Color(0x7faa5f).offsetHSL(0,.01,shade);
   const soil=new THREE.Mesh(
-    new THREE.BoxGeometry(GRID.tileSize*.96,.72,GRID.tileSize*.96),
-    new THREE.MeshStandardMaterial({color:0x8b7047,roughness:.95})
+    new RoundedBoxGeometry(GRID.tileSize*.94,.72,GRID.tileSize*.94,4,.18),
+    new THREE.MeshStandardMaterial({color:soilColor,roughness:.96})
   );
   soil.position.y=-.38;
   soil.castShadow=soil.receiveShadow=true;
   g.add(soil);
   const grass=new THREE.Mesh(
-    new THREE.BoxGeometry(GRID.tileSize*.98,.16,GRID.tileSize*.98),
-    new THREE.MeshStandardMaterial({color:0x79a95a,roughness:.93})
+    new RoundedBoxGeometry(GRID.tileSize*.97,.18,GRID.tileSize*.97,4,.20),
+    new THREE.MeshStandardMaterial({color:grassColor,roughness:.9})
   );
-  grass.position.y=.02;
+  grass.position.y=.03;
   grass.castShadow=grass.receiveShadow=true;
   grass.userData.cellKey=g.userData.cellKey;
   g.add(grass);
+  const rim=new THREE.Mesh(
+    new RoundedBoxGeometry(GRID.tileSize*.91,.035,GRID.tileSize*.91,3,.17),
+    new THREE.MeshBasicMaterial({color:0xc7d98d,transparent:true,opacity:.13,depthWrite:false})
+  );
+  rim.position.y=.135;
+  rim.userData.cellKey=g.userData.cellKey;
+  g.add(rim);
   return g;
 }
 function addLand(x,z){
@@ -357,7 +508,9 @@ const BUILDING_SIZE={house:3.45,market:3.75,lumbermill:3.9,mine:3.55};
 async function setBuilding(t,type,animated=false){
   clearContent(t);
   t.type=type;
-  await modelOn(t,BUILDING_ASSET[type],BUILDING_SIZE[type],(t.x*17+t.z*11)*.13,animated);
+  const m=await modelOn(t,BUILDING_ASSET[type],BUILDING_SIZE[type],(t.x*17+t.z*11)*.13,false);
+  if(animated)await animateBuildingConstruction(t,type,m);
+  registerBuildingAmbient(t,type,m);
   t.type=type;
 }
 function isMillZone(t){
@@ -551,7 +704,8 @@ function renderHand(){
     const d=CARD_DEFS[c.type];
     const b=document.createElement('button');
     b.className=`card ${d.tone}${state.selectedCardId===c.id?' active':''}`;
-    b.innerHTML=`<span class="card-icon">${d.icon}</span><b>${d.name}</b><p>${d.description}</p>`;
+    b.style.setProperty('--deal-index',String(state.hand.indexOf(c)));
+    b.innerHTML=`<div class="card-top"><span class="card-kind">${d.category||'КАРТА'}</span><span class="card-icon">${d.icon}</span></div><b>${d.name}</b><p>${d.description}</p><span class="card-action">Выбрать</span>`;
     b.onclick=e=>{
       e.stopPropagation();
       state.selectedCardId=state.selectedCardId===c.id?null:c.id;
@@ -570,8 +724,11 @@ function status(){
   ui.fieldStatus.innerHTML=DIRECTIONS.map(d=>{
     const t=state.land.get(key(d.dx,d.dz));
     const s=t?.type==='field'?t.stage:0;
-    return`<div class="field-chip ${s>=4?'ready':''}"><span>${names[d.key]}</span><b>${s?`${s}/4`:'—'}</b></div>`;
+    return`<div class="field-chip ${s>=4?'ready':''}"><div><span>${names[d.key]}</span><i><em style="width:${s?Math.min(100,s/4*100):0}%"></em></i></div><b>${s?`${s}/4`:'—'}</b></div>`;
   }).join('');
+  const millProgress=millFields().reduce((sum,t)=>sum+(t?.type==='field'?Math.min(4,t.stage):0),0);
+  if(ui.objectiveProgress)ui.objectiveProgress.style.width=`${Math.min(100,millProgress/16*100)}%`;
+  if(ui.objectiveProgressLabel)ui.objectiveProgressLabel.textContent=`${millProgress} / 16`;
   ui.objectiveTitle.textContent=ready()?'Урожай готов — нужна новая мельница':'Соединяйте любые 4 части поля';
   ui.objectiveCopy.textContent=ready()
     ?'Положите карту «Новая мельница» на центральную мельницу, чтобы собрать комбо.'
@@ -788,6 +945,23 @@ renderer.domElement.onpointerup=async e=>{
   if(!t)return toast('Эту карту нужно применить к клетке острова.');
   await apply(card,t);
 };
+renderer.domElement.onpointermove=e=>{
+  if(state.inputLocked){hoverMarker.visible=false;return;}
+  const hits=hitsAt(e.clientX,e.clientY);
+  const tileHit=hits.find(h=>tileOf(h.object));
+  const t=tileHit?tileOf(tileHit.object):null;
+  if(t){
+    hoverMarker.visible=true;
+    hoverMarker.position.set(t.visual.position.x,.17,t.visual.position.z);
+    const card=state.hand.find(c=>c.id===state.selectedCardId);
+    const valid=!card||card.type==='clear'?true:t.type==='empty'||card.type==='field'&&t.type==='field'||card.type==='millUpgrade'&&t.type==='mill';
+    hoverMarker.material.color.setHex(valid?0xf6df86:0xd97b6f);
+    hoverMarker.material.opacity=valid?.24:.16;
+  }else{
+    hoverMarker.visible=false;
+  }
+};
+renderer.domElement.onpointerleave=()=>{hoverMarker.visible=false;};
 renderer.domElement.oncontextmenu=e=>e.preventDefault();
 
 function rotate(a){
@@ -812,6 +986,7 @@ function tick(time){
   previousFrame=time;
   controls.update();
   updateTweens(dt);
+  updateAmbientActors(time,dt);
   const bladeSpeed=.75+state.bladeBoost;
   for(const blades of state.millBlades)blades.rotation.z+=dt*bladeSpeed;
   state.bladeBoost=Math.max(0,state.bladeBoost-dt*1.8);

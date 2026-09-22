@@ -35,6 +35,12 @@
 - [x] Reward card burst animation
 - [x] Building / nature particle and ring feedback
 - [x] Windmill combo pulse animation
+- [x] Rounded island tile visual pass
+- [x] Hovered-cell world highlight
+- [x] Per-building construction animations
+- [x] House smoke, market halo, lumbermill saw and mine lamp idle effects
+- [x] High-quality HUD and card-hand visual pass
+- [x] Objective progress meter and richer field status chips
 - [ ] Browser play-test and balance pass
 
 ## Prototype 0.2 — More spatial engines
