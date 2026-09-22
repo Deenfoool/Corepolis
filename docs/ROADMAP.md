@@ -48,6 +48,8 @@
 - [x] Producer self-replacement to close a full local cycle
 - [x] Producer teardown frees its own tile
 - [x] Large extraction cycles reward bonus cards
+- [x] Existing producers auto-process newly placed Tree/Rock cards
+- [x] Resource cards can instantly resolve inside overlapping producer zones
 - [x] Objective progress meter and richer field status chips
 - [ ] Browser play-test and balance pass
 

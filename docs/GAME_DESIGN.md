@@ -58,6 +58,7 @@ Trees and Rocks are setup resources, not filler cards.
 4. If a different matching producer later touches the same resource, that is its second processing step: the resource disappears, the cell is freed, and the player gains score plus another material unit.
 5. Alternatively, playing a second Lumbermill/Quarry card directly on top of an existing matching producer closes that producer's whole local cycle: every adjacent matching resource is processed to completion, the producer itself disappears, and its tile becomes free.
 6. Closing a large cycle grants bonus cards: 3+ depleted cells gives one card; 5+ gives two.
+7. The timing is symmetric: if a Tree or Rock card is placed later inside an existing producer's range, that producer immediately applies its processing step. A resource placed into the overlap of two matching producers can therefore be created and fully depleted in the same turn.
 
 This creates deliberate overlap puzzles: two producers can share one resource without deleting every resource around either building. Only cells that reach their second matching processing step are exhausted.
 

@@ -17,7 +17,7 @@ The current vertical slice combines field merging, the windmill combo and the fi
 7. House and Market provide settlement adjacency, while Lumbermill and Quarry run two-step resource extraction loops.
 8. World actions now have placement pops, expanding-land rise, collapse motion, reward bursts, rings and combo pulses.
 
-Trees and rocks are now productive setup cards rather than dead draws: a first nearby producer yields material and marks the resource 1/2; a second producer contact or the same producer card played on top closes the cycle, removes the depleted resource and grants score.
+Trees and rocks are now productive setup cards rather than dead draws: a first nearby producer yields material and marks the resource 1/2; a second producer contact or the same producer card played on top closes the cycle, removes the depleted resource and grants score. The order is flexible: placing a new Tree/Rock inside an existing producer zone immediately triggers that producer, so the player can build the industry first or the resource first.
 
 ## Deployment
 
