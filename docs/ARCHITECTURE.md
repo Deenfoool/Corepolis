@@ -7,8 +7,9 @@ Corepolis must run as a fully static application on GitHub Pages:
 - canonical public path: `/Corepolis/`;
 - no required backend;
 - no GitHub Actions;
-- deployment from the `gh-pages` branch;
-- assets must use relative URLs.
+- deployment directly from `main` → `/ (root)`;
+- assets must use relative URLs;
+- `.nojekyll` must remain at the repository root.
 
 ## Prototype stack
 
