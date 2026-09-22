@@ -9,11 +9,16 @@
 - [x] Card selection and world targeting
 - [x] Windmill using CC0 KayKit art
 - [x] Trees and rocks using CC0 KayKit art
-- [x] Four directional field slots
+- [x] Free field placement across the island
+- [x] Four-cell windmill synergy zone
+- [x] Normal-field small harvest loop
+- [x] Accelerated field growth beside the windmill
 - [x] Field growth stages I–IV
 - [x] Mature-field waiting state
 - [x] New Windmill trigger card
-- [x] Four-field harvest combo and reset
+- [x] Four-field windmill harvest combo and reset
+- [x] Continuously rotating windmill blades
+- [x] Blade speed boost on large harvest
 - [x] Bonus-card reward
 - [x] Expand Island card
 - [x] Add/remove nature cards
