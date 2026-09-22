@@ -36,16 +36,28 @@ export const BUILDINGS = {
     description: 'Parallel compute campus for heavy visual workloads.'
   },
   storage: {
-    name: 'Storage Zone',
-    short: 'STORAGE',
-    cost: 1200,
+    name: 'SSD District',
+    short: 'SSD',
+    cost: 1300,
     size: [4.0, 3.0],
     color: 0xffcd73,
     height: 1.4,
-    storage: 160,
-    powerUse: 9,
-    heat: 5,
-    description: 'Persistent data blocks and high-throughput storage.'
+    storage: 180,
+    powerUse: 7,
+    heat: 4,
+    description: 'Fast solid-state storage for active workloads.'
+  },
+  hdd: {
+    name: 'HDD Archive',
+    short: 'HDD',
+    cost: 900,
+    size: [4.2, 3.2],
+    color: 0xe7b96c,
+    height: 1.45,
+    storage: 260,
+    powerUse: 11,
+    heat: 7,
+    description: 'Cheap high-capacity storage with a larger power and heat footprint.'
   },
   power: {
     name: 'Power Plant',
