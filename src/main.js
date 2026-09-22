@@ -50,10 +50,6 @@ scene.add(roomFill);
 const world = new THREE.Group();
 scene.add(world);
 
-function mat(color, roughness=.58, metalness=.62){
-  return new THREE.MeshStandardMaterial({ color, roughness, metalness });
-}
-
 const gltfLoader = new GLTFLoader();
 const modelCache = new Map();
 
