@@ -444,8 +444,12 @@ function clearContent(t){
     t.resourceMarker.material?.dispose?.();
     t.resourceMarker=null;
   }
-  for(const object of t.ambientObjects||[]){
+  const ambientSet=new Set(t.ambientObjects||[]);
+  for(const object of ambientSet){
     if(object?.parent)object.parent.remove(object);
+  }
+  if(ambientSet.size){
+    state.ambientActors=state.ambientActors.filter(actor=>!ambientSet.has(actor.object));
   }
   t.ambientObjects=[];
   t.type='empty';
@@ -671,6 +675,24 @@ async function processProducerPlacement(producerTile,producerType){
   status();
   return{touched,depleted};
 }
+async function activateProducersForResource(resourceTile){
+  const producerType=resourceTile.type==='tree'?'lumbermill':resourceTile.type==='rock'?'quarry':null;
+  if(!producerType)return{producers:0,depleted:0};
+  const producers=[];
+  for(let dx=-1;dx<=1;dx++)for(let dz=-1;dz<=1;dz++){
+    if(!dx&&!dz)continue;
+    const cell=state.land.get(key(resourceTile.x+dx,resourceTile.z+dz));
+    if(cell?.type===producerType)producers.push(cell);
+  }
+  let depleted=0;
+  for(const producer of producers){
+    const result=await processProducerPlacement(producer,producerType);
+    depleted+=result.depleted;
+    if(resourceTile.type==='empty')break;
+  }
+  return{producers:producers.length,depleted};
+}
+
 async function resolveProducer(producerTile,producerType){
   const cfg=PRODUCER_RESOURCE[producerType];
   if(!cfg)return;
@@ -1011,7 +1033,10 @@ async function apply(card,t){
     if(t.type!=='empty')return toast('Для леса нужна свободная клетка.');
     await setTree(t,true);
     spend(card.id);
+    const activation=await activateProducersForResource(t);
     status();
+    if(activation.producers>=2)return toast('Лес попал в перекрытие двух лесопилок: древесина добыта, клетка сразу освободилась.');
+    if(activation.producers===1)return toast('Новый лес сразу обработан соседней лесопилкой: +1 древесина, 1/2.');
     return;
   }
 
@@ -1019,7 +1044,10 @@ async function apply(card,t){
     if(t.type!=='empty')return toast('Камни можно добавить только на свободную клетку.');
     await setRock(t,true);
     spend(card.id);
+    const activation=await activateProducersForResource(t);
     status();
+    if(activation.producers>=2)return toast('Камни попали в перекрытие двух каменоломен: ресурс добыт, клетка сразу освободилась.');
+    if(activation.producers===1)return toast('Новые камни сразу обработаны соседней каменоломней: +1 камень, 1/2.');
     return;
   }
 
