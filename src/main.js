@@ -1,6 +1,8 @@
 import * as THREE from 'three';
 import { MapControls } from 'three/addons/controls/MapControls.js';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { BUILDINGS, BOARD } from './config.js';
+import { MODEL_ASSETS } from './models.js';
 
 const canvas = document.querySelector('#game');
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
@@ -50,6 +52,128 @@ scene.add(world);
 
 function mat(color, roughness=.58, metalness=.62){
   return new THREE.MeshStandardMaterial({ color, roughness, metalness });
+}
+
+const gltfLoader = new GLTFLoader();
+const modelCache = new Map();
+
+function loadModelTemplate(type){
+  const asset = MODEL_ASSETS[type];
+  if(!asset) return Promise.reject(new Error(`No model asset for ${type}`));
+  if(!modelCache.has(asset.url)){
+    modelCache.set(asset.url, new Promise((resolve,reject)=>{
+      gltfLoader.load(asset.url, gltf=>resolve(gltf.scene), undefined, reject);
+    }));
+  }
+  return modelCache.get(asset.url);
+}
+
+function prepareModelInstance(source,type,ghostMode){
+  const asset = MODEL_ASSETS[type];
+  const cfg = BUILDINGS[type];
+  const model = source.clone(true);
+  model.rotation.set(...(asset.rotation || [0,0,0]));
+  model.updateMatrixWorld(true);
+
+  const rawBox = new THREE.Box3().setFromObject(model);
+  const rawSize = rawBox.getSize(new THREE.Vector3());
+  const fit = asset.fit || [cfg.size[0]*.8, cfg.height, cfg.size[1]*.8];
+  const candidates = [
+    rawSize.x > 0 ? fit[0] / rawSize.x : Infinity,
+    rawSize.y > 0 ? fit[1] / rawSize.y : Infinity,
+    rawSize.z > 0 ? fit[2] / rawSize.z : Infinity
+  ];
+  const scale = Math.min(...candidates.filter(Number.isFinite));
+  model.scale.setScalar(scale);
+  model.updateMatrixWorld(true);
+
+  model.traverse(o=>{
+    if(!o.isMesh) return;
+    o.castShadow = !ghostMode;
+    o.receiveShadow = true;
+    if(ghostMode){
+      o.material = new THREE.MeshStandardMaterial({
+        color: cfg.color,
+        emissive: cfg.color,
+        emissiveIntensity: .35,
+        transparent: true,
+        opacity: .5,
+        roughness: .45,
+        metalness: .55
+      });
+    } else if(o.material){
+      const materials = Array.isArray(o.material) ? o.material : [o.material];
+      const cloned = materials.map(m=>{
+        const copy = m.clone();
+        if('emissive' in copy){
+          copy.emissive = new THREE.Color(cfg.color);
+          copy.emissiveIntensity = Math.max(copy.emissiveIntensity || 0, .055);
+        }
+        return copy;
+      });
+      o.material = Array.isArray(o.material) ? cloned : cloned[0];
+    }
+  });
+
+  const box = new THREE.Box3().setFromObject(model);
+  const center = box.getCenter(new THREE.Vector3());
+  model.position.x -= center.x;
+  model.position.z -= center.z;
+  model.position.y -= box.min.y;
+  return model;
+}
+
+function attachAssetModel(group,type,ghostMode,fallback){
+  if(!MODEL_ASSETS[type]) return;
+  loadModelTemplate(type).then(source=>{
+    if(!group.parent && !group.userData.keepDetached) return;
+    const host = new THREE.Group();
+    host.userData.assetModel = true;
+    host.position.y = .46;
+    const model = prepareModelInstance(source,type,ghostMode);
+    host.add(model);
+    group.add(host);
+    fallback.visible = false;
+    group.userData.modelLoaded = true;
+  }).catch(err=>{
+    console.warn(`[Corepolis] 3D model failed for ${type}; using fallback.`, err);
+    group.userData.modelLoaded = false;
+  });
+}
+
+function makeFallbackVisual(type,cfg,ghostMode){
+  const root = new THREE.Group();
+  root.userData.fallbackVisual = true;
+  const material = new THREE.MeshStandardMaterial({
+    color: cfg.color,
+    emissive: cfg.color,
+    emissiveIntensity: ghostMode ? .32 : .1,
+    roughness: .38,
+    metalness: .55,
+    transparent: ghostMode,
+    opacity: ghostMode ? .46 : 1
+  });
+
+  if(type==='ram'){
+    [-.55,0,.55].forEach(x=>{
+      const mesh = new THREE.Mesh(new THREE.BoxGeometry(.35,1.7,4.2),material);
+      mesh.position.set(x,1.28,0); root.add(mesh);
+    });
+  } else if(type==='gpu'){
+    const mesh = new THREE.Mesh(new THREE.BoxGeometry(5.1,1.45,2.15),material);
+    mesh.position.y=1.2; root.add(mesh);
+  } else if(type==='cpu'){
+    const mesh = new THREE.Mesh(new THREE.BoxGeometry(3.0,.8,2.8),material);
+    mesh.position.y=.85; root.add(mesh);
+  } else {
+    const mesh = new THREE.Mesh(
+      new THREE.BoxGeometry(cfg.size[0]*.7,Math.max(.75,cfg.height*.7),cfg.size[1]*.7),
+      material
+    );
+    mesh.position.y=Math.max(.75,cfg.height*.7)/2+.42; root.add(mesh);
+  }
+  root.traverse(o=>{ if(o.isMesh){o.castShadow=!ghostMode;o.receiveShadow=true;} });
+  return root;
 }
 
 // PC case / world shell
@@ -135,73 +259,33 @@ function makeBuildingMesh(type, ghostMode=false){
   const cfg = BUILDINGS[type];
   const group = new THREE.Group();
   group.userData.type = type;
+  group.userData.modelLoaded = false;
 
   const base = new THREE.Mesh(
     new THREE.BoxGeometry(cfg.size[0], .45, cfg.size[1]),
     new THREE.MeshStandardMaterial({
       color: ghostMode ? 0x6fffd1 : 0x172724,
-      roughness:.48, metalness:.7, transparent:ghostMode, opacity:ghostMode?.42:1
+      roughness:.48,
+      metalness:.7,
+      transparent:ghostMode,
+      opacity:ghostMode?.38:1
     })
   );
-  base.position.y=.2; base.castShadow=!ghostMode; base.receiveShadow=true; group.add(base);
+  base.position.y=.2;
+  base.castShadow=!ghostMode;
+  base.receiveShadow=true;
+  group.add(base);
 
-  const accent = new THREE.MeshStandardMaterial({
-    color:cfg.color, emissive:cfg.color, emissiveIntensity:ghostMode?.4:.12,
-    roughness:.36, metalness:.5, transparent:ghostMode, opacity:ghostMode?.65:1
-  });
-
-  if(type==='ram'){
-    for(let i=-1;i<=1;i++){
-      const tower = new THREE.Mesh(new THREE.BoxGeometry(.48,cfg.height,4.7),accent);
-      tower.position.set(i*.72,cfg.height/2+.42,0); tower.castShadow=!ghostMode; group.add(tower);
-    }
-  } else if(type==='gpu'){
-    const block = new THREE.Mesh(new THREE.BoxGeometry(5.5,1.2,2.3),accent);
-    block.position.y=1.05; block.castShadow=!ghostMode; group.add(block);
-    [-1.8,0,1.8].forEach(x=>{
-      const fan = new THREE.Mesh(new THREE.CylinderGeometry(.55,.55,.18,18),mat(0x0c1211,.4,.8));
-      fan.rotation.x=Math.PI/2; fan.position.set(x,1.08,1.22); group.add(fan);
-    });
-  } else if(type==='cooling'){
-    const ring = new THREE.Mesh(new THREE.TorusGeometry(1.05,.22,12,32),accent);
-    ring.rotation.x=Math.PI/2; ring.position.y=1.25; group.add(ring);
-    for(let i=0;i<5;i++){
-      const blade = new THREE.Mesh(new THREE.BoxGeometry(.22,.06,.92),accent);
-      blade.position.y=1.25; blade.rotation.y=i*Math.PI*.4; group.add(blade);
-    }
-  } else if(type==='cpu'){
-    for(let i=0;i<3;i++){
-      const core = new THREE.Mesh(new THREE.BoxGeometry(2.7,.55,2.7),accent);
-      core.position.y=.72+i*.6; core.scale.set(1-i*.08,1,1-i*.08); core.castShadow=!ghostMode; group.add(core);
-    }
-    const halo = new THREE.Mesh(new THREE.TorusGeometry(1.7,.12,10,32),accent);
-    halo.rotation.x=Math.PI/2; halo.position.y=2.5; group.add(halo);
-  } else if(type==='power'){
-    const reactor = new THREE.Mesh(new THREE.CylinderGeometry(1.6,1.9,1.65,8),accent);
-    reactor.position.y=1.25; reactor.castShadow=!ghostMode; group.add(reactor);
-    const cap = new THREE.Mesh(new THREE.CylinderGeometry(.9,1.15,.45,8),mat(0x202b28,.35,.85));
-    cap.position.y=2.3; group.add(cap);
-  } else if(type==='network'){
-    const mast = new THREE.Mesh(new THREE.CylinderGeometry(.35,.65,2.8,8),accent);
-    mast.position.y=1.7; group.add(mast);
-    [1.3,1.8,2.3].forEach((y,i)=>{
-      const ring = new THREE.Mesh(new THREE.TorusGeometry(.8+i*.18,.06,8,28),accent);
-      ring.rotation.x=Math.PI/2; ring.position.y=y; group.add(ring);
-    });
-  } else {
-    const block = new THREE.Mesh(new THREE.BoxGeometry(cfg.size[0]*.72,cfg.height,cfg.size[1]*.72),accent);
-    block.position.y=cfg.height/2+.42; block.castShadow=!ghostMode; group.add(block);
-    for(let i=0;i<5;i++){
-      const line = new THREE.Mesh(new THREE.BoxGeometry(cfg.size[0]*.55,.07,.06),mat(0xffe0a0,.4,.6));
-      line.position.set(0,.62+i*.18,cfg.size[1]*.37); group.add(line);
-    }
-  }
+  const fallback = makeFallbackVisual(type,cfg,ghostMode);
+  group.add(fallback);
+  attachAssetModel(group,type,ghostMode,fallback);
 
   if(!ghostMode){
-    const marker = new THREE.PointLight(cfg.color,5,8,2);
+    const marker = new THREE.PointLight(cfg.color,4.5,8,2);
     marker.position.y = cfg.height+1;
     group.add(marker);
   }
+
   return group;
 }
 
@@ -422,7 +506,8 @@ Object.entries(BUILDINGS).forEach(([type,cfg])=>{
 placeStarter('power',new THREE.Vector3(-14,0,8));
 placeStarter('cpu',new THREE.Vector3(-5,0,1));
 placeStarter('ram',new THREE.Vector3(3,0,-3));
-placeStarter('storage',new THREE.Vector3(11,0,6));
+placeStarter('storage',new THREE.Vector3(10,0,6));
+placeStarter('hdd',new THREE.Vector3(16,0,6));
 placeStarter('network',new THREE.Vector3(16,0,-7));
 placeStarter('cooling',new THREE.Vector3(-13,0,-8));
 function placeStarter(type,pos){
