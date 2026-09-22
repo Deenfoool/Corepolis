@@ -10,12 +10,12 @@
 - [x] Windmill using CC0 KayKit art
 - [x] Trees and rocks using CC0 KayKit art
 - [x] Free field placement across the island
-- [x] Automatic 2×2 field merging into one visual/gameplay field
-- [x] Bonus card and score when a new 2×2 field is formed
-- [x] Merged-field upgrade and harvest loop
+- [x] Any-shape four-piece field collapse using edge connectivity
+- [x] Collapse into the oldest / first field piece
+- [x] Free the other three cells after collapse
+- [x] Bonus card and score from normal field collapse
 - [x] Four-cell windmill synergy zone
 - [x] Normal-field small harvest loop
-- [x] Accelerated field growth beside the windmill
 - [x] Field growth stages I–IV
 - [x] Mature-field waiting state
 - [x] New Windmill trigger card
@@ -29,6 +29,12 @@
 - [x] Market adjacency engine
 - [x] Lumbermill adjacency engine
 - [x] Mine adjacency engine
+- [x] Placement pop animations
+- [x] Island expansion rise animation
+- [x] Field collapse animation
+- [x] Reward card burst animation
+- [x] Building / nature particle and ring feedback
+- [x] Windmill combo pulse animation
 - [ ] Browser play-test and balance pass
 
 ## Prototype 0.2 — More spatial engines
@@ -37,7 +43,7 @@
 - card rarity and discard choices
 - preview ghost before committing a card
 - better island coast geometry
-- particles, sounds and harvest animation
+- sound effects and richer harvest presentation
 - save/load
 
 ## Prototype 0.3 — Run structure

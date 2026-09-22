@@ -15,14 +15,15 @@ The map is not given to the player up front. Cards both build the settlement and
 - Spatial relationships matter more than raw resource totals.
 - Mature structures can wait for a specific trigger card instead of resolving automatically.
 
-## Field merging
+## Field collapsing
 
 - A Field card creates one field piece on any free land cell.
-- Four field pieces of the same stage arranged as a 2×2 square merge into one large field.
-- The merged field uses one visual border and one growth badge instead of four separate plots.
-- Forming a new 2×2 field awards score and a bonus card.
-- A merged field upgrades as a whole when any of its four cells is targeted with a Field card.
-- A mature merged field can be harvested for a larger reward and then restarts at stage I.
+- Normal fields do not need a square. **Any four orthogonally connected field pieces** qualify, regardless of shape.
+- As soon as the fourth connected piece is placed, those four pieces collapse into the oldest / first piece from that group.
+- The other three cells become free again immediately after the collapse animation.
+- A collapse awards score and a bonus card.
+- This makes placement order meaningful: the first field piece determines where the compacted field remains.
+- Diagonal-only contact does not connect a group; pieces must touch by an edge.
 
 ## Windmill loop
 
@@ -32,13 +33,13 @@ The prototype proves the key rule using one building:
 - Fields may be placed on **any free land cell**; the windmill never hard-locks field placement.
 - Normal fields advance I → II → III → IV one stage per Field card.
 - A mature normal field can be harvested with another Field card for a small reward and then resets to stage I.
-- Fields inside the windmill synergy zone grow faster: after placement, each additional Field card advances them by two stages.
-- Mature synergy fields wait instead of resolving individually.
+- Fields directly beside the windmill are the exception to normal collapsing: each position accumulates from 1/4 to 4/4 one card at a time.
+- A 4/4 windmill-side field waits instead of resolving individually.
 - When all four synergy cells are mature, the system waits for a `New Windmill` card.
 - Playing that card on the current windmill triggers the large combo, returns the four synergy fields to stage I and grants bonus cards and score.
 - Windmill blades rotate continuously and briefly accelerate when the large harvest combo fires.
 
-This keeps placement free while preserving a strong optimization puzzle: fields work anywhere, but building around the windmill creates a faster and more valuable engine.
+This keeps placement free while preserving a strong optimization puzzle: ordinary four-piece groups compact automatically, while the four mill-side positions deliberately wait for the building upgrade trigger.
 
 ## Settlement buildings
 
@@ -69,3 +70,16 @@ Future systems should reuse the same readable verbs rather than introducing unre
 - Strong silhouettes and readable stages.
 - A small diorama-like island in open water.
 - Free assets only, with license provenance documented.
+
+
+## Animation language
+
+Gameplay actions should communicate cause and reward without relying only on UI text:
+
+- placed fields, buildings, trees and rocks pop into the scene with a soft ring;
+- new island cells rise out of the water;
+- four normal field pieces visibly fly into the oldest field before the three source cells clear;
+- card rewards burst upward as small card-shaped particles;
+- score / reward events use radial particle bursts;
+- clearing nature shrinks the removed object before the tile is freed;
+- the windmill combo pulses the mill and nearby fields while the blades accelerate.

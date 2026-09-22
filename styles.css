@@ -36,6 +36,7 @@ h1{font-size:23px;letter-spacing:.12em;margin:2px 0 0;color:#26372a}
 .hand-meta{width:max-content;max-width:100%;margin:0 auto 8px;padding:7px 12px;border-radius:999px;display:flex;gap:18px;font-size:10px;color:#687567}
 .hand-meta b{color:#32442f}.hand{display:flex;justify-content:center;align-items:flex-end;gap:9px;min-height:132px;pointer-events:none}
 .card{
+  animation:card-deal .28s cubic-bezier(.2,.8,.2,1) both;
   width:142px;min-width:128px;height:124px;border:0;border-radius:17px;padding:11px 11px 10px;text-align:left;
   color:#31402f;background:linear-gradient(155deg,#fffdf0,#ede5c7);box-shadow:0 13px 30px rgba(44,61,45,.20),inset 0 0 0 1px rgba(89,85,58,.12);
   cursor:pointer;pointer-events:auto;transition:transform .16s ease,box-shadow .16s ease,filter .16s ease;position:relative;overflow:hidden
@@ -49,7 +50,7 @@ h1{font-size:23px;letter-spacing:.12em;margin:2px 0 0;color:#26372a}
 .camera-help b{color:#354532}
 .tile-info{position:fixed;right:18px;top:106px;width:220px;border-radius:18px;padding:14px;pointer-events:none}
 .tile-info h2{font-size:15px;margin:6px 0 4px}.tile-info p{font-size:10px;line-height:1.45;color:#6b7667;margin:0}
-.toast{position:fixed;left:50%;top:108px;transform:translateX(-50%);padding:10px 14px;border-radius:12px;font-size:11px;color:#4c533f;z-index:20;transition:opacity .2s ease}
+.toast{position:fixed;left:50%;top:108px;transform:translateX(-50%);padding:10px 14px;border-radius:12px;font-size:11px;color:#4c533f;z-index:20;transition:opacity .2s ease;animation:toast-pop .24s cubic-bezier(.2,.9,.25,1.2)}
 .hidden{display:none!important}
 .loading-screen{position:fixed;inset:0;z-index:9999;display:grid;place-items:center;background:radial-gradient(circle at 50% 42%,#b7e1cf 0,#83c6d3 48%,#67aabd 100%);transition:opacity .45s ease,visibility .45s ease}
 .loading-screen.done{opacity:0;visibility:hidden;pointer-events:none}
@@ -60,4 +61,13 @@ h1{font-size:23px;letter-spacing:.12em;margin:2px 0 0;color:#26372a}
 }
 @media(max-width:620px){
   .topbar{align-items:flex-start}.resource-row{gap:4px}.resource-row>div{padding:6px;min-width:55px}.resource-row span{font-size:8px}.resource-row strong{font-size:13px}.objective{top:94px;width:205px}.objective p{display:none}.field-status{grid-template-columns:1fr}.hand-wrap{width:calc(100% - 12px)}
+}
+
+@keyframes card-deal{
+  from{opacity:0;transform:translateY(18px) scale(.94) rotate(-1.5deg)}
+  to{opacity:1;transform:translateY(0) scale(1) rotate(0)}
+}
+@keyframes toast-pop{
+  from{opacity:0;transform:translate(-50%,-8px) scale(.94)}
+  to{opacity:1;transform:translate(-50%,0) scale(1)}
 }
