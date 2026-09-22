@@ -7,7 +7,8 @@
 - [x] Strategy camera
 - [x] Build toolbar
 - [x] Placement ghost and collision checks
-- [x] CPU, RAM, GPU, Storage, Power, Cooling, Network districts
+- [x] CPU, RAM, GPU, SSD, HDD, Power, Cooling, Network districts
+- [x] Lightweight GLB hardware visuals with procedural fallbacks
 - [x] Credits
 - [x] Workload growth
 - [x] Compute / memory / storage / power / thermal simulation
