@@ -6,6 +6,7 @@
   <meta name="theme-color" content="#8dc9d7" />
   <title>Corepolis — Island Card Builder</title>
   <link rel="stylesheet" href="./styles.css" />
+  <script defer src="https://unpkg.com/lucide@1.47.0"></script>
   <script type="importmap">
   {
     "imports": {
@@ -43,17 +44,17 @@
         </div>
       </div>
       <div class="resource-row">
-        <div class="resource-chip"><span class="resource-icon">✦</span><span><small>ОЧКИ</small><strong id="harvest-score">0</strong></span></div>
-        <div class="resource-chip material wood"><span class="resource-icon">▰</span><span><small>ДРЕВЕСИНА</small><strong id="wood-count">0</strong></span></div>
-        <div class="resource-chip material stone"><span class="resource-icon">◆</span><span><small>КАМЕНЬ</small><strong id="stone-count">0</strong></span></div>
-        <div class="resource-chip compact"><span class="resource-icon">◇</span><span><small>КОМБО</small><strong id="combo-count">0</strong></span></div>
-        <div class="resource-chip compact"><span class="resource-icon">▦</span><span><small>ЗЕМЛЯ</small><strong id="land-count">0</strong></span></div>
+        <div class="resource-chip"><span class="resource-icon"><i data-lucide="sparkles"></i></span><span><small>ОЧКИ</small><strong id="harvest-score">0</strong></span></div>
+        <div class="resource-chip material wood"><span class="resource-icon"><i data-lucide="trees"></i></span><span><small>ДРЕВЕСИНА</small><strong id="wood-count">0</strong></span></div>
+        <div class="resource-chip material stone"><span class="resource-icon"><i data-lucide="mountain"></i></span><span><small>КАМЕНЬ</small><strong id="stone-count">0</strong></span></div>
+        <div class="resource-chip compact"><span class="resource-icon"><i data-lucide="badge"></i></span><span><small>КОМБО</small><strong id="combo-count">0</strong></span></div>
+        <div class="resource-chip compact"><span class="resource-icon"><i data-lucide="layers-3"></i></span><span><small>ЗЕМЛЯ</small><strong id="land-count">0</strong></span></div>
       </div>
     </header>
 
     <aside class="objective panel">
       <div class="panel-heading">
-        <span class="section-icon">◎</span>
+        <span class="section-icon"><i data-lucide="target"></i></span>
         <div>
           <div class="eyebrow">ЦЕЛЬ</div>
           <h2 id="objective-title">Соединяйте любые 4 части поля</h2>
@@ -71,23 +72,23 @@
 
     <section class="hand-wrap">
       <div class="hand-meta panel">
-        <div class="hand-label"><span class="section-icon">▰</span><b>РУКА</b><span class="hand-count"><b id="hand-count">0</b> карт</span></div>
+        <div class="hand-label"><span class="section-icon"><i data-lucide="hand"></i></span><b>РУКА</b><span class="hand-count"><b id="hand-count">0</b> карт</span></div>
         <span id="selection-hint">Выберите карту</span>
       </div>
       <div id="hand" class="hand" aria-label="Рука карт"></div>
     </section>
 
     <div class="camera-help panel">
-      <span><kbd>LMB</kbd> карта</span>
-      <span><kbd>RMB</kbd> панорама</span>
-      <span><kbd>Wheel</kbd> зум</span>
-      <span><kbd>Q / E</kbd> поворот</span>
-      <span><kbd>Esc</kbd> отмена</span>
+      <span><i data-lucide="mouse-pointer-2"></i><kbd>LMB</kbd> карта</span>
+      <span><i data-lucide="move-3d"></i><kbd>RMB</kbd> панорама</span>
+      <span><i data-lucide="zoom-in"></i><kbd>Wheel</kbd> зум</span>
+      <span><i data-lucide="rotate-3d"></i><kbd>Q / E</kbd> поворот</span>
+      <span><i data-lucide="x"></i><kbd>Esc</kbd> отмена</span>
     </div>
 
     <aside id="tile-info" class="tile-info panel hidden">
       <div class="panel-heading">
-        <span class="section-icon">⌖</span>
+        <span class="section-icon"><i data-lucide="map-pin"></i></span>
         <div>
           <div class="eyebrow">ОБЪЕКТ</div>
           <h2 id="tile-title"></h2>

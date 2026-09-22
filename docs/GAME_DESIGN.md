@@ -93,3 +93,30 @@ Gameplay actions should communicate cause and reward without relying only on UI 
 - score / reward events use radial particle bursts;
 - clearing nature shrinks the removed object before the tile is freed;
 - the windmill combo pulses the mill and nearby fields while the blades accelerate.
+
+
+## Card economy and presentation
+
+Cards are designed as object-first game cards rather than generic HTML buttons:
+
+- the upper section is a rendered preview of the actual 3D object;
+- the preview softens and blurs into the lower text area;
+- the installation cost is always visible inside the top edge;
+- Wood and Stone cost chips use Lucide icons;
+- unaffordable cards stay visible in the hand but are dimmed and cannot be selected;
+- resource cards and the two basic producers are free, preventing opening-hand deadlocks.
+
+Current installation costs:
+
+- Field — free
+- Tree — free
+- Rock — free
+- Lumbermill — free
+- Quarry — free
+- Clear — 1 Wood
+- Expand Island — 1 Wood + 1 Stone
+- House — 2 Wood
+- Market — 2 Wood + 2 Stone
+- New Windmill — 4 Wood + 3 Stone
+
+The cost is paid only after a legal action is committed.

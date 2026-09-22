@@ -26,3 +26,13 @@ The pack's accompanying texture and binary data are loaded from the same pinned 
 ## Three.js
 
 Three.js is loaded as an ES module from jsDelivr at version `0.180.0`.
+
+
+## Lucide
+
+Corepolis uses the Lucide icon library for interface and card icons.
+
+- Project: https://lucide.dev/
+- Runtime package: `lucide@1.47.0`
+- License: **ISC**
+- Runtime delivery: pinned UMD package from unpkg.

@@ -75,6 +75,13 @@ scene.add(waterPlane);
 
 const loader=new GLTFLoader();
 const cache=new Map();
+const previewRenderer=new THREE.WebGLRenderer({antialias:true,alpha:true,preserveDrawingBuffer:true,powerPreference:'low-power'});
+previewRenderer.setPixelRatio(1);
+previewRenderer.setSize(512,320,false);
+previewRenderer.outputColorSpace=THREE.SRGBColorSpace;
+previewRenderer.toneMapping=THREE.ACESFilmicToneMapping;
+previewRenderer.toneMappingExposure=1.08;
+previewRenderer.setClearColor(0x000000,0);
 const ray=new THREE.Raycaster();
 const pointer=new THREE.Vector2();
 
@@ -104,6 +111,7 @@ const state={
   bladeBoost:0,
   tweens:[],
   ambientActors:[],
+  cardPreviews:new Map(),
   inputLocked:false
 };
 
@@ -111,6 +119,12 @@ const key=(x,z)=>`${x},${z}`;
 const pos=(x,z)=>new THREE.Vector3(x*GRID.tileSize,0,z*GRID.tileSize);
 const easeOut=t=>1-Math.pow(1-t,3);
 const easeInOut=t=>t<.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2;
+
+function refreshLucide(){
+  if(window.lucide?.createIcons){
+    window.lucide.createIcons();
+  }
+}
 
 const load=url=>{
   if(!cache.has(url))cache.set(url,loader.loadAsync(url).then(g=>g.scene));
@@ -377,6 +391,76 @@ function fit(root,maxXZ,maxY=maxXZ*1.5){
   const c=b.getCenter(new THREE.Vector3());
   root.position.set(root.position.x-c.x,root.position.y-b.min.y,root.position.z-c.z);
 }
+
+const CARD_PREVIEW_ASSET={
+  tree:'treeA',
+  rock:'rockA',
+  clear:'treeA',
+  millUpgrade:'windmill',
+  house:'house',
+  market:'market',
+  lumbermill:'lumbermill',
+  quarry:'quarry'
+};
+async function previewObjectFor(type){
+  if(type==='field')return fieldVisual(2,false);
+  if(type==='expand')return tileMesh(0,0);
+  const asset=CARD_PREVIEW_ASSET[type];
+  if(!asset)return null;
+  const model=(await load(ASSETS[asset])).clone(true);
+  shadows(model);
+  return model;
+}
+async function renderCardPreview(type){
+  try{
+    const object=await previewObjectFor(type);
+    if(!object)return null;
+    fit(object,type==='expand'?3.8:3.25,4.2);
+    object.rotation.y=type==='clear'?-.28:.42;
+
+    const previewScene=new THREE.Scene();
+    previewScene.background=new THREE.Color(0x263129);
+    previewScene.add(new THREE.HemisphereLight(0xe8f1dc,0x4a4337,2.25));
+    const keyLight=new THREE.DirectionalLight(0xffe3b0,3.1);
+    keyLight.position.set(4.5,7,5.5);
+    previewScene.add(keyLight);
+    const fillLight=new THREE.DirectionalLight(0x90b8c7,1.15);
+    fillLight.position.set(-5,3,-4);
+    previewScene.add(fillLight);
+
+    const ground=new THREE.Mesh(
+      new THREE.CircleGeometry(3.2,48),
+      new THREE.MeshStandardMaterial({color:0x314032,roughness:1})
+    );
+    ground.rotation.x=-Math.PI/2;
+    ground.position.y=-.035;
+    previewScene.add(ground);
+    previewScene.add(object);
+
+    object.updateMatrixWorld(true);
+    const box=new THREE.Box3().setFromObject(object);
+    const size=box.getSize(new THREE.Vector3());
+    const targetY=Math.max(.28,Math.min(1.25,size.y*.42));
+    const cam=new THREE.PerspectiveCamera(32,512/320,.1,30);
+    const distance=type==='expand'?6.2:5.6;
+    cam.position.set(distance*.68,Math.max(3.2,size.y*.74+1.7),distance);
+    cam.lookAt(0,targetY,0);
+
+    previewRenderer.render(previewScene,cam);
+    return previewRenderer.domElement.toDataURL('image/png');
+  }catch(error){
+    console.warn('[Corepolis] Card preview failed:',type,error);
+    return null;
+  }
+}
+async function buildCardPreviews(){
+  for(const type of Object.keys(CARD_DEFS)){
+    const image=await renderCardPreview(type);
+    if(image)state.cardPreviews.set(type,image);
+  }
+  renderHand();
+}
+
 async function preload(){
   const entries=Object.entries(ASSETS);
   let done=0;
@@ -492,7 +576,7 @@ function resourceProgressMarker(type){
   x.fillStyle='#42513f';
   x.font='900 34px system-ui';
   x.textAlign='center';x.textBaseline='middle';
-  x.fillText(type==='tree'?'🪓  1 / 2':'⛏  1 / 2',96,49);
+  x.fillText('1 / 2',96,49);
   const tx=new THREE.CanvasTexture(c);
   tx.colorSpace=THREE.SRGBColorSpace;
   const marker=new THREE.Sprite(new THREE.SpriteMaterial({map:tx,transparent:true,depthTest:false}));
@@ -889,13 +973,45 @@ const draw=(type=randomType())=>({id:state.nextCardId++,type});
 function fill(n=5){
   while(state.hand.length<n)state.hand.push(draw());
 }
+function cardCost(type){
+  return CARD_DEFS[type]?.cost||{};
+}
+function canAfford(type){
+  const cost=cardCost(type);
+  return (state.resources.wood||0)>=(cost.wood||0)&&(state.resources.stone||0)>=(cost.stone||0);
+}
+function payCardCost(type){
+  const cost=cardCost(type);
+  state.resources.wood-=cost.wood||0;
+  state.resources.stone-=cost.stone||0;
+}
+function costMarkup(type){
+  const cost=cardCost(type);
+  const parts=[];
+  if(cost.wood)parts.push(`<span class="cost-chip wood"><i data-lucide="trees"></i><b>${cost.wood}</b></span>`);
+  if(cost.stone)parts.push(`<span class="cost-chip stone"><i data-lucide="mountain"></i><b>${cost.stone}</b></span>`);
+  return parts.length?parts.join(''):'<span class="cost-free">БЕСПЛАТНО</span>';
+}
+function syncCardAffordability(){
+  for(const button of ui.hand.querySelectorAll('[data-card-id]')){
+    const card=state.hand.find(c=>String(c.id)===button.dataset.cardId);
+    const affordable=card?canAfford(card.type):false;
+    button.classList.toggle('unaffordable',!affordable);
+    button.disabled=!affordable;
+  }
+}
 function spend(id){
   const i=state.hand.findIndex(c=>c.id===id);
-  if(i<0)return;
+  if(i<0)return false;
+  const card=state.hand[i];
+  if(!canAfford(card.type))return false;
+  payCardCost(card.type);
   state.hand.splice(i,1);
   state.selectedCardId=null;
   fill();
   renderHand();
+  status();
+  return true;
 }
 function ensureUpgrade(){
   if(ready()&&!state.hand.some(c=>c.type==='millUpgrade'))state.hand.push(draw('millUpgrade'));
@@ -906,11 +1022,40 @@ function renderHand(){
   for(const c of state.hand){
     const d=CARD_DEFS[c.type];
     const b=document.createElement('button');
-    b.className=`card ${d.tone}${state.selectedCardId===c.id?' active':''}`;
+    const affordable=canAfford(c.type);
+    b.className=`card ${d.tone}${state.selectedCardId===c.id?' active':''}${affordable?'':' unaffordable'}`;
+    b.dataset.cardId=String(c.id);
+    b.disabled=!affordable;
     b.style.setProperty('--deal-index',String(state.hand.indexOf(c)));
-    b.innerHTML=`<div class="card-top"><span class="card-kind">${d.category||'КАРТА'}</span><span class="card-icon">${d.icon}</span></div><b>${d.name}</b><p>${d.description}</p><span class="card-action">Выбрать</span>`;
+
+    const preview=state.cardPreviews.get(c.type);
+    b.innerHTML=`
+      <div class="card-preview ${preview?'':'placeholder'}"></div>
+      <div class="card-shade"></div>
+      <div class="card-top">
+        <span class="card-kind">${d.category||'КАРТА'}</span>
+        <span class="card-cost">${costMarkup(c.type)}</span>
+      </div>
+      <span class="card-symbol"><i data-lucide="${d.icon||'box'}"></i></span>
+      <div class="card-body">
+        <b>${d.name}</b>
+        <p>${d.description}</p>
+        <span class="card-action"><i data-lucide="mouse-pointer-2"></i>${affordable?'ВЫБРАТЬ':'НУЖНЫ РЕСУРСЫ'}</span>
+      </div>`;
+
+    const previewEl=b.querySelector('.card-preview');
+    if(preview){
+      previewEl.style.backgroundImage=`url("${preview}")`;
+    }else{
+      previewEl.innerHTML=`<i data-lucide="${d.icon||'box'}"></i>`;
+    }
+
     b.onclick=e=>{
       e.stopPropagation();
+      if(!canAfford(c.type)){
+        toast('Не хватает ресурсов для этой карты.');
+        return;
+      }
       state.selectedCardId=state.selectedCardId===c.id?null:c.id;
       ui.selectionHint.textContent=state.selectedCardId?`Карта: ${d.name}`:'Выберите карту';
       renderHand();
@@ -918,6 +1063,7 @@ function renderHand(){
     ui.hand.appendChild(b);
   }
   ui.handCount.textContent=state.hand.length;
+  refreshLucide();
 }
 function status(){
   ui.harvestScore.textContent=state.harvestScore.toLocaleString('ru-RU');
@@ -925,6 +1071,7 @@ function status(){
   if(ui.stoneCount)ui.stoneCount.textContent=state.resources.stone.toLocaleString('ru-RU');
   ui.comboCount.textContent=state.comboCount;
   ui.landCount.textContent=state.land.size;
+  syncCardAffordability();
   const names={north:'Север',east:'Восток',south:'Юг',west:'Запад'};
   ui.fieldStatus.innerHTML=DIRECTIONS.map(d=>{
     const t=state.land.get(key(d.dx,d.dz));
@@ -1157,6 +1304,7 @@ renderer.domElement.onpointerup=async e=>{
   const hits=hitsAt(e.clientX,e.clientY);
   if(!hits.length)return;
   const card=state.hand.find(c=>c.id===state.selectedCardId);
+  if(card&&!canAfford(card.type))return toast('Не хватает ресурсов для установки.');
   const tileHit=hits.find(h=>tileOf(h.object));
   const t=tileHit?tileOf(tileHit.object):null;
   if(!card)return tileInfo(t);
@@ -1240,8 +1388,10 @@ async function boot(){
   const loading=preload();
   await decorate();
   await loading;
+  await buildCardPreviews();
+  refreshLucide();
   status();
-  toast('Лес и камни теперь — сырьё: первая обработка даёт ресурс, вторая освобождает клетку.');
+  toast('Карты теперь используют реальные превью и стоимость из древесины/камня.');
 }
 boot().catch(e=>{
   console.error(e);

@@ -50,6 +50,11 @@
 - [x] Large extraction cycles reward bonus cards
 - [x] Existing producers auto-process newly placed Tree/Rock cards
 - [x] Resource cards can instantly resolve inside overlapping producer zones
+- [x] Pinned Lucide icon system
+- [x] Real Wood/Stone card installation costs
+- [x] Disabled/dimmed unaffordable cards
+- [x] Runtime 3D object previews for cards
+- [x] Dark rectangular card redesign with preview fade/blur
 - [x] Objective progress meter and richer field status chips
 - [ ] Browser play-test and balance pass
 

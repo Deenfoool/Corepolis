@@ -32,6 +32,14 @@ Trees and rocks are now productive setup cards rather than dead draws: a first n
 
 - HTML / CSS / JavaScript
 - Three.js via jsDelivr ES modules
+- Lucide 1.47.0 for pinned interface/card icons
 - CC0 KayKit game assets loaded from a commit-pinned official GitHub repository
 
 See `docs/GAME_DESIGN.md`, `docs/ARCHITECTURE.md`, and `docs/ROADMAP.md`.
+
+
+## Card presentation and costs
+
+Cards use dark rectangular game-card layouts with live 3D previews generated from the same models used in the world. The preview fades and blurs into the lower information area. Installation costs are shown inside the top edge of each card with Lucide Wood/Stone icons.
+
+Costs are real gameplay rules. Resource/producers remain free so a run cannot deadlock, while settlement/expansion upgrades consume produced materials.
