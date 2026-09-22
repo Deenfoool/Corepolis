@@ -62,7 +62,10 @@ function loadModelTemplate(type){
   if(!asset) return Promise.reject(new Error(`No model asset for ${type}`));
   if(!modelCache.has(asset.url)){
     modelCache.set(asset.url, new Promise((resolve,reject)=>{
-      gltfLoader.load(asset.url, gltf=>resolve(gltf.scene), undefined, reject);
+      gltfLoader.load(asset.url, gltf=>{
+        if(!gltf.scene) reject(new Error(`Model ${type} has no scene`));
+        else resolve(gltf.scene);
+      }, undefined, reject);
     }));
   }
   return modelCache.get(asset.url);
@@ -76,6 +79,7 @@ function prepareModelInstance(source,type,ghostMode){
   model.updateMatrixWorld(true);
 
   const rawBox = new THREE.Box3().setFromObject(model);
+  if(rawBox.isEmpty()) throw new Error(`Model ${type} has no visible geometry`);
   const rawSize = rawBox.getSize(new THREE.Vector3());
   const fit = asset.fit || [cfg.size[0]*.8, cfg.height, cfg.size[1]*.8];
   const candidates = [
@@ -83,7 +87,9 @@ function prepareModelInstance(source,type,ghostMode){
     rawSize.y > 0 ? fit[1] / rawSize.y : Infinity,
     rawSize.z > 0 ? fit[2] / rawSize.z : Infinity
   ];
-  const scale = Math.min(...candidates.filter(Number.isFinite));
+  const validScales = candidates.filter(value=>Number.isFinite(value) && value>0);
+  if(!validScales.length) throw new Error(`Model ${type} has invalid bounds`);
+  const scale = Math.min(...validScales);
   model.scale.setScalar(scale);
   model.updateMatrixWorld(true);
 
@@ -123,8 +129,7 @@ function prepareModelInstance(source,type,ghostMode){
   return model;
 }
 
-function attachAssetModel(group,type,ghostMode,fallback){
-  if(!MODEL_ASSETS[type]) return;
+function attachAssetModel(group,type,ghostMode){
   loadModelTemplate(type).then(source=>{
     if(!group.parent && !group.userData.keepDetached) return;
     const host = new THREE.Group();
@@ -133,47 +138,14 @@ function attachAssetModel(group,type,ghostMode,fallback){
     const model = prepareModelInstance(source,type,ghostMode);
     host.add(model);
     group.add(host);
-    fallback.visible = false;
     group.userData.modelLoaded = true;
+    group.userData.modelError = null;
   }).catch(err=>{
-    console.warn(`[Corepolis] 3D model failed for ${type}; using fallback.`, err);
+    console.error(`[Corepolis] 3D model failed for ${type}.`, err);
     group.userData.modelLoaded = false;
+    group.userData.modelError = err;
+    if(!ghostMode) flash(`${BUILDINGS[type].name.toUpperCase()} MODEL FAILED`);
   });
-}
-
-function makeFallbackVisual(type,cfg,ghostMode){
-  const root = new THREE.Group();
-  root.userData.fallbackVisual = true;
-  const material = new THREE.MeshStandardMaterial({
-    color: cfg.color,
-    emissive: cfg.color,
-    emissiveIntensity: ghostMode ? .32 : .1,
-    roughness: .38,
-    metalness: .55,
-    transparent: ghostMode,
-    opacity: ghostMode ? .46 : 1
-  });
-
-  if(type==='ram'){
-    [-.55,0,.55].forEach(x=>{
-      const mesh = new THREE.Mesh(new THREE.BoxGeometry(.35,1.7,4.2),material);
-      mesh.position.set(x,1.28,0); root.add(mesh);
-    });
-  } else if(type==='gpu'){
-    const mesh = new THREE.Mesh(new THREE.BoxGeometry(5.1,1.45,2.15),material);
-    mesh.position.y=1.2; root.add(mesh);
-  } else if(type==='cpu'){
-    const mesh = new THREE.Mesh(new THREE.BoxGeometry(3.0,.8,2.8),material);
-    mesh.position.y=.85; root.add(mesh);
-  } else {
-    const mesh = new THREE.Mesh(
-      new THREE.BoxGeometry(cfg.size[0]*.7,Math.max(.75,cfg.height*.7),cfg.size[1]*.7),
-      material
-    );
-    mesh.position.y=Math.max(.75,cfg.height*.7)/2+.42; root.add(mesh);
-  }
-  root.traverse(o=>{ if(o.isMesh){o.castShadow=!ghostMode;o.receiveShadow=true;} });
-  return root;
 }
 
 // PC case / world shell
@@ -276,9 +248,7 @@ function makeBuildingMesh(type, ghostMode=false){
   base.receiveShadow=true;
   group.add(base);
 
-  const fallback = makeFallbackVisual(type,cfg,ghostMode);
-  group.add(fallback);
-  attachAssetModel(group,type,ghostMode,fallback);
+  attachAssetModel(group,type,ghostMode);
 
   if(!ghostMode){
     const marker = new THREE.PointLight(cfg.color,4.5,8,2);

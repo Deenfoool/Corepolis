@@ -9,6 +9,7 @@ Corepolis must run as a fully static application on GitHub Pages:
 - no GitHub Actions;
 - deployment directly from `main` → `/ (root)`;
 - assets must use relative URLs;
+- runtime 3D assets must be stored in the repository rather than fetched from third-party model hosts;
 - `.nojekyll` must remain at the repository root.
 
 ## Prototype stack
@@ -30,6 +31,8 @@ Current:
 
 - `src/config.js` — building definitions and board constants.
 - `src/main.js` — rendering, camera, build mode, simulation and UI binding.
+- `src/models.js` — local GLB paths and placement metadata.
+- `assets/models/` — self-contained hardware models used by the runtime.
 
 Target split after prototype validation:
 

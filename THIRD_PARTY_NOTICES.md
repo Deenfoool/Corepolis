@@ -2,7 +2,7 @@
 
 ## 3D hardware models
 
-Corepolis Prototype 0.1 uses game-ready GLB assets served from 3DAssets.dev.
+Corepolis Prototype 0.1 includes game-ready GLB assets sourced from 3DAssets.dev. The files are stored locally under `assets/models/` so the published game does not depend on a third-party model CDN at runtime.
 
 The selected assets are released under **CC0 1.0 Universal**. Attribution is not required, but the sources are documented here for provenance.
 
@@ -14,5 +14,3 @@ The selected assets are released under **CC0 1.0 Universal**. Attribution is not
 - Heat Sink — https://3dassets.dev/assets/scavengers-loot-library-heat-sink-a75194cb
 - Circuit Board — https://3dassets.dev/assets/scavengers-loot-library-circuit-board-8b1aed98
 - External SSD — https://3dassets.dev/assets/computers-and-desk-gadgets-external-ssd-185da295
-
-3DAssets.dev documents the CDN URLs as immutable, CORS-enabled and suitable for direct loading with Three.js GLTFLoader.
