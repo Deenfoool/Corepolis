@@ -19,16 +19,17 @@ The map is not given to the player up front. Cards both build the settlement and
 
 The prototype proves the key rule using one building:
 
-- A windmill occupies the center cell.
-- Four field slots exist at north/east/south/west.
-- Field cards advance a slot through stages I → II → III → IV.
-- A stage-IV field stays mature.
-- When all four fields are mature, the system waits for a `New Windmill` card.
-- Playing that card on the current windmill triggers a big harvest.
-- All four fields return to stage I.
-- The player receives bonus cards and score.
+- A windmill occupies the center cell and creates a four-cell synergy zone at north/east/south/west.
+- Fields may be placed on **any free land cell**; the windmill never hard-locks field placement.
+- Normal fields advance I → II → III → IV one stage per Field card.
+- A mature normal field can be harvested with another Field card for a small reward and then resets to stage I.
+- Fields inside the windmill synergy zone grow faster: after placement, each additional Field card advances them by two stages.
+- Mature synergy fields wait instead of resolving individually.
+- When all four synergy cells are mature, the system waits for a `New Windmill` card.
+- Playing that card on the current windmill triggers the large combo, returns the four synergy fields to stage I and grants bonus cards and score.
+- Windmill blades rotate continuously and briefly accelerate when the large harvest combo fires.
 
-This creates anticipation: the player can prepare the whole pattern before receiving or spending the trigger card.
+This keeps placement free while preserving a strong optimization puzzle: fields work anywhere, but building around the windmill creates a faster and more valuable engine.
 
 ## World manipulation
 
