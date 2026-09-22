@@ -10,6 +10,9 @@
 - [x] Windmill using CC0 KayKit art
 - [x] Trees and rocks using CC0 KayKit art
 - [x] Free field placement across the island
+- [x] Automatic 2×2 field merging into one visual/gameplay field
+- [x] Bonus card and score when a new 2×2 field is formed
+- [x] Merged-field upgrade and harvest loop
 - [x] Four-cell windmill synergy zone
 - [x] Normal-field small harvest loop
 - [x] Accelerated field growth beside the windmill
@@ -22,13 +25,14 @@
 - [x] Bonus-card reward
 - [x] Expand Island card
 - [x] Add/remove nature cards
+- [x] House card
+- [x] Market adjacency engine
+- [x] Lumbermill adjacency engine
+- [x] Mine adjacency engine
 - [ ] Browser play-test and balance pass
 
 ## Prototype 0.2 — More spatial engines
 
-- lumbermill + surrounding forests
-- mine + rock deposits
-- market + nearby houses
 - roads / adjacency chains
 - card rarity and discard choices
 - preview ghost before committing a card

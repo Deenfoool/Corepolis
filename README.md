@@ -6,14 +6,15 @@ The player starts with a small island and a hand of cards. Cards create or trans
 
 ## First playable loop
 
-The first vertical slice focuses on the windmill combo:
+The current vertical slice combines field merging, the windmill combo and the first settlement buildings:
 
 1. A windmill starts in the center of the island.
 2. Field cards can be played on any free island cell.
-3. Normal fields grow from stage I to IV and can be harvested individually for a small reward.
-4. The four cells beside the windmill are a synergy zone: those fields grow faster and wait at stage IV.
-5. When all four synergy fields are mature, a `New Windmill` card played on the old windmill triggers the large combo.
-6. The four synergy fields reset to stage I, the player receives bonus cards and harvest score, and the windmill blades visibly accelerate.
+3. Four same-stage field pieces forming a 2×2 square visually and mechanically merge into one large field and award a bonus card.
+4. A merged field upgrades as one object; a mature merged field can be harvested and restarted.
+5. The four cells beside the windmill remain a synergy zone: those fields grow faster and wait at stage IV.
+6. When all four synergy fields are mature, a `New Windmill` card triggers the large combo and accelerates the blades.
+7. House, Market, Lumbermill and Mine cards introduce the first building adjacency engines.
 
 The same rule language is intended to grow into lumbermills, mines, markets and other spatial production chains.
 

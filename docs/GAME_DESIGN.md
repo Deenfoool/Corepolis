@@ -15,6 +15,15 @@ The map is not given to the player up front. Cards both build the settlement and
 - Spatial relationships matter more than raw resource totals.
 - Mature structures can wait for a specific trigger card instead of resolving automatically.
 
+## Field merging
+
+- A Field card creates one field piece on any free land cell.
+- Four field pieces of the same stage arranged as a 2×2 square merge into one large field.
+- The merged field uses one visual border and one growth badge instead of four separate plots.
+- Forming a new 2×2 field awards score and a bonus card.
+- A merged field upgrades as a whole when any of its four cells is targeted with a Field card.
+- A mature merged field can be harvested for a larger reward and then restarts at stage I.
+
 ## Windmill loop
 
 The prototype proves the key rule using one building:
@@ -30,6 +39,17 @@ The prototype proves the key rule using one building:
 - Windmill blades rotate continuously and briefly accelerate when the large harvest combo fires.
 
 This keeps placement free while preserving a strong optimization puzzle: fields work anywhere, but building around the windmill creates a faster and more valuable engine.
+
+## Settlement buildings
+
+The first non-farm cards use the same adjacency language:
+
+- **House** — a basic settlement building and a target for market adjacency.
+- **Market** — scores more for every neighboring House; two or more nearby houses also grant a card.
+- **Lumbermill** — scores more for nearby Trees; two or more nearby trees grant a card.
+- **Mine** — scores more for nearby Rocks; two or more nearby rock cells grant a card.
+
+These are intentionally simple engines: the player gets immediate value but is rewarded for planning clusters rather than placing buildings anywhere without thought.
 
 ## World manipulation
 

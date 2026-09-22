@@ -16,6 +16,10 @@ Selected assets currently used by the prototype:
 - `tree_single_B.gltf`
 - `rock_single_A.gltf`
 - `rock_single_C.gltf`
+- `building_home_A_green.gltf`
+- `building_market_green.gltf`
+- `building_lumbermill_green.gltf`
+- `building_mine_green.gltf`
 
 The pack's accompanying texture and binary data are loaded from the same pinned source commit through each GLTF's relative references.
 
