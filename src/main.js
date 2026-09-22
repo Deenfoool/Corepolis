@@ -151,7 +151,7 @@ function attachAssetModel(group,type,ghostMode){
   });
 }
 
-function prepareSceneAsset(source,{position=[0,0,0],rotation=[0,0,0],scale=1,hideMaterials=[],castShadow=true}={}){
+function prepareSceneAsset(source,{position=[0,0,0],rotation=[0,0,0],scale=1,castShadow=true}={}){
   const model = source.clone(true);
   model.position.set(...position);
   model.rotation.set(...rotation);
@@ -159,8 +159,6 @@ function prepareSceneAsset(source,{position=[0,0,0],rotation=[0,0,0],scale=1,hid
   else model.scale.setScalar(scale);
   model.traverse(object=>{
     if(!object.isMesh) return;
-    const materials = Array.isArray(object.material) ? object.material : [object.material];
-    if(materials.some(material=>hideMaterials.includes(material?.name))) object.visible = false;
     object.castShadow = castShadow;
     object.receiveShadow = true;
   });
@@ -199,8 +197,7 @@ async function buildEnvironment(){
   const pcCase = addSceneAsset(world,'pcCase',{
     position:[25.65,8.25,0],
     rotation:[0,0,Math.PI/2],
-    scale:90,
-    hideMaterials:['glass']
+    scale:90
   });
 
   await Promise.all([...floorTiles,...roomWalls,desk,pcCase]);
