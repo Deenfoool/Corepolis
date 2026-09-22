@@ -1,10 +1,10 @@
 <!doctype html>
-<html lang="en">
+<html lang="ru">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="theme-color" content="#07110f" />
-  <title>Corepolis — Prototype 0.1</title>
+  <meta name="theme-color" content="#8dc9d7" />
+  <title>Corepolis — Island Cards Prototype</title>
   <link rel="stylesheet" href="./styles.css" />
   <script type="importmap">
   {
@@ -19,89 +19,58 @@
   <div id="app">
     <div id="loading-screen" class="loading-screen" aria-live="polite">
       <div class="loading-card">
-        <div class="eyebrow">COREPOLIS BOOT SEQUENCE</div>
-        <strong>Loading high-detail hardware</strong>
-        <p id="loading-detail">Preparing 3D assets…</p>
+        <div class="eyebrow">COREPOLIS</div>
+        <strong>Создаём остров</strong>
+        <p id="loading-detail">Загружаем игровые ассеты…</p>
         <div class="loading-track"><i id="loading-bar"></i></div>
-        <span id="loading-progress">0 / 0 assets</span>
+        <span id="loading-progress">0 / 0</span>
       </div>
     </div>
 
     <canvas id="game"></canvas>
 
-    <header class="topbar glass">
+    <header class="topbar panel">
       <div>
-        <div class="eyebrow">SYSTEM CITY BUILDER</div>
+        <div class="eyebrow">ISLAND CARD BUILDER · PROTOTYPE</div>
         <h1>COREPOLIS</h1>
       </div>
-      <div class="status-line">
-        <span id="city-level">NODE LEVEL 01</span>
-        <span class="status-dot"></span>
-        <span id="sim-status">SYSTEM NOMINAL</span>
+      <div class="resource-row">
+        <div><span>Урожай</span><strong id="harvest-score">0</strong></div>
+        <div><span>Комбо</span><strong id="combo-count">0</strong></div>
+        <div><span>Земля</span><strong id="land-count">0</strong></div>
       </div>
     </header>
 
-    <aside class="resource-panel glass">
-      <div class="resource credits">
-        <span>Credits</span>
-        <strong id="credits">12,000</strong>
-      </div>
-      <div class="resource">
-        <div><span>Compute</span><strong id="compute-text">0 / 0</strong></div>
-        <div class="meter"><i id="compute-bar"></i></div>
-      </div>
-      <div class="resource">
-        <div><span>Memory</span><strong id="memory-text">0 / 0</strong></div>
-        <div class="meter"><i id="memory-bar"></i></div>
-      </div>
-      <div class="resource">
-        <div><span>Storage</span><strong id="storage-text">0 / 0</strong></div>
-        <div class="meter"><i id="storage-bar"></i></div>
-      </div>
-      <div class="resource">
-        <div><span>Power</span><strong id="power-text">0 / 0</strong></div>
-        <div class="meter"><i id="power-bar"></i></div>
-      </div>
-      <div class="resource">
-        <div><span>Thermal</span><strong id="thermal-text">24°C</strong></div>
-        <div class="meter heat"><i id="thermal-bar"></i></div>
-      </div>
+    <aside class="objective panel">
+      <div class="eyebrow">ТЕКУЩАЯ ЦЕЛЬ</div>
+      <h2 id="objective-title">Вырастите 4 поля вокруг мельницы</h2>
+      <p id="objective-copy">Карта «Поле» повышает выбранную сторону от I до IV стадии.</p>
+      <div class="field-status" id="field-status"></div>
     </aside>
 
-    <aside class="workload-panel glass">
-      <div class="eyebrow">LIVE WORKLOAD</div>
-      <div class="workload-number"><strong id="workload">0</strong><span>processes</span></div>
-      <div class="mini-grid">
-        <span>Served<strong id="served">100%</strong></span>
-        <span>Income<strong id="income">+0/s</strong></span>
-        <span>Heat<strong id="heat">0</strong></span>
-        <span>Buildings<strong id="building-count">0</strong></span>
-      </div>
-    </aside>
+    <div id="toast" class="toast panel hidden"></div>
 
-    <div id="alert" class="alert glass hidden"></div>
-
-    <section class="build-dock glass">
-      <div class="dock-title">
-        <span>BUILD SYSTEM</span>
-        <small>Click a district, then place it on the motherboard. RMB / Esc cancels.</small>
+    <section class="hand-wrap">
+      <div class="hand-meta panel">
+        <span><b id="hand-count">0</b> карт в руке</span>
+        <span id="selection-hint">Выберите карту</span>
       </div>
-      <div id="build-buttons" class="build-buttons"></div>
+      <div id="hand" class="hand" aria-label="Рука карт"></div>
     </section>
 
-    <div class="camera-help glass">
-      <span><b>LMB</b> place/select</span>
-      <span><b>RMB</b> pan</span>
-      <span><b>Wheel</b> zoom</span>
-      <span><b>Q/E</b> rotate</span>
+    <div class="camera-help panel">
+      <span><b>LMB</b> применить карту</span>
+      <span><b>RMB</b> двигать</span>
+      <span><b>Wheel</b> масштаб</span>
+      <span><b>Q / E</b> вращать</span>
+      <span><b>Esc</b> убрать карту</span>
     </div>
 
-    <div id="selection" class="selection-card glass hidden">
-      <div class="eyebrow">DISTRICT</div>
-      <h2 id="selection-name"></h2>
-      <p id="selection-desc"></p>
-      <button id="bulldoze">Bulldoze</button>
-    </div>
+    <aside id="tile-info" class="tile-info panel hidden">
+      <div class="eyebrow">КЛЕТКА</div>
+      <h2 id="tile-title"></h2>
+      <p id="tile-copy"></p>
+    </aside>
   </div>
 
   <script type="module" src="./src/main.js"></script>

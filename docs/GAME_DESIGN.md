@@ -2,60 +2,49 @@
 
 ## High concept
 
-Corepolis is a **city-builder inside a computer**.
+Corepolis is a **3D island card-builder and spatial combo game**.
 
-The PC case is the world boundary. The motherboard is the city map. Hardware-inspired districts are city infrastructure rather than literal PC assembly parts.
+The map is not given to the player up front. Cards both build the settlement and reshape the island itself. The central challenge is deciding where to spend limited cards so that local combinations grow into larger reward loops.
 
-The player is not asked to install a DIMM into DIMM_A2 or route a real SATA cable. The goal is to grow a living system city while balancing capacity, energy and heat.
+## Core rules
 
-## Core fantasy
+- The player keeps a hand of cards.
+- Cards are played onto cells or existing objects.
+- Some cards create things: fields, trees, rocks and later buildings.
+- Some cards transform things: clear nature, upgrade buildings, expand land.
+- Spatial relationships matter more than raw resource totals.
+- Mature structures can wait for a specific trigger card instead of resolving automatically.
 
-> Build the system. Run the city.
+## Windmill loop
 
-The player should be able to look at the board and understand the health of the system without reading a spreadsheet.
+The prototype proves the key rule using one building:
 
-Data should move. Power should feel scarce. Heat should spread. Bottlenecks should be visible.
+- A windmill occupies the center cell.
+- Four field slots exist at north/east/south/west.
+- Field cards advance a slot through stages I → II → III → IV.
+- A stage-IV field stays mature.
+- When all four fields are mature, the system waits for a `New Windmill` card.
+- Playing that card on the current windmill triggers a big harvest.
+- All four fields return to stage I.
+- The player receives bonus cards and score.
 
-## Core resources
+This creates anticipation: the player can prepare the whole pattern before receiving or spending the trigger card.
 
-- **Compute** — supplied by CPU/GPU districts.
-- **Memory** — supplied by RAM districts.
-- **Storage** — supplied by storage districts.
-- **Power** — supplied by power infrastructure.
-- **Cooling** — offsets thermal load.
-- **Network** — limits external workload throughput.
-- **Credits** — used to expand and upgrade.
+## World manipulation
 
-## Core loop
+The initial deck also contains:
 
-1. Build infrastructure.
-2. New workload arrives.
-3. Districts generate capacity.
-4. Bottlenecks appear.
-5. The player expands, rebalances or replaces infrastructure.
-6. A stable city attracts more workload.
-7. Repeat at a larger scale.
+- Expand Island — create a new land cell adjacent to the current island.
+- Plant Forest — place a tree on empty land.
+- Rocks — add stone obstacles/resources.
+- Clear — remove a tree or rock.
 
-## Visual language
+Future systems should reuse the same readable verbs rather than introducing unrelated UI-heavy subsystems.
 
-Hardware is the visual vocabulary, not a strict simulator.
+## Visual direction
 
-- CPU → compute core / central district.
-- RAM → memory towers.
-- GPU → parallel-compute complex.
-- SSD/HDD → storage blocks.
-- PSU/VRM → power plants and substations.
-- Fans/radiators → cooling infrastructure.
-- PCIe/data traces → highways.
-- Network I/O → city gateways.
-
-## Prototype 0.1
-
-The first vertical slice must prove only four things:
-
-1. the motherboard feels like a city map;
-2. placing hardware-inspired districts is satisfying;
-3. workload growth creates readable bottlenecks;
-4. data flow makes the board feel alive.
-
-Real brands are deliberately excluded from the first prototype.
+- Cozy stylized 3D.
+- Strategy camera from above at an angle.
+- Strong silhouettes and readable stages.
+- A small diorama-like island in open water.
+- Free assets only, with license provenance documented.

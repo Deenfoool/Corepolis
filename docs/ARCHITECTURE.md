@@ -1,61 +1,45 @@
 # Corepolis — Architecture
 
-## Deployment constraint
+## Deployment constraints
 
-Corepolis must run as a fully static application on GitHub Pages:
+Corepolis is a fully static GitHub Pages application:
 
 - canonical public path: `/Corepolis/`;
-- no required backend;
+- no backend;
 - no GitHub Actions;
-- deployment directly from `main` → `/ (root)`;
-- assets must use relative URLs;
-- runtime 3D assets must be stored in the repository rather than fetched from third-party model hosts;
-- `.nojekyll` must remain at the repository root.
+- deployment from `main` → `/ (root)`;
+- `.nojekyll` remains at repository root.
 
-## Prototype stack
+## Stack
 
-Prototype 0.1 intentionally uses browser-native ES modules:
+The prototype intentionally stays build-tool free:
 
 - HTML
 - CSS
-- JavaScript
-- Three.js loaded as an ES module from jsDelivr
+- JavaScript ES modules
+- Three.js from jsDelivr
 
-This removes the build pipeline as a failure point while the gameplay direction is still being validated.
+## Runtime modules
 
-A later migration to TypeScript/Vite remains possible without changing the gameplay model.
+- `src/config.js` — card definitions, deck weights and grid constants.
+- `src/models.js` — commit-pinned CC0 asset URLs.
+- `src/main.js` — scene, island grid, cards, interactions, combo logic and UI binding.
 
-## Modules
+## Asset policy
 
-Current:
+Only assets with clear redistribution/use terms are accepted.
 
-- `src/config.js` — building definitions and board constants.
-- `src/main.js` — rendering, camera, build mode, simulation and UI binding.
-- `src/models.js` — local GLB paths and placement metadata.
-- `assets/models/` — self-contained hardware models used by the runtime.
-- `assets/environment/` — self-contained room, desk and computer-case GLB assets.
+The current authored art is from the official KayKit Game Assets GitHub organization. Runtime URLs are pinned to an exact source commit so the model content cannot silently change.
 
-Target split after prototype validation:
+If assets are later vendored into this repository, obsolete remote paths must be removed rather than kept as fallbacks.
 
-- `src/core/`
-- `src/world/`
-- `src/buildings/`
-- `src/simulation/`
-- `src/economy/`
-- `src/traffic/`
-- `src/rendering/`
-- `src/input/`
-- `src/ui/`
-- `src/save/`
+## State model
 
-## Simulation direction
+Every land cell is stored by integer `x,z` key and has:
 
-The simulation should remain deterministic enough to save and reproduce.
+- terrain membership;
+- content type;
+- optional growth stage;
+- Three.js visual root.
 
-Buildings expose capacity and costs. Workload creates demand. System health is derived from capacity/demand ratios, power availability and thermal balance.
-
-The first prototype intentionally avoids per-process simulation.
-
-## Scene composition
-
-The playable motherboard sits inside an open computer chassis lying flat on a desk. The room, desk and chassis use local CC0 GLB assets from `assets/environment/`; no procedural duplicates or third-party runtime requests remain.
+Card instances have a unique runtime id plus a card type. Applying a card mutates exactly one gameplay action and then removes that card from the hand.

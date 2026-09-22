@@ -1,48 +1,42 @@
 # Corepolis — Roadmap
 
-## Prototype 0.1 — First playable board
+## Prototype 0.1 — Card island loop
 
-- [x] Static GitHub Pages-safe architecture
-- [x] 3D PC case and motherboard world
+- [x] Static GitHub Pages-safe runtime
 - [x] Strategy camera
-- [x] Build toolbar
-- [x] Placement ghost and collision checks
-- [x] CPU, RAM, GPU, SSD, HDD, Power, Cooling, Network districts
-- [x] Lightweight GLB hardware visuals with procedural fallbacks
-- [x] Credits
-- [x] Workload growth
-- [x] Compute / memory / storage / power / thermal simulation
-- [x] Data-flow visualization
-- [x] Selection and bulldoze
-- [ ] Publish and validate on GitHub Pages
+- [x] Small expandable island
+- [x] Five-card starting hand
+- [x] Card selection and world targeting
+- [x] Windmill using CC0 KayKit art
+- [x] Trees and rocks using CC0 KayKit art
+- [x] Four directional field slots
+- [x] Field growth stages I–IV
+- [x] Mature-field waiting state
+- [x] New Windmill trigger card
+- [x] Four-field harvest combo and reset
+- [x] Bonus-card reward
+- [x] Expand Island card
+- [x] Add/remove nature cards
+- [ ] Browser play-test and balance pass
 
-## Prototype 0.2 — City depth
+## Prototype 0.2 — More spatial engines
 
-- district upgrades and tiers
-- proper road/trace network
-- local power and data connectivity
-- heat map
-- build zones
-- outages and service degradation
-- save/load via IndexedDB
-- pause and simulation speeds
-- tutorial scenario
+- lumbermill + surrounding forests
+- mine + rock deposits
+- market + nearby houses
+- roads / adjacency chains
+- card rarity and discard choices
+- preview ghost before committing a card
+- better island coast geometry
+- particles, sounds and harvest animation
+- save/load
 
-## Prototype 0.3 — Identity
+## Prototype 0.3 — Run structure
 
-- authored motherboard map
-- bespoke low-poly hardware art set
-- audio
-- particles and cooling airflow
-- night/system lighting modes
-- progression tree
-- contracts / workload types
-- incidents
-
-## Later
-
-- multiple case maps
-- procedural motherboard layouts
-- challenge scenarios
-- campaign
-- mod-friendly data definitions
+- progression / unlocks
+- card drafting choices
+- island biomes
+- goals and fail states
+- combo encyclopedia
+- seeded runs
+- tutorial

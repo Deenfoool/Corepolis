@@ -1,28 +1,35 @@
 # Corepolis
 
-**Corepolis** is a browser-based 3D city-builder set inside a computer.
+Corepolis is now a browser-based **3D island card-builder / spatial puzzle**.
 
-The PC case is the world, the motherboard is the city map, and hardware-inspired districts provide compute, memory, storage, power, cooling and network capacity.
+The player starts with a small island and a hand of cards. Cards create or transform the world: fields grow in stages, the island expands, nature appears or is cleared, and buildings are upgraded by placing a new card on top of the old one.
+
+## First playable loop
+
+The first vertical slice focuses on the windmill combo:
+
+1. A windmill starts in the center of the island.
+2. Field cards can be played on its north/east/south/west cells.
+3. Replaying a field card grows that field from stage I to IV.
+4. When all four directions reach stage IV, the fields wait instead of auto-resolving.
+5. A `New Windmill` card played on the old windmill triggers the combo.
+6. The four fields reset to stage I and the player receives bonus cards and harvest score.
+
+The same rule language is intended to grow into lumbermills, mines, markets and other spatial production chains.
 
 ## Deployment
 
-Corepolis is designed for GitHub Pages.
+- Static GitHub Pages application.
+- Branch: `main`.
+- Published folder: `/ (root)`.
+- Deployment: **Deploy from a branch**.
+- No GitHub Actions.
+- `.nojekyll` stays at repository root.
 
-- Source and published branch: `main`
-- Published folder: `/ (root)`
-- Deployment method: **Deploy from a branch**
-- No GitHub Actions are required.
-- `.nojekyll` is committed at the repository root.
-- Public base path: `/Corepolis/`
+## Stack
 
-## Prototype goal
+- HTML / CSS / JavaScript
+- Three.js via jsDelivr ES modules
+- CC0 KayKit game assets loaded from a commit-pinned official GitHub repository
 
-The first playable slice focuses on a simple city-building loop:
-
-1. place infrastructure;
-2. generate capacity;
-3. accept growing workload;
-4. detect bottlenecks;
-5. expand or rebalance the city.
-
-See `docs/GAME_DESIGN.md`, `docs/ARCHITECTURE.md`, and `docs/ROADMAP.md` for the current design direction.
+See `docs/GAME_DESIGN.md`, `docs/ARCHITECTURE.md`, and `docs/ROADMAP.md`.
