@@ -395,10 +395,18 @@ renderer.domElement.addEventListener('pointerup',e=>{
 });
 renderer.domElement.addEventListener('contextmenu',e=>{e.preventDefault();if(selectedBuildType)setBuildMode(null)});
 
+function rotateCamera(angle){
+  const offset = camera.position.clone().sub(controls.target);
+  offset.applyAxisAngle(new THREE.Vector3(0,1,0), angle);
+  camera.position.copy(controls.target).add(offset);
+  camera.lookAt(controls.target);
+  controls.update();
+}
+
 window.addEventListener('keydown',e=>{
   if(e.key==='Escape')setBuildMode(null);
-  if(e.key.toLowerCase()==='q')controls.rotateLeft(.12);
-  if(e.key.toLowerCase()==='e')controls.rotateLeft(-.12);
+  if(e.key.toLowerCase()==='q')rotateCamera(.12);
+  if(e.key.toLowerCase()==='e')rotateCamera(-.12);
 });
 document.querySelector('#bulldoze').addEventListener('click',()=>selectedBuilding&&removeBuilding(selectedBuilding));
 
