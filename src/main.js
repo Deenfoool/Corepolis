@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { MapControls } from 'three/addons/controls/MapControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { BUILDINGS, BOARD } from './config.js';
-import { MODEL_ASSETS, SCENE_ASSETS } from './models.js';
+import { MODEL_ASSETS, MOTHERBOARD_ASSET, SCENE_ASSETS } from './models.js';
 
 const canvas = document.querySelector('#game');
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
@@ -57,6 +57,18 @@ function mat(color, roughness=.58, metalness=.62){
 const gltfLoader = new GLTFLoader();
 const modelCache = new Map();
 
+const loadingScreen = document.querySelector('#loading-screen');
+const loadingBar = document.querySelector('#loading-bar');
+const loadingProgress = document.querySelector('#loading-progress');
+const loadingDetail = document.querySelector('#loading-detail');
+
+function setLoadingProgress(done,total,label){
+  const ratio = total ? done / total : 0;
+  if(loadingBar) loadingBar.style.width = `${Math.round(ratio * 100)}%`;
+  if(loadingProgress) loadingProgress.textContent = `${done} / ${total} assets`;
+  if(loadingDetail && label) loadingDetail.textContent = label;
+}
+
 function loadAssetTemplate(asset,label){
   if(!asset) return Promise.reject(new Error(`No model asset for ${label}`));
   if(!modelCache.has(asset.url)){
@@ -72,6 +84,31 @@ function loadAssetTemplate(asset,label){
 
 function loadModelTemplate(type){
   return loadAssetTemplate(MODEL_ASSETS[type],type);
+}
+
+async function preloadAssets(){
+  const entries = [
+    ['motherboard', MOTHERBOARD_ASSET],
+    ...Object.entries(MODEL_ASSETS),
+    ...Object.entries(SCENE_ASSETS)
+  ];
+  let done = 0;
+  setLoadingProgress(0,entries.length,'Preparing 3D assets…');
+  const results = await Promise.allSettled(entries.map(async ([label,asset])=>{
+    try{
+      await loadAssetTemplate(asset,label);
+      return label;
+    } finally {
+      done += 1;
+      setLoadingProgress(done,entries.length,`Loading ${label}…`);
+    }
+  }));
+  const failed = results.filter(result=>result.status==='rejected');
+  setLoadingProgress(entries.length,entries.length,failed.length
+    ? `${failed.length} asset${failed.length===1?'':'s'} failed; continuing with available models`
+    : 'High-detail hardware ready');
+  requestAnimationFrame(()=>loadingScreen?.classList.add('done'));
+  setTimeout(()=>loadingScreen?.remove(),550);
 }
 
 function prepareModelInstance(source,type,ghostMode){
@@ -208,13 +245,9 @@ buildEnvironment().catch(error=>{
   flash('ENVIRONMENT ASSETS FAILED');
 });
 
-// Motherboard
-const boardMat = new THREE.MeshStandardMaterial({ color:0x0d2a23, roughness:.72, metalness:.25 });
-const board = new THREE.Mesh(new THREE.BoxGeometry(BOARD.width,.7,BOARD.depth), boardMat);
-board.position.y = -0.45;
-board.receiveShadow = true;
-world.add(board);
+preloadAssets();
 
+// Motherboard: real high-detail GLB. The invisible plane remains only for placement/raycasting.
 const boardHit = new THREE.Mesh(
   new THREE.PlaneGeometry(BOARD.width, BOARD.depth),
   new THREE.MeshBasicMaterial({ transparent:true, opacity:0, depthWrite:false })
@@ -223,35 +256,40 @@ boardHit.rotation.x = -Math.PI/2;
 boardHit.position.y = -0.05;
 world.add(boardHit);
 
-// motherboard traces
-const traceMat = new THREE.MeshBasicMaterial({ color:0x1f6c59, transparent:true, opacity:.44 });
-for(let i=0;i<34;i++){
-  const horizontal = i%2===0;
-  const len = horizontal ? 8 + Math.random()*24 : 5 + Math.random()*16;
-  const g = new THREE.BoxGeometry(horizontal?len:.08,.015,horizontal?.08:len);
-  const t = new THREE.Mesh(g,traceMat);
-  t.position.set(
-    THREE.MathUtils.randFloatSpread(BOARD.width-5),
-    -0.075,
-    THREE.MathUtils.randFloatSpread(BOARD.depth-5)
+async function addMotherboardVisual(){
+  const source = await loadAssetTemplate(MOTHERBOARD_ASSET,'motherboard');
+  const model = source.clone(true);
+  model.rotation.set(...(MOTHERBOARD_ASSET.rotation || [0,0,0]));
+  model.updateMatrixWorld(true);
+
+  const rawBox = new THREE.Box3().setFromObject(model);
+  if(rawBox.isEmpty()) throw new Error('Motherboard model has no visible geometry');
+  const rawSize = rawBox.getSize(new THREE.Vector3());
+  const scale = Math.min(
+    (BOARD.width * .985) / Math.max(rawSize.x,.001),
+    (BOARD.depth * .985) / Math.max(rawSize.z,.001)
   );
-  world.add(t);
+  model.scale.setScalar(scale);
+  model.updateMatrixWorld(true);
+
+  model.traverse(object=>{
+    if(!object.isMesh) return;
+    object.castShadow = true;
+    object.receiveShadow = true;
+  });
+
+  const box = new THREE.Box3().setFromObject(model);
+  const center = box.getCenter(new THREE.Vector3());
+  model.position.x -= center.x;
+  model.position.z -= center.z;
+  model.position.y += -.13 - box.max.y;
+  world.add(model);
 }
 
-const socketMat = mat(0x1a2724,.5,.65);
-for(let i=0;i<14;i++){
-  const s = new THREE.Mesh(new THREE.BoxGeometry(.35,.35,THREE.MathUtils.randFloat(4,10)),socketMat);
-  s.position.set(THREE.MathUtils.randFloatSpread(39),.05,THREE.MathUtils.randFloatSpread(24));
-  s.castShadow=true; world.add(s);
-}
-
-// grid overlay
-const grid = new THREE.GridHelper(BOARD.width, BOARD.width, 0x3b8e78, 0x173c33);
-grid.scale.z = BOARD.depth/BOARD.width;
-grid.position.y = -0.06;
-grid.material.transparent = true;
-grid.material.opacity = .18;
-world.add(grid);
+addMotherboardVisual().catch(error=>{
+  console.error('[Corepolis] Motherboard asset failed to load.',error);
+  flash('MOTHERBOARD MODEL FAILED');
+});
 
 const buildings = [];
 const flows = [];
