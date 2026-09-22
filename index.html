@@ -17,6 +17,16 @@
 </head>
 <body>
   <div id="app">
+    <div id="loading-screen" class="loading-screen" aria-live="polite">
+      <div class="loading-card">
+        <div class="eyebrow">COREPOLIS BOOT SEQUENCE</div>
+        <strong>Loading high-detail hardware</strong>
+        <p id="loading-detail">Preparing 3D assets…</p>
+        <div class="loading-track"><i id="loading-bar"></i></div>
+        <span id="loading-progress">0 / 0 assets</span>
+      </div>
+    </div>
+
     <canvas id="game"></canvas>
 
     <header class="topbar glass">
