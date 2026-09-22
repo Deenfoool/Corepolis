@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#07110f" />
+  <title>Corepolis — Prototype 0.1</title>
+  <link rel="stylesheet" href="./styles.css" />
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/"
+    }
+  }
+  </script>
+</head>
+<body>
+  <div id="app">
+    <canvas id="game"></canvas>
+
+    <header class="topbar glass">
+      <div>
+        <div class="eyebrow">SYSTEM CITY BUILDER</div>
+        <h1>COREPOLIS</h1>
+      </div>
+      <div class="status-line">
+        <span id="city-level">NODE LEVEL 01</span>
+        <span class="status-dot"></span>
+        <span id="sim-status">SYSTEM NOMINAL</span>
+      </div>
+    </header>
+
+    <aside class="resource-panel glass">
+      <div class="resource credits">
+        <span>Credits</span>
+        <strong id="credits">12,000</strong>
+      </div>
+      <div class="resource">
+        <div><span>Compute</span><strong id="compute-text">0 / 0</strong></div>
+        <div class="meter"><i id="compute-bar"></i></div>
+      </div>
+      <div class="resource">
+        <div><span>Memory</span><strong id="memory-text">0 / 0</strong></div>
+        <div class="meter"><i id="memory-bar"></i></div>
+      </div>
+      <div class="resource">
+        <div><span>Storage</span><strong id="storage-text">0 / 0</strong></div>
+        <div class="meter"><i id="storage-bar"></i></div>
+      </div>
+      <div class="resource">
+        <div><span>Power</span><strong id="power-text">0 / 0</strong></div>
+        <div class="meter"><i id="power-bar"></i></div>
+      </div>
+      <div class="resource">
+        <div><span>Thermal</span><strong id="thermal-text">24°C</strong></div>
+        <div class="meter heat"><i id="thermal-bar"></i></div>
+      </div>
+    </aside>
+
+    <aside class="workload-panel glass">
+      <div class="eyebrow">LIVE WORKLOAD</div>
+      <div class="workload-number"><strong id="workload">0</strong><span>processes</span></div>
+      <div class="mini-grid">
+        <span>Served<strong id="served">100%</strong></span>
+        <span>Income<strong id="income">+0/s</strong></span>
+        <span>Heat<strong id="heat">0</strong></span>
+        <span>Buildings<strong id="building-count">0</strong></span>
+      </div>
+    </aside>
+
+    <div id="alert" class="alert glass hidden"></div>
+
+    <section class="build-dock glass">
+      <div class="dock-title">
+        <span>BUILD SYSTEM</span>
+        <small>Click a district, then place it on the motherboard. RMB / Esc cancels.</small>
+      </div>
+      <div id="build-buttons" class="build-buttons"></div>
+    </section>
+
+    <div class="camera-help glass">
+      <span><b>LMB</b> place/select</span>
+      <span><b>RMB</b> pan</span>
+      <span><b>Wheel</b> zoom</span>
+      <span><b>Q/E</b> rotate</span>
+    </div>
+
+    <div id="selection" class="selection-card glass hidden">
+      <div class="eyebrow">DISTRICT</div>
+      <h2 id="selection-name"></h2>
+      <p id="selection-desc"></p>
+      <button id="bulldoze">Bulldoze</button>
+    </div>
+  </div>
+
+  <script type="module" src="./src/main.js"></script>
+</body>
+</html>
