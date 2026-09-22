@@ -33,6 +33,7 @@ Current:
 - `src/main.js` — rendering, camera, build mode, simulation and UI binding.
 - `src/models.js` — local GLB paths and placement metadata.
 - `assets/models/` — self-contained hardware models used by the runtime.
+- `assets/environment/` — self-contained room, desk and computer-case GLB assets.
 
 Target split after prototype validation:
 
@@ -57,4 +58,4 @@ The first prototype intentionally avoids per-process simulation.
 
 ## Scene composition
 
-The playable motherboard sits inside an open computer chassis lying flat on a desk. The desk is placed in a fully modeled, daylit room so the computer reads as a physical object in a larger environment rather than an abstract dark arena.
+The playable motherboard sits inside an open computer chassis lying flat on a desk. The room, desk and chassis use local CC0 GLB assets from `assets/environment/`; no procedural duplicates or third-party runtime requests remain.

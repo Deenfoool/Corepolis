@@ -40,3 +40,12 @@ export const MODEL_ASSETS = {
     rotation: [0, 0, 0]
   }
 };
+
+export const SCENE_ASSETS = {
+  roomFloor: { url: './assets/environment/room-floor.glb' },
+  roomWall: { url: './assets/environment/room-wall.glb' },
+  roomWindow: { url: './assets/environment/room-window.glb' },
+  roomDoor: { url: './assets/environment/room-door.glb' },
+  desk: { url: './assets/environment/desk.glb' },
+  pcCase: { url: './assets/environment/pc-case.glb' }
+};
