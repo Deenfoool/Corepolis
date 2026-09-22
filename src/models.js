@@ -13,7 +13,7 @@ export const MODEL_ASSETS = {
   ram: {
     url: `${CUSTOM_PC_MODELS}/ram.glb`,
     fit: [1.45, 2.35, 4.8],
-    rotation: [-1.5707963268, 0, 0]
+    rotation: [1.5707963268, 0, 0]
   },
   gpu: {
     url: `${BRICKSHOW_MODELS}/gpu.glb`,
@@ -23,7 +23,7 @@ export const MODEL_ASSETS = {
   storage: {
     url: `${CUSTOM_PC_MODELS}/storage.glb`,
     fit: [3.15, 0.9, 2.25],
-    rotation: [0, 0, 0]
+    rotation: [1.5707963268, 0, 0]
   },
   hdd: {
     url: `${BRICKSHOW_MODELS}/hdd.glb`,
