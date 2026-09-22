@@ -8,10 +8,11 @@ The PC case is the world, the motherboard is the city map, and hardware-inspired
 
 Corepolis is designed for GitHub Pages.
 
-- Source branch: `main`
-- Published branch: `gh-pages`
+- Source and published branch: `main`
+- Published folder: `/ (root)`
 - Deployment method: **Deploy from a branch**
 - No GitHub Actions are required.
+- `.nojekyll` is committed at the repository root.
 - Public base path: `/Corepolis/`
 
 ## Prototype goal
