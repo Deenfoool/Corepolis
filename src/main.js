@@ -12,46 +12,55 @@ renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 1.0;
+renderer.toneMappingExposure = 1.12;
 
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x020706);
-scene.fog = new THREE.FogExp2(0x020706, 0.018);
+scene.background = new THREE.Color(0xb9cbd3);
+scene.fog = new THREE.Fog(0xcbd5d7, 95, 210);
 
-const camera = new THREE.PerspectiveCamera(42, innerWidth / innerHeight, 0.1, 200);
-camera.position.set(29, 34, 36);
+const camera = new THREE.PerspectiveCamera(40, innerWidth / innerHeight, 0.1, 320);
+camera.position.set(39, 43, 52);
 
 const controls = new MapControls(camera, renderer.domElement);
-controls.target.set(0, 0, 0);
+controls.target.set(0, -1, 0);
 controls.enableDamping = true;
 controls.dampingFactor = 0.08;
 controls.screenSpacePanning = false;
-controls.minDistance = 18;
-controls.maxDistance = 72;
+controls.minDistance = 20;
+controls.maxDistance = 96;
 controls.maxPolarAngle = Math.PI * 0.46;
 controls.mouseButtons.LEFT = THREE.MOUSE.ROTATE;
 controls.mouseButtons.RIGHT = THREE.MOUSE.PAN;
 controls.touches.ONE = THREE.TOUCH.ROTATE;
 controls.touches.TWO = THREE.TOUCH.DOLLY_PAN;
 
-scene.add(new THREE.HemisphereLight(0xb8fff1, 0x07100f, 1.7));
-const key = new THREE.DirectionalLight(0xd9fff5, 3.2);
-key.position.set(18, 28, 16);
+scene.add(new THREE.HemisphereLight(0xdff4ff, 0x6f503c, 2.25));
+const key = new THREE.DirectionalLight(0xfff0d1, 4.1);
+key.position.set(35, 58, 38);
 key.castShadow = true;
 key.shadow.mapSize.set(2048, 2048);
-key.shadow.camera.left = -35; key.shadow.camera.right = 35;
-key.shadow.camera.top = 35; key.shadow.camera.bottom = -35;
+key.shadow.camera.left = -62; key.shadow.camera.right = 62;
+key.shadow.camera.top = 62; key.shadow.camera.bottom = -62;
 scene.add(key);
 
-const rim = new THREE.PointLight(0x2fe8c5, 20, 60, 2);
-rim.position.set(-18, 8, -14);
-scene.add(rim);
+const roomFill = new THREE.PointLight(0xffc78f, 48, 115, 2);
+roomFill.position.set(-44, 28, 18);
+scene.add(roomFill);
 
 const world = new THREE.Group();
 scene.add(world);
 
 function mat(color, roughness=.58, metalness=.62){
   return new THREE.MeshStandardMaterial({ color, roughness, metalness });
+}
+
+function addBox(parent,size,position,material,{cast=true,receive=true}={}){
+  const mesh = new THREE.Mesh(new THREE.BoxGeometry(...size),material);
+  mesh.position.set(...position);
+  mesh.castShadow = cast;
+  mesh.receiveShadow = receive;
+  parent.add(mesh);
+  return mesh;
 }
 
 const gltfLoader = new GLTFLoader();
@@ -148,24 +157,68 @@ function attachAssetModel(group,type,ghostMode){
   });
 }
 
-// PC case / world shell
-const caseFloor = new THREE.Mesh(
-  new THREE.BoxGeometry(56, 1.2, 40),
-  mat(0x070d0c, .72, .72)
-);
-caseFloor.position.y = -1.4;
-caseFloor.receiveShadow = true;
-world.add(caseFloor);
+// Daylit room
+const room = new THREE.Group();
+scene.add(room);
 
-const frameMat = mat(0x111b19, .5, .88);
-[
-  [0,1,-20.2,56.5,.8,.8],
-  [0,1,20.2,56.5,.8,.8],
-  [-28.2,1,0,.8,.8,40.5],
-  [28.2,1,0,.8,.8,40.5]
-].forEach(([x,y,z,sx,sy,sz])=>{
-  const m = new THREE.Mesh(new THREE.BoxGeometry(sx,sy,sz), frameMat);
-  m.position.set(x,y,z); m.castShadow=true; world.add(m);
+const wallMat = mat(0xe4ddd2,.96,.02);
+const floorMat = mat(0x9a7458,.82,.04);
+const rugMat = mat(0x667b78,.98,.01);
+addBox(room,[180,2,145],[0,-26,0],floorMat,{cast:false});
+addBox(room,[180,82,2],[0,14,-68],wallMat,{cast:false});
+addBox(room,[2,82,145],[-89,14,0],mat(0xd5cec4,.96,.02),{cast:false});
+addBox(room,[110,.24,72],[-5,-24.85,-9],rugMat,{cast:false});
+
+const windowPane = addBox(room,[35,25,.45],[27,18,-66.75],mat(0x9fd6ed,.22,.08),{cast:false});
+windowPane.material.emissive = new THREE.Color(0x80c7e8);
+windowPane.material.emissiveIntensity = .32;
+const windowFrameMat = mat(0xf3eee6,.58,.1);
+addBox(room,[38,1.1,1],[27,31,-66.2],windowFrameMat);
+addBox(room,[38,1.1,1],[27,5,-66.2],windowFrameMat);
+addBox(room,[1.1,27,1],[8.5,18,-66.2],windowFrameMat);
+addBox(room,[1.1,27,1],[45.5,18,-66.2],windowFrameMat);
+addBox(room,[1,25,1],[27,18,-66.15],windowFrameMat);
+addBox(room,[35,1,1],[27,18,-66.1],windowFrameMat);
+
+const shelfMat = mat(0x76503b,.72,.08);
+[-4,8,20].forEach(y=>addBox(room,[28,1.2,5],[-41,y,-64.6],shelfMat));
+[-54,-28].forEach(x=>addBox(room,[1.2,26,5],[x,8,-64.6],shelfMat));
+const bookColors=[0xc36b55,0x557c91,0xd2a85b,0x6d8d65,0x8a6689];
+for(let i=0;i<10;i++){
+  const h=THREE.MathUtils.randFloat(5.2,8.5);
+  addBox(room,[1.7,h,3.6],[-51+i*2.25,-3.3+h/2,-61.8],mat(bookColors[i%bookColors.length],.84,.02));
+}
+
+// Desk supporting the open computer case
+const desk = new THREE.Group();
+scene.add(desk);
+const deskTopMat = mat(0x8b5b3c,.7,.05);
+const deskEdgeMat = mat(0x65412e,.74,.06);
+addBox(desk,[91,3.2,63],[0,-4.3,0],deskTopMat);
+addBox(desk,[91,1.1,2.2],[0,-2.65,30.3],deskEdgeMat);
+addBox(desk,[91,1.1,2.2],[0,-2.65,-30.3],deskEdgeMat);
+[[-38,-16,-24],[38,-16,-24],[-38,-16,24],[38,-16,24]].forEach(position=>{
+  addBox(desk,[4.5,23,4.5],position,deskEdgeMat);
+});
+
+// Open PC chassis lying flat on the desk
+const chassisMat = mat(0x30393b,.46,.82);
+const chassisEdgeMat = mat(0x161d1e,.4,.9);
+addBox(world,[60,1.4,44],[0,-1.35,0],chassisMat);
+addBox(world,[60,4.4,1.25],[0,.15,-21.4],chassisEdgeMat);
+addBox(world,[1.25,4.4,44],[-29.4,.15,0],chassisEdgeMat);
+addBox(world,[1.25,4.4,44],[29.4,.15,0],chassisEdgeMat);
+addBox(world,[60,1.5,1.25],[0,-1.25,21.4],chassisEdgeMat);
+[[-25,-2.45,-17],[25,-2.45,-17],[-25,-2.45,17],[25,-2.45,17]].forEach(position=>{
+  addBox(world,[4,.9,4],position,chassisEdgeMat);
+});
+
+const mountMat = mat(0xb9b7aa,.3,.88);
+[[-21,-.35,-13],[21,-.35,-13],[-21,-.35,13],[21,-.35,13]].forEach(([x,y,z])=>{
+  const mount = new THREE.Mesh(new THREE.CylinderGeometry(.34,.42,.55,16),mountMat);
+  mount.position.set(x,y,z);
+  mount.castShadow = true;
+  world.add(mount);
 });
 
 // Motherboard

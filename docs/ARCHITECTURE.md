@@ -54,3 +54,7 @@ The simulation should remain deterministic enough to save and reproduce.
 Buildings expose capacity and costs. Workload creates demand. System health is derived from capacity/demand ratios, power availability and thermal balance.
 
 The first prototype intentionally avoids per-process simulation.
+
+## Scene composition
+
+The playable motherboard sits inside an open computer chassis lying flat on a desk. The desk is placed in a fully modeled, daylit room so the computer reads as a physical object in a larger environment rather than an abstract dark arena.
