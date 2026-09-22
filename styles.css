@@ -70,3 +70,25 @@ h1{font-size:22px;letter-spacing:.12em;margin:2px 0 0}
   .build-dock{bottom:10px}.camera-help,.selection-card{bottom:178px}
   .dock-title small{display:none}
 }
+
+.loading-screen{
+  position:fixed;inset:0;z-index:9999;display:grid;place-items:center;
+  background:
+    radial-gradient(circle at 50% 42%,rgba(35,86,70,.24),transparent 32%),
+    linear-gradient(180deg,#08100f,#020504);
+  transition:opacity .45s ease,visibility .45s ease;
+}
+.loading-screen.done{opacity:0;visibility:hidden;pointer-events:none}
+.loading-card{
+  width:min(520px,calc(100% - 40px));padding:26px 28px;border-radius:18px;
+  background:rgba(7,18,16,.92);border:1px solid rgba(139,255,214,.16);
+  box-shadow:0 30px 90px rgba(0,0,0,.48);
+}
+.loading-card strong{display:block;margin-top:8px;font-size:22px;letter-spacing:.02em}
+.loading-card p{margin:8px 0 18px;color:#8aa39a;font-size:12px}
+.loading-track{height:5px;background:rgba(255,255,255,.07);border-radius:99px;overflow:hidden}
+.loading-track i{
+  display:block;width:0;height:100%;background:#8bffd6;
+  box-shadow:0 0 18px rgba(139,255,214,.65);transition:width .2s ease
+}
+#loading-progress{display:block;margin-top:9px;color:#73978a;font-size:10px;letter-spacing:.08em}
