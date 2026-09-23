@@ -82,3 +82,7 @@
 - combo encyclopedia
 - seeded runs
 - tutorial
+
+- [x] Five-card hand limit with visible card-back reserve stack
+- [x] Bonus cards overflow into reserve and refill the hand before random draws
+- [x] Removed obsolete camera-help HUD

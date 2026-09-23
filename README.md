@@ -44,3 +44,8 @@ See `docs/GAME_DESIGN.md`, `docs/ARCHITECTURE.md`, and `docs/ROADMAP.md`.
 Cards use dark rectangular game-card layouts with live 3D previews generated from the same models used in the world. The preview fades and blurs into the lower information area. Installation costs are shown inside the top edge of each card with Lucide Wood/Stone icons.
 
 Costs are real gameplay rules. Resource/producers remain free so a run cannot deadlock, while settlement/expansion upgrades consume produced materials.
+
+
+### Hand and reserve
+
+The active hand is capped at five cards. Combo rewards beyond that limit are kept in a visible card-back reserve to the right of the hand. Playing a card promotes the next reserve card before a new random card is drawn.

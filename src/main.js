@@ -88,7 +88,7 @@ const pointer=new THREE.Vector2();
 
 const ui={
   loadingScreen:$('#loading-screen'),loadingBar:$('#loading-bar'),loadingProgress:$('#loading-progress'),
-  loadingDetail:$('#loading-detail'),hand:$('#hand'),handCount:$('#hand-count'),
+  loadingDetail:$('#loading-detail'),hand:$('#hand'),handCount:$('#hand-count'),reserveStack:$('#reserve-stack'),
   selectionHint:$('#selection-hint'),harvestScore:$('#harvest-score'),comboCount:$('#combo-count'),
   landCount:$('#land-count'),woodCount:$('#wood-count'),stoneCount:$('#stone-count'),
   objectiveTitle:$('#objective-title'),objectiveCopy:$('#objective-copy'),
@@ -100,6 +100,7 @@ const ui={
 const state={
   land:new Map(),
   hand:[],
+  reserve:[],
   selectedCardId:null,
   nextCardId:1,
   nextFieldOrder:1,
@@ -118,6 +119,7 @@ const state={
 
 const key=(x,z)=>`${x},${z}`;
 const pos=(x,z)=>new THREE.Vector3(x*GRID.tileSize,0,z*GRID.tileSize);
+const HAND_LIMIT=5;
 const easeOut=t=>1-Math.pow(1-t,3);
 const easeInOut=t=>t<.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2;
 
@@ -1086,8 +1088,21 @@ async function collapseFields(group){
   status();
   state.inputLocked=false;
 }
+function addCard(card,{priority=false}={}){
+  if(state.hand.length<HAND_LIMIT){
+    state.hand.push(card);
+    return;
+  }
+  if(priority){
+    const displaced=state.hand.pop();
+    if(displaced)state.reserve.unshift(displaced);
+    state.hand.push(card);
+    return;
+  }
+  state.reserve.push(card);
+}
 function grantCards(count){
-  for(let i=0;i<count;i++)state.hand.push(draw());
+  for(let i=0;i<count;i++)addCard(draw());
   renderHand();
 }
 async function setMill(t){
@@ -1132,8 +1147,10 @@ function randomType(){
   return'field';
 }
 const draw=(type=randomType())=>({id:state.nextCardId++,type});
-function fill(n=5){
-  while(state.hand.length<n)state.hand.push(draw());
+function refillHand(){
+  while(state.hand.length<HAND_LIMIT){
+    state.hand.push(state.reserve.length?state.reserve.shift():draw());
+  }
 }
 function cardCost(type){
   return CARD_DEFS[type]?.cost||{};
@@ -1170,14 +1187,37 @@ function spend(id){
   payCardCost(card.type);
   state.hand.splice(i,1);
   state.selectedCardId=null;
-  fill();
+  refillHand();
   renderHand();
   status();
   return true;
 }
 function ensureUpgrade(){
-  if(ready()&&!state.hand.some(c=>c.type==='millUpgrade'))state.hand.push(draw('millUpgrade'));
+  const hasUpgrade=[...state.hand,...state.reserve].some(c=>c.type==='millUpgrade');
+  if(ready()&&!hasUpgrade)addCard(draw('millUpgrade'),{priority:true});
   renderHand();
+}
+function renderReserve(){
+  ui.reserveStack.replaceChildren();
+  const count=state.reserve.length;
+  ui.reserveStack.classList.toggle('hidden',count===0);
+  ui.reserveStack.setAttribute('aria-label',count?`Запас: ${count} карт`:'Запас пуст');
+  ui.reserveStack.title=count?`Запас: ${count} карт`:'';
+  if(!count)return;
+
+  const yStep=count>1?Math.min(10,96/(count-1)):0;
+  const xStep=count>1?Math.min(1.6,14/(count-1)):0;
+  state.reserve.forEach((card,index)=>{
+    const back=document.createElement('span');
+    back.className='reserve-card';
+    back.dataset.cardId=String(card.id);
+    back.style.setProperty('--stack-y',(index*yStep).toFixed(2));
+    back.style.setProperty('--stack-x',(index*xStep).toFixed(2));
+    back.style.setProperty('--stack-index',String(index+1));
+    back.style.setProperty('--stack-tilt',`${((index%3)-1)*.75}deg`);
+    back.setAttribute('aria-hidden','true');
+    ui.reserveStack.appendChild(back);
+  });
 }
 function renderHand(){
   ui.hand.innerHTML='';
@@ -1224,6 +1264,7 @@ function renderHand(){
     };
     ui.hand.appendChild(b);
   }
+  renderReserve();
   ui.handCount.textContent=state.hand.length;
   refreshLucide();
 }
@@ -1545,7 +1586,7 @@ function tick(time){
 
 async function boot(){
   seed();
-  ['tree','lumbermill','rock','quarry','field'].forEach(t=>state.hand.push(draw(t)));
+  ['tree','lumbermill','rock','quarry','field'].forEach(t=>addCard(draw(t)));
   renderHand();
   status();
   const loading=preload();
@@ -1554,7 +1595,7 @@ async function boot(){
   await buildCardPreviews();
   refreshLucide();
   status();
-  toast('Поля обновлены: борозды, 4 стадии роста, ветер и новое схлопывание.');
+  toast('В руке максимум 5 карт — бонусные карты складываются справа в запас.');
 }
 boot().catch(e=>{
   console.error(e);

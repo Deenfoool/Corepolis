@@ -5,7 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="theme-color" content="#8dc9d7" />
   <title>Corepolis — Island Card Builder</title>
-  <link rel="stylesheet" href="./styles.css" />
+  <link rel="preload" as="image" href="./assets/cards/corepolis-card-back.webp" type="image/webp" />
+  <link rel="stylesheet" href="./styles.css?v=hand-reserve-1" />
   <script defer src="https://unpkg.com/lucide@1.47.0"></script>
   <script type="importmap">
   {
@@ -75,16 +76,11 @@
         <div class="hand-label"><span class="section-icon"><i data-lucide="hand"></i></span><b>РУКА</b><span class="hand-count"><b id="hand-count">0</b> карт</span></div>
         <span id="selection-hint">Выберите карту</span>
       </div>
-      <div id="hand" class="hand" aria-label="Рука карт"></div>
+      <div class="hand-row">
+        <div id="hand" class="hand" aria-label="Рука карт"></div>
+        <div id="reserve-stack" class="reserve-stack hidden" aria-label="Запас карт"></div>
+      </div>
     </section>
-
-    <div class="camera-help panel">
-      <span><i data-lucide="mouse-pointer-2"></i><kbd>LMB</kbd> карта</span>
-      <span><i data-lucide="move-3d"></i><kbd>RMB</kbd> панорама</span>
-      <span><i data-lucide="zoom-in"></i><kbd>Wheel</kbd> зум</span>
-      <span><i data-lucide="rotate-3d"></i><kbd>Q / E</kbd> поворот</span>
-      <span><i data-lucide="x"></i><kbd>Esc</kbd> отмена</span>
-    </div>
 
     <aside id="tile-info" class="tile-info panel hidden">
       <div class="panel-heading">
@@ -98,6 +94,6 @@
     </aside>
   </div>
 
-  <script type="module" src="./src/main.js?v=wheat-material-fix-1"></script>
+  <script type="module" src="./src/main.js?v=hand-reserve-1"></script>
 </body>
 </html>
