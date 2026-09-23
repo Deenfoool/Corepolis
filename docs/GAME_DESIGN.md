@@ -174,3 +174,12 @@ Autotile classes:
 Each coordinate deterministically selects one of five visual variants. The variation affects cliff faceting, embedded rocks, grass tufts and subtle interior tone without moving the shared tile boundary.
 
 Rare coastline cells receive a restrained hero treatment with an extra stone/flower cluster. Expansion rises with the previous coastline still visible; after the animation the new cell and its eight-neighbour area are rebuilt so obsolete cliff faces disappear and the joined surface becomes seamless.
+
+
+### Organic coastline correction
+
+The first procedural terrain pass preserved a square top plate and added a separate green coast lip. That produced an artificial slab/concrete-formwork silhouette and has been removed.
+
+The coastline is now the actual boundary of the grass surface. Every exposed cardinal edge is sampled as an irregular deterministic curve. Exterior corners where two sides are open are cut inward independently, so isolated cells and outer corners do not keep a square silhouette. The cliff mesh starts from those exact same top-edge points, which removes the visual split between a rectangular grass cap and a separate cliff.
+
+Only seams that touch another land cell remain exact grid boundaries. Those seams are internal and share the same flat material/elevation, while exposed land-water boundaries are organic.

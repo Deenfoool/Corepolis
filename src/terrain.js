@@ -56,40 +56,100 @@ function makeMaterial(color,roughness=.96,extra={}){
 function setCellKey(root,cellKey){
   root.traverse(object=>{object.userData.cellKey=cellKey;});
 }
-function makeTopCore(size){
-  const grass=new THREE.Mesh(
-    new THREE.BoxGeometry(size,.14,size),
-    makeMaterial(0x7fa65e,.94)
-  );
-  grass.position.y=.05;
-  grass.castShadow=false;
-  grass.receiveShadow=true;
+function coastWave(x,z,sideIndex,i,segments,size){
+  if(i===0||i===segments)return 0;
+  const u=i/segments;
+  const envelope=Math.pow(Math.sin(Math.PI*u),.72);
+  const broad=Math.sin((u*2.15+rand(x,z,1000+sideIndex)*.7)*Math.PI)*size*.018;
+  const local=(rand(x,z,1010+sideIndex*64+i)-.5)*size*.095;
+  return envelope*(size*.032+broad+local);
+}
+function makeSideProfile(side,x,z,size,sideIndex,connected){
+  const half=size*.5;
+  const segments=9;
+  const points=[];
+  for(let i=0;i<=segments;i++){
+    const u=i/segments;
+    const t=-half+u*size;
+    const offset=connected?0:coastWave(x,z,sideIndex,i,segments,size);
+    if(side==='n')points.push(new THREE.Vector2(t,-half+offset));
+    if(side==='e')points.push(new THREE.Vector2(half-offset,t));
+    if(side==='s')points.push(new THREE.Vector2(-t,half-offset));
+    if(side==='w')points.push(new THREE.Vector2(-half+offset,-t));
+  }
+  return points;
+}
+function organicCorner(x,z,size,index,sx,sz){
+  const half=size*.5;
+  const cutX=size*(.045+rand(x,z,1080+index*2)*.035);
+  const cutZ=size*(.045+rand(x,z,1081+index*2)*.035);
+  return new THREE.Vector2(sx*(half-cutX),sz*(half-cutZ));
+}
+function makeCoastProfiles(x,z,size,cardinal){
+  const profiles={
+    n:makeSideProfile('n',x,z,size,0,cardinal.n),
+    e:makeSideProfile('e',x,z,size,1,cardinal.e),
+    s:makeSideProfile('s',x,z,size,2,cardinal.s),
+    w:makeSideProfile('w',x,z,size,3,cardinal.w)
+  };
 
-  const soil=new THREE.Mesh(
-    new THREE.BoxGeometry(size,.60,size),
-    makeMaterial(0x795637,.99)
-  );
-  soil.position.y=-.32;
-  soil.castShadow=false;
-  soil.receiveShadow=true;
+  const corners=[
+    {a:'n',ai:0,b:'w',bi:profiles.w.length-1,sx:-1,sz:-1},
+    {a:'n',ai:profiles.n.length-1,b:'e',bi:0,sx:1,sz:-1},
+    {a:'e',ai:profiles.e.length-1,b:'s',bi:0,sx:1,sz:1},
+    {a:'s',ai:profiles.s.length-1,b:'w',bi:0,sx:-1,sz:1}
+  ];
+  corners.forEach((corner,index)=>{
+    if(cardinal[corner.a]||cardinal[corner.b])return;
+    const point=organicCorner(x,z,size,index,corner.sx,corner.sz);
+    profiles[corner.a][corner.ai]=point.clone();
+    profiles[corner.b][corner.bi]=point.clone();
+  });
 
-  const submergedRock=new THREE.Mesh(
-    new THREE.BoxGeometry(size*.92,.54,size*.92),
-    makeMaterial(0x62635a,1)
-  );
-  submergedRock.position.y=-.89;
-  submergedRock.castShadow=true;
-  submergedRock.receiveShadow=true;
+  return profiles;
+}
+function terrainPerimeter(profiles){
+  return[
+    ...profiles.n,
+    ...profiles.e.slice(1),
+    ...profiles.s.slice(1),
+    ...profiles.w.slice(1,-1)
+  ];
+}
+function createTopSurface(profiles,x,z,variant){
+  const perimeter=terrainPerimeter(profiles);
+  const faces=THREE.ShapeUtils.triangulateShape(perimeter,[]);
+  const positions=[];
+  const colors=[];
+  const base=[0x7fa65e,0x7ba259,0x82a960,0x779e58,0x85aa62][variant];
 
-  const underside=new THREE.Mesh(
-    new THREE.BoxGeometry(size*.76,.22,size*.76),
-    makeMaterial(0x51564f,1)
-  );
-  underside.position.y=-1.27;
-  underside.castShadow=true;
-  underside.receiveShadow=true;
+  for(const p of perimeter){
+    positions.push(p.x,.11,p.y);
+    const tone=(rand(x,z,1160+positions.length)-.5)*.028;
+    const c=shade(base,tone);
+    colors.push(c.r,c.g,c.b);
+  }
 
-  return[grass,soil,submergedRock,underside];
+  const indices=[];
+  for(const face of faces)indices.push(face[0],face[1],face[2]);
+  const geometry=new THREE.BufferGeometry();
+  geometry.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));
+  geometry.setAttribute('color',new THREE.Float32BufferAttribute(colors,3));
+  geometry.setIndex(indices);
+  geometry.computeVertexNormals();
+
+  const mesh=new THREE.Mesh(
+    geometry,
+    new THREE.MeshStandardMaterial({
+      vertexColors:true,
+      roughness:.94,
+      metalness:0,
+      side:THREE.DoubleSide
+    })
+  );
+  mesh.receiveShadow=true;
+  mesh.castShadow=false;
+  return mesh;
 }
 function addInteriorTone(root,x,z,size,variant){
   const tones=[0x93b46e,0x739b58,0xa4bd79,0x88aa64,0x6f9857];
@@ -122,25 +182,34 @@ function edgePoint(side,t,half,out){
   if(side==='e')return[half+out,t];
   return[-half-out,t];
 }
-function createCliffWall(side,x,z,size,sideIndex){
-  const half=size*.5;
-  const segments=6;
-  const rows=4;
+function createCliffWall(side,topProfile,x,z,sideIndex){
+  const rows=5;
   const positions=[];
   const colors=[];
   const indices=[];
-  const rowY=[-.02,-.29,-.61,-1.12];
-  const rowOut=[0,.018,.075,.15];
+  const rowY=[.085,-.10,-.36,-.72,-1.14];
+  const outward=[0,.025,.075,.12,.19];
+  const segments=topProfile.length-1;
+
+  const normal=
+    side==='n'?new THREE.Vector2(0,-1):
+    side==='s'?new THREE.Vector2(0,1):
+    side==='e'?new THREE.Vector2(1,0):
+    new THREE.Vector2(-1,0);
+  const tangent=new THREE.Vector2(-normal.y,normal.x);
 
   for(let row=0;row<rows;row++){
     for(let i=0;i<=segments;i++){
-      const baseT=-half+(i/segments)*size;
-      const parallel=row===0?0:(rand(x,z,320+sideIndex*100+row*17+i)-.5)*.10;
-      const bulge=row===0?0:(rand(x,z,420+sideIndex*100+row*17+i)-.5)*.045;
-      const [a,b]=edgePoint(side,baseT+parallel,half,rowOut[row]+bulge);
-      const bottomNoise=row===rows-1?(rand(x,z,520+sideIndex*31+i)-.5)*.16:0;
-      positions.push(a,rowY[row]+bottomNoise,b);
-      const c=cliffVertexColor(row,x,z,sideIndex,i);
+      const top=topProfile[i];
+      const envelope=Math.sin(Math.PI*(i/segments));
+      const parallel=row===0?0:(rand(x,z,1210+sideIndex*170+row*23+i)-.5)*.13*envelope;
+      const bulge=row===0?0:(rand(x,z,1310+sideIndex*170+row*23+i)-.5)*.095;
+      const px=top.x+normal.x*(outward[row]+bulge)+tangent.x*parallel;
+      const pz=top.y+normal.y*(outward[row]+bulge)+tangent.y*parallel;
+      const y=rowY[row]+(row===rows-1?(rand(x,z,1410+sideIndex*37+i)-.5)*.18:0);
+      positions.push(px,y,pz);
+      const c=cliffVertexColor(Math.min(3,row),x,z,sideIndex,i);
+      if(row===0)c.lerp(new THREE.Color(0x718c55),.20);
       colors.push(c.r,c.g,c.b);
     }
   }
@@ -151,8 +220,7 @@ function createCliffWall(side,x,z,size,sideIndex){
       const b=a+1;
       const c=(row+1)*(segments+1)+i;
       const d=c+1;
-      if(side==='n'||side==='e')indices.push(a,c,b,b,c,d);
-      else indices.push(a,b,c,b,d,c);
+      indices.push(a,c,b,b,c,d);
     }
   }
 
@@ -182,34 +250,6 @@ function edgeLocal(side,along,inset,size){
   if(side==='s')return[along,half-inset];
   if(side==='e')return[half-inset,along];
   return[-half+inset,along];
-}
-function addCoastLip(root,side,x,z,size,sideIndex){
-  const half=size*.5;
-  const vertical=side==='n'||side==='s';
-  const lip=new THREE.Mesh(
-    new THREE.BoxGeometry(vertical?size*.985:.16,.055,vertical?.16:size*.985),
-    makeMaterial(0x91b86b,.91)
-  );
-  const inset=.035;
-  if(side==='n')lip.position.set(0,.145,-half+inset);
-  if(side==='s')lip.position.set(0,.145,half-inset);
-  if(side==='e')lip.position.set(half-inset,.145,0);
-  if(side==='w')lip.position.set(-half+inset,.145,0);
-  lip.castShadow=false;
-  lip.receiveShadow=true;
-  root.add(lip);
-
-  const bumpMaterial=new THREE.MeshBasicMaterial({color:0x83ab62,side:THREE.DoubleSide});
-  for(let i=0;i<2;i++){
-    const radius=.16+rand(x,z,610+sideIndex*10+i)*.12;
-    const bump=new THREE.Mesh(new THREE.CircleGeometry(radius,12),bumpMaterial.clone());
-    bump.rotation.x=-Math.PI/2;
-    const along=(-.24+rand(x,z,620+sideIndex*10+i)*.48)*size;
-    const outward=.035+rand(x,z,630+sideIndex*10+i)*.06;
-    const [px,pz]=edgeLocal(side,along,-outward,size);
-    bump.position.set(px,.122,pz);
-    root.add(bump);
-  }
 }
 function addRockChunk(root,position,scaleValue,color=0x67675f,rotation=0){
   const mesh=new THREE.Mesh(
@@ -281,23 +321,25 @@ function addTopEdgeDecor(root,side,x,z,size,sideIndex,hero){
 }
 function addOuterCorner(root,corner,x,z,size,index){
   const half=size*.5;
-  const px=corner.sx*(half+.035);
-  const pz=corner.sz*(half+.035);
+  const inset=size*(.045+rand(x,z,1500+index)*.035);
+  const px=corner.sx*(half-inset*.45);
+  const pz=corner.sz*(half-inset*.45);
   addRockChunk(
     root,
-    new THREE.Vector3(px,-.70,pz),
-    .62+rand(x,z,900+index)*.28,
-    0x66655c,
-    rand(x,z,910+index)*Math.PI
+    new THREE.Vector3(px,-.58,pz),
+    .56+rand(x,z,1510+index)*.28,
+    rand(x,z,1520+index)>.5?0x66655c:0x706657,
+    rand(x,z,1530+index)*Math.PI
   );
-
-  const sod=new THREE.Mesh(
-    new THREE.CircleGeometry(.20+rand(x,z,920+index)*.08,14),
-    new THREE.MeshBasicMaterial({color:0x83aa61,side:THREE.DoubleSide})
-  );
-  sod.rotation.x=-Math.PI/2;
-  sod.position.set(corner.sx*(half-.01),.123,corner.sz*(half-.01));
-  root.add(sod);
+  if(rand(x,z,1540+index)>.45){
+    addRockChunk(
+      root,
+      new THREE.Vector3(px-corner.sx*.18,-.84,pz-corner.sz*.12),
+      .34+rand(x,z,1550+index)*.18,
+      0x5b5e57,
+      rand(x,z,1560+index)*Math.PI
+    );
+  }
 }
 function addInnerCornerDetail(root,corner,x,z,size,index){
   const half=size*.5;
@@ -324,13 +366,13 @@ export function buildTerrainTile({x,z,tileSize,cellKey,hasLand}){
   root.userData.heroTerrain=hero;
   root.userData.cellKey=cellKey;
 
-  for(const mesh of makeTopCore(tileSize))root.add(mesh);
+  const profiles=makeCoastProfiles(x,z,tileSize,cardinal);
+  root.add(createTopSurface(profiles,x,z,variant));
   addInteriorTone(root,x,z,tileSize,variant);
 
   SIDES.forEach((side,index)=>{
     if(cardinal[side.key])return;
-    root.add(createCliffWall(side.key,x,z,tileSize,index));
-    addCoastLip(root,side.key,x,z,tileSize,index);
+    root.add(createCliffWall(side.key,profiles[side.key],x,z,index));
     addCliffDetails(root,side.key,x,z,tileSize,index);
     addTopEdgeDecor(root,side.key,x,z,tileSize,index,hero&&index===Math.floor(rand(x,z,72)*4));
   });

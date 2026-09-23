@@ -103,3 +103,9 @@
 - [x] Coastline micro-detail and rare hero-edge decoration
 - [x] Rebuild neighbouring terrain after island expansion without touching tile content
 - [x] GPU cleanup for superseded terrain geometry/materials
+
+- [x] Removed rectangular grass/soil core from coastline terrain
+- [x] Removed artificial straight green coast-lip geometry
+- [x] Organic sampled coastline is now the actual top-surface boundary
+- [x] Cliff top row reuses the exact same irregular coastline points
+- [x] Organic cut outer corners instead of square land corners
