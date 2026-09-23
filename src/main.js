@@ -3,7 +3,7 @@ import { MapControls } from 'three/addons/controls/MapControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { CARD_DEFS, DECK_WEIGHTS, DIRECTIONS, GRID } from './config.js';
-import { ASSETS } from './models.js';
+import { ASSETS } from './models.js?v=wheat-material-fix-1';
 
 const $=s=>document.querySelector(s);
 const canvas=$('#game');
