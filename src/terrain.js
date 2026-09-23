@@ -168,7 +168,8 @@ function createCliffWall(side,x,z,size,sideIndex){
       vertexColors:true,
       roughness:1,
       metalness:0,
-      flatShading:true
+      flatShading:true,
+      side:THREE.DoubleSide
     })
   );
   mesh.castShadow=true;
