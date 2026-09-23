@@ -953,37 +953,40 @@ async function collapseFields(group){
   state.inputLocked=true;
   const anchor=group.reduce((best,t)=>t.fieldOrder<best.fieldOrder?t:best,group[0]);
   const anchorOrder=anchor.fieldOrder;
-  const target=anchor.visual.position.clone().add(new THREE.Vector3(0,.32,0));
+  const target=anchor.visual.position.clone().add(new THREE.Vector3(0,.36,0));
   const moving=[];
   for(const t of group){
     if(!t.content)continue;
+    spawnRing(t.visual.position.clone(),0xc8d66f);
+    pulse(t.content,.24,.08);
     const object=t.content;
     world.attach(object);
-    moving.push({
-      t,object,start:object.position.clone(),scale:object.scale.clone(),
-      rotY:object.rotation.y
-    });
+    moving.push({t,object,start:object.position.clone(),scale:object.scale.clone(),rotY:object.rotation.y});
   }
-  spawnRing(target,0xf3c85d);
-  spawnBurst(target,0xf4d46d,16);
-  await tween(.6,p=>{
-    for(const m of moving){
-      const arc=Math.sin(p*Math.PI)*(m.t===anchor?.18:.55);
-      m.object.position.lerpVectors(m.start,target,easeInOut(p));
+  spawnBurst(target,0xf0cb63,20);
+  await tween(.72,p=>{
+    for(let i=0;i<moving.length;i++){
+      const m=moving[i];
+      const q=easeInOut(p);
+      const arc=Math.sin(p*Math.PI)*(m.t===anchor?.26:.72+i*.06);
+      const side=Math.sin(p*Math.PI)*((i-1.5)*.12);
+      m.object.position.lerpVectors(m.start,target,q);
       m.object.position.y+=arc;
-      m.object.scale.copy(m.scale).multiplyScalar(1-p*.72);
-      m.object.rotation.y=m.rotY+p*Math.PI*.65;
+      m.object.position.x+=side;
+      const shrink=1-p*.76;
+      m.object.scale.set(m.scale.x*shrink,m.scale.y*(1-p*.64),m.scale.z*shrink);
+      m.object.rotation.y=m.rotY+p*Math.PI*(.45+i*.11);
     }
   },t=>t);
   for(const m of moving){
     if(m.object.parent)m.object.parent.remove(m.object);
-    m.t.content=null;
-    m.t.type='empty';
-    m.t.stage=0;
-    m.t.fieldOrder=null;
+    m.t.content=null; m.t.type='empty'; m.t.stage=0; m.t.fieldOrder=null;
   }
   setField(anchor,1,false,anchorOrder);
-  await pulse(anchor.content,.42,.28);
+  spawnRing(anchor.visual.position.clone(),0xf0cb63);
+  spawnBurst(anchor.visual.position.clone(),0xf4d875,22);
+  await animateFieldGrowth(anchor.content,1,false);
+  await pulse(anchor.content,.44,.16);
   state.harvestScore+=120;
   state.comboCount++;
   grantCards(1);
@@ -1460,7 +1463,7 @@ async function boot(){
   await buildCardPreviews();
   refreshLucide();
   status();
-  toast('Карты теперь используют реальные превью и стоимость из древесины/камня.');
+  toast('Поля обновлены: борозды, 4 стадии роста, ветер и новое схлопывание.');
 }
 boot().catch(e=>{
   console.error(e);
