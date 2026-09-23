@@ -145,3 +145,10 @@
 - [x] Merge adjacent field soil visually across shared tile boundaries
 - [x] Rebuild field edges when neighbouring field connectivity changes
 - [x] Replace Mill-field perimeter glow with warmer borderless soil styling
+
+- [x] Make farmland cover the complete tile footprint
+- [x] Replace rounded soil base with flat-shaded voxel geometry
+- [x] Replace sculpted curved furrows with three-step voxel furrows
+- [x] Add darker voxel troughs between planting ridges
+- [x] Replace rounded soil clods with box-shaped voxel chunks
+- [x] Align furrow rows across neighbouring field tiles

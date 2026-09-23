@@ -124,25 +124,23 @@ The cost is paid only after a legal action is committed.
 
 ## Farmland visual language
 
-Fields use a dedicated borderless farmland renderer rather than a framed plot:
+Farmland now uses a full-tile voxel language instead of rounded garden-bed geometry:
 
-- the old raised perimeter edging is removed completely;
-- the soil is a low rounded low-poly mass with no lip or fence around it;
-- five sculpted low-poly ridges form soft rounded furrows instead of flat rectangular strips;
-- stage I uses `Wheat_1.glb` in sparse young rows;
-- stage II uses `Wheat_2.glb` with denser growth;
-- stage III uses `Wheat_3.glb` as taller pre-harvest wheat;
-- stage IV uses `Wheat_4.glb` as the mature crop;
-- small deterministic soil clods add surface variation without noisy random placement;
-- neighbouring Field cells extend their soil surface to the shared grid boundary, removing the visual gap between plots;
-- adjacency is tracked in the field visual signature so exposed edges are rebuilt when a neighbour appears or disappears;
-- mill-adjacent fields use warmer soil rather than a perimeter ring;
-- crop rows sway continuously and grow upward with a staggered animation;
-- field collapse pulls all four plots toward the oldest piece and finishes with a stronger harvest burst.
+- plowed soil fills the complete logical tile from edge to edge, with only a tiny overlap to hide rendering seams;
+- there is no perimeter rim, fence, lip or inset patch;
+- the soil base is a flat-shaded box rather than rounded geometry;
+- each furrow is built from three stacked rectangular steps: broad lower shoulder, narrower middle step and a flat narrow crest;
+- shallow dark voxel troughs separate the furrows and improve depth readability;
+- soil clods are small box-shaped chunks rather than rounded rocks;
+- all five rows align to the same grid on every field cell, so neighbouring cells read as one continuous cultivated surface;
+- stage I is deliberately sparse, while stages II–IV progressively increase crop density;
+- stage I uses `Wheat_1.glb`, stage II uses `Wheat_2.glb`, stage III uses `Wheat_3.glb`, and stage IV uses `Wheat_4.glb`;
+- mill-adjacent fields keep the same geometry and differ only through warmer soil tones;
+- crop rows retain wind sway and staggered growth animation.
 
-The Field card preview is rendered from this same runtime field model, so card art and world art cannot drift apart.
+The Field card preview is generated from this exact runtime renderer, keeping card art and world art synchronized.
 
-The crop meshes come from Quaternius Ultimate Crops Pack (CC0) and are stored locally as optimized GLB files. Corepolis owns the procedural soil, rounded furrows, borderless merging, wind motion and collapse effects around those meshes.
+The crop meshes come from Quaternius Ultimate Crops Pack (CC0). Corepolis owns the voxel soil, stepped furrows, troughs, clods, field merging, wind motion and collapse effects around those meshes.
 
 
 ## Building unlock progression
