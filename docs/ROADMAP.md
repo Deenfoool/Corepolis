@@ -127,3 +127,14 @@
 - [x] Mill-field stage is determined by occupied cardinal Mill slots
 - [x] Remove numeric 1/2/3/4 sprites above field plots
 - [x] Large harvest clears Mill fields for a new spatial planting cycle
+
+- [x] Water-grid Pier placement with shoreline orientation
+- [x] Boat attached to every Pier with ambient bobbing
+- [x] First-Pier expedition choice UI
+- [x] Archipelago reward path: 7 Island Tile cards
+- [x] Lighthouse reward path: 1 Lighthouse + 2 Island Tile cards
+- [x] Remote Lighthouse island founding
+- [x] Lighthouse radius enables detached Island Tile placement
+- [x] Fishing Shop unlock and house/pier card synergies
+- [x] Sea-route reward between piers on separate landmasses
+- [ ] Replace isolated marine placeholder visuals with exact TIDELINE GLBs after archive is supplied

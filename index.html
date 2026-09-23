@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#8dc9d7" />
   <title>Corepolis — Island Card Builder</title>
   <link rel="preload" as="image" href="./assets/cards/corepolis-card-back.webp" type="image/webp" />
-  <link rel="stylesheet" href="./styles.css?v=loading-stories-2" />
+  <link rel="stylesheet" href="./styles.css?v=marine-branch-1" />
   <script defer src="https://unpkg.com/lucide@1.47.0"></script>
   <script type="importmap">
   {
@@ -36,6 +36,29 @@
         <div class="loading-foot"><span id="loading-stage">СТРОИМ МИР</span><b id="loading-progress">0%</b></div>
       </div>
     </div>
+
+    <section id="marine-choice" class="marine-choice hidden" aria-modal="true" role="dialog" aria-labelledby="marine-choice-title">
+      <div class="marine-choice-card panel">
+        <div class="eyebrow">МОРСКАЯ ЭКСПЕДИЦИЯ</div>
+        <h2 id="marine-choice-title">Куда отправить лодку?</h2>
+        <p>Первый причал открывает морскую ветку. Выберите, чем станет первая экспедиция.</p>
+        <div class="marine-choice-grid">
+          <button type="button" data-marine-choice="archipelago">
+            <span class="marine-choice-icon"><i data-lucide="map"></i></span>
+            <strong>Исследовать архипелаг</strong>
+            <small>Сразу получить <b>7 островных тайлов</b> и быстро расшириться в море.</small>
+            <em>+7 ОСТРОВНЫХ КАРТ</em>
+          </button>
+          <button type="button" data-marine-choice="lighthouse">
+            <span class="marine-choice-icon"><i data-lucide="scan-line"></i></span>
+            <strong>Зажечь огонь вдали</strong>
+            <small>Получить маяк, основать дальнюю точку и строить острова вокруг неё.</small>
+            <em>+1 МАЯК · +2 ОСТРОВА</em>
+          </button>
+        </div>
+        <div class="marine-choice-note"><i data-lucide="fish"></i> Рыболовный магазин откроется при любом выборе.</div>
+      </div>
+    </section>
 
     <canvas id="game"></canvas>
 
@@ -99,6 +122,6 @@
     </aside>
   </div>
 
-  <script type="module" src="./src/main.js?v=spatial-field-growth-1"></script>
+  <script type="module" src="./src/main.js?v=marine-branch-1"></script>
 </body>
 </html>

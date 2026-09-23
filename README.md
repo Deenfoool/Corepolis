@@ -64,3 +64,8 @@ Corepolis now uses neighbour-aware procedural autotiling for island land. Grid s
 ### Spatial field growth
 
 Fields now mature by spreading across the island. Every orthogonally connected normal field shares a stage equal to its connected size, capped at four. Around the Mill, all planted cardinal fields share a stage equal to the number of planted Mill sides. Field cards can no longer be stacked repeatedly on one plot.
+
+
+### Maritime branch
+
+Piers are placed directly on water beside land and spawn a boat. The first Pier opens an expedition choice between seven Island Tile cards or a Lighthouse plus two Island Tiles, and unlocks the Fishing Shop. Lighthouses seed distant islands and extend detached island placement; piers on separate landmasses create rewarded sea routes.

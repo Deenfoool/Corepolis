@@ -5,6 +5,7 @@ import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.j
 import { CARD_DEFS, DECK_WEIGHTS, DIRECTIONS, GRID } from './config.js';
 import { ASSETS } from './models.js?v=wheat-material-fix-1';
 import { buildTerrainTile, disposeTerrainTile } from './terrain.js?v=coast-stitch-3';
+import { createPierVisual, createLighthouseVisual, createFishingShopVisual, marinePreviewVisual } from './marine-visuals.js?v=marine-branch-1';
 
 const $=s=>document.querySelector(s);
 const canvas=$('#game');
@@ -97,7 +98,8 @@ const ui={
   objectiveTitle:$('#objective-title'),objectiveCopy:$('#objective-copy'),
   fieldStatus:$('#field-status'),toast:$('#toast'),tileInfo:$('#tile-info'),
   tileTitle:$('#tile-title'),tileCopy:$('#tile-copy'),objectiveProgress:$('#objective-progress'),
-  objectiveProgressName:$('#objective-progress-name'),objectiveProgressLabel:$('#objective-progress-label')
+  objectiveProgressName:$('#objective-progress-name'),objectiveProgressLabel:$('#objective-progress-label'),
+  marineChoice:$('#marine-choice')
 };
 
 const state={
@@ -112,7 +114,12 @@ const state={
   comboCount:0,
   millLevel:1,
   millCell:null,
-  unlocks:{mill:false,market:false},
+  unlocks:{mill:false,market:false,marine:false,fishingShop:false},
+  waterStructures:new Map(),
+  seaRoutes:new Set(),
+  marineActors:[],
+  lighthouseBeams:[],
+  marineChoiceOpen:false,
   millBlades:[],
   bladeBoost:0,
   tweens:[],
@@ -519,13 +526,18 @@ const CARD_PREVIEW_ASSET={
 };
 async function previewObjectFor(type){
   if(type==='field')return fieldVisual(2,false);
-  if(type==='expand'){
+  if(type==='expand'||type==='island'){
     const preview=new THREE.Group();
     preview.add(buildTerrainTile({
       x:0,z:0,tileSize:GRID.tileSize,cellKey:'preview',
       hasLand:()=>false
     }));
     return preview;
+  }
+  if(['pier','lighthouse','fishingShop'].includes(type)){
+    const visual=marinePreviewVisual(type);
+    if(visual)shadows(visual);
+    return visual;
   }
   const asset=CARD_PREVIEW_ASSET[type];
   if(!asset)return null;
@@ -537,7 +549,7 @@ async function renderCardPreview(type){
   try{
     const object=await previewObjectFor(type);
     if(!object)return null;
-    fit(object,type==='expand'?3.8:3.25,4.2);
+    fit(object,(type==='expand'||type==='island')?3.8:3.25,4.2);
     object.rotation.y=type==='clear'?-.28:.42;
 
     const previewScene=new THREE.Scene();
@@ -564,7 +576,7 @@ async function renderCardPreview(type){
     const size=box.getSize(new THREE.Vector3());
     const targetY=Math.max(.28,Math.min(1.25,size.y*.42));
     const cam=new THREE.PerspectiveCamera(32,512/320,.1,30);
-    const distance=type==='expand'?6.2:5.6;
+    const distance=(type==='expand'||type==='island')?6.2:5.6;
     cam.position.set(distance*.68,Math.max(3.2,size.y*.74+1.7),distance);
     cam.lookAt(0,targetY,0);
 
@@ -661,6 +673,270 @@ function addLand(x,z,{refresh=true}={}){
   rebuildTerrainTile(tile);
   if(refresh)refreshTerrainNeighborhood(x,z);
   return tile;
+}
+const waterKey=(x,z)=>`${x},${z}`;
+function waterStructureOf(object){
+  while(object){
+    const wk=object.userData?.waterKey;
+    if(wk&&state.waterStructures.has(wk))return state.waterStructures.get(wk);
+    object=object.parent;
+  }
+  return null;
+}
+function snappedWaterCell(hits){
+  const hit=hits.find(h=>h.object===waterPlane);
+  if(!hit)return null;
+  return{
+    x:Math.round(hit.point.x/GRID.tileSize),
+    z:Math.round(hit.point.z/GRID.tileSize)
+  };
+}
+function withinMap(x,z){
+  return Math.abs(x)<=GRID.maxRadius&&Math.abs(z)<=GRID.maxRadius;
+}
+function adjacentLandForWater(x,z){
+  const matches=[];
+  for(const d of DIRECTIONS){
+    const tile=state.land.get(key(x+d.dx,z+d.dz));
+    if(!tile)continue;
+    const seaDx=-d.dx;
+    const seaDz=-d.dz;
+    matches.push({
+      tile,
+      seaDx,seaDz,
+      yaw:Math.atan2(seaDx,seaDz)
+    });
+  }
+  return matches;
+}
+function canPlacePier(x,z){
+  return withinMap(x,z)&&!state.land.has(key(x,z))&&!state.waterStructures.has(waterKey(x,z))&&adjacentLandForWater(x,z).length>0;
+}
+function lighthouseRangeAllows(x,z){
+  for(const tile of state.land.values()){
+    if(tile.type!=='lighthouse')continue;
+    if(Math.hypot(tile.x-x,tile.z-z)<=3.25)return true;
+  }
+  return false;
+}
+function canPlaceIsland(x,z){
+  if(!withinMap(x,z)||state.land.has(key(x,z))||state.waterStructures.has(waterKey(x,z)))return false;
+  return adjacent(x,z)||lighthouseRangeAllows(x,z);
+}
+function nearestLandDistance(x,z){
+  let best=Infinity;
+  for(const tile of state.land.values())best=Math.min(best,Math.hypot(tile.x-x,tile.z-z));
+  return best;
+}
+function canPlaceRemoteLighthouse(x,z){
+  if(!withinMap(x,z)||state.land.has(key(x,z))||state.waterStructures.has(waterKey(x,z)))return false;
+  return nearestLandDistance(x,z)<=4.35;
+}
+function landComponent(startKey){
+  const start=state.land.get(startKey);
+  if(!start)return new Set();
+  const seen=new Set([start.key]);
+  const queue=[start];
+  while(queue.length){
+    const tile=queue.shift();
+    for(const d of DIRECTIONS){
+      const next=state.land.get(key(tile.x+d.dx,tile.z+d.dz));
+      if(!next||seen.has(next.key))continue;
+      seen.add(next.key);
+      queue.push(next);
+    }
+  }
+  return seen;
+}
+function nearbyPiers(tile,radius=1){
+  let count=0;
+  for(const structure of state.waterStructures.values()){
+    if(structure.type!=='pier')continue;
+    if(Math.max(Math.abs(structure.x-tile.x),Math.abs(structure.z-tile.z))<=radius)count++;
+  }
+  return count;
+}
+function setMarineObjectCellKey(root,tile){
+  root.traverse(object=>{object.userData.cellKey=tile.key;});
+}
+async function setLighthouse(tile,animated=true){
+  clearContent(tile);
+  tile.type='lighthouse';
+  const visual=createLighthouseVisual();
+  shadows(visual);
+  visual.position.y=.10;
+  setMarineObjectCellKey(visual,tile);
+  tile.visual.add(visual);
+  tile.content=visual;
+  const beam=visual.userData.beamPivot;
+  if(beam)state.lighthouseBeams.push(beam);
+  if(animated){
+    spawnRing(tile.visual.position.clone(),0xf4d778);
+    spawnBurst(tile.visual.position.clone(),0xffdf85,14);
+    await animatePop(visual,.48);
+  }
+}
+async function setFishingShop(tile,animated=true){
+  clearContent(tile);
+  tile.type='fishingShop';
+  const visual=createFishingShopVisual();
+  shadows(visual);
+  visual.position.y=.11;
+  setMarineObjectCellKey(visual,tile);
+  tile.visual.add(visual);
+  tile.content=visual;
+  if(animated)await animateBuildingConstruction(tile,'fishingShop',visual);
+}
+function grantSpecificCards(type,count,{priorityFirst=false}={}){
+  const reserveBefore=state.reserve.length;
+  for(let i=0;i<count;i++)addCard(draw(type),{priority:priorityFirst&&i===0});
+  renderHand();
+  if(state.reserve.length>reserveBefore)animateReserveGain();
+}
+function openMarineChoice(){
+  if(state.marineChoiceOpen)return;
+  state.marineChoiceOpen=true;
+  state.inputLocked=true;
+  ui.marineChoice.classList.remove('hidden');
+  refreshLucide();
+}
+function resolveMarineChoice(choice){
+  if(!state.marineChoiceOpen)return;
+  state.marineChoiceOpen=false;
+  ui.marineChoice.classList.add('hidden');
+
+  if(choice==='lighthouse'){
+    grantSpecificCards('lighthouse',1,{priorityFirst:true});
+    grantSpecificCards('island',2);
+  }else{
+    grantSpecificCards('island',7);
+  }
+  grantSpecificCards('fishingShop',1,{priorityFirst:true});
+  state.inputLocked=false;
+  status();
+  toast(choice==='lighthouse'
+    ?'Экспедиция выбрала маяк: +1 маяк, +2 острова. Рыболовный магазин тоже открыт.'
+    :'Экспедиция нашла архипелаг: +7 островных тайлов. Рыболовный магазин тоже открыт.');
+}
+function animateSeaRoute(from,to){
+  if(!from?.visual||!to?.visual)return;
+  const boat=createPierVisual(0).userData.boat.clone(true);
+  shadows(boat);
+  const start=from.visual.position.clone().add(new THREE.Vector3(0,.04,0));
+  const end=to.visual.position.clone().add(new THREE.Vector3(0,.04,0));
+  boat.position.copy(start);
+  world.add(boat);
+  tween(1.25,p=>{
+    const q=easeInOut(p);
+    boat.position.lerpVectors(start,end,q);
+    boat.position.y+=Math.sin(p*Math.PI)*.20;
+    const dx=end.x-start.x,dz=end.z-start.z;
+    boat.rotation.y=Math.atan2(dx,dz);
+  },t=>t).then(()=>world.remove(boat));
+}
+function awardSeaRoute(newPier){
+  const component=landComponent(newPier.shoreKey);
+  for(const other of state.waterStructures.values()){
+    if(other===newPier||other.type!=='pier'||component.has(other.shoreKey))continue;
+    const route=[newPier.key,other.key].sort().join('|');
+    if(state.seaRoutes.has(route))continue;
+    state.seaRoutes.add(route);
+    state.harvestScore+=125;
+    state.comboCount++;
+    grantCards(2);
+    spawnCardBurst(newPier.visual.position.clone(),2);
+    spawnRing(newPier.visual.position.clone(),0x78d5d1);
+    animateSeaRoute(newPier,other);
+    status();
+    toast('Морской маршрут между островами! +125 очков и +2 карты.');
+    return true;
+  }
+  return false;
+}
+async function placePier(card,x,z){
+  if(!canPlacePier(x,z))return toast('Причал ставится на свободную воду вплотную к берегу.');
+  const shore=adjacentLandForWater(x,z)[0];
+  const visual=createPierVisual(shore.yaw);
+  shadows(visual);
+  visual.position.set(x*GRID.tileSize,-.48,z*GRID.tileSize);
+  const wk=waterKey(x,z);
+  visual.userData.waterKey=wk;
+  visual.traverse(object=>{object.userData.waterKey=wk;});
+  world.add(visual);
+
+  const structure={key:wk,x,z,type:'pier',visual,shoreKey:shore.tile.key};
+  state.waterStructures.set(wk,structure);
+  const boat=visual.userData.boat;
+  if(boat){
+    state.marineActors.push({
+      object:boat,
+      baseY:boat.position.y,
+      phase:(x*1.7+z*2.3)
+    });
+  }
+
+  spend(card.id);
+  spawnRing(visual.position.clone().setY(-.36),0x7ed2c8);
+  spawnBurst(visual.position.clone().setY(-.20),0xd2b46f,10);
+
+  const first=!state.unlocks.marine;
+  if(first){
+    state.unlocks.marine=true;
+    state.unlocks.fishingShop=true;
+    status();
+    openMarineChoice();
+    return;
+  }
+  if(!awardSeaRoute(structure)){
+    status();
+    toast('Причал готов. Лодка ждёт следующую экспедицию.');
+  }
+}
+async function placeIsland(card,x,z){
+  if(!canPlaceIsland(x,z)){
+    return toast(lighthouseRangeAllows(x,z)
+      ?'Эта водная клетка уже занята.'
+      :'Островной тайл должен касаться суши или находиться в радиусе маяка.');
+  }
+  const tile=addLand(x,z,{refresh:false});
+  spend(card.id);
+  state.inputLocked=true;
+  await animateLandRise(tile);
+  refreshTerrainNeighborhood(x,z);
+  spawnRing(tile.visual.position.clone(),0x83d0ad);
+  spawnBurst(tile.visual.position.clone(),0x9fd56f,12);
+  state.inputLocked=false;
+  status();
+  tileInfo(tile);
+  toast(adjacent(x,z)?'Берег расширен островным тайлом.':'Новый остров поднялся в свете маяка.');
+}
+async function placeRemoteLighthouse(card,x,z){
+  if(!canPlaceRemoteLighthouse(x,z))return toast('Удалённый маяк можно основать не дальше четырёх клеток от известной суши.');
+  const tile=addLand(x,z,{refresh:false});
+  state.inputLocked=true;
+  await animateLandRise(tile);
+  refreshTerrainNeighborhood(x,z);
+  await setLighthouse(tile,true);
+  spend(card.id);
+  state.inputLocked=false;
+  status();
+  tileInfo(tile);
+  toast('Маяк основан вдали. Островные тайлы можно ставить в радиусе 3 клеток вокруг него.');
+}
+function waterStructureInfo(structure){
+  if(!structure){
+    ui.tileInfo.classList.add('hidden');
+    return;
+  }
+  if(structure.type==='pier'){
+    ui.tileTitle.textContent='Причал';
+    const component=landComponent(structure.shoreKey);
+    const routes=[...state.seaRoutes].filter(route=>route.includes(structure.key)).length;
+    ui.tileCopy.textContent=routes
+      ?`Морской причал · активных маршрутов: ${routes}. Лодка связывает этот остров с другими берегами.`
+      :`Морской причал у острова из ${component.size} клеток. Постройте причал на отдельном острове, чтобы открыть маршрут.`;
+  }
+  ui.tileInfo.classList.remove('hidden');
 }
 function clearContent(t){
   if(t.content){
@@ -1371,6 +1647,7 @@ function ready(){
 function randomType(){
   const pool=DECK_WEIGHTS.filter(([type])=>{
     if(type==='market'&&!state.unlocks.market)return false;
+    if(type==='fishingShop'&&!state.unlocks.fishingShop)return false;
     return true;
   });
   const total=pool.reduce((s,[,w])=>s+w,0);
@@ -1646,7 +1923,8 @@ function tileInfo(t){
   }
   const names={
     empty:'Свободная земля',tree:'Лес',rock:'Камни',field:'Поле',mill:'Мельница',
-    house:'Дом',market:'Рынок',lumbermill:'Лесопилка',quarry:'Каменоломня'
+    house:'Дом',market:'Рынок',lumbermill:'Лесопилка',quarry:'Каменоломня',
+    lighthouse:'Маяк',fishingShop:'Рыболовный магазин'
   };
   ui.tileTitle.textContent=names[t.type];
   if(t.type==='field'){
@@ -1657,6 +1935,12 @@ function tileInfo(t){
       const group=connectedNormalFields(t);
       ui.tileCopy.textContent=`Связное поле: ${group.length} ${group.length===1?'часть':'части'}. Стадия ${t.stage}/4 растёт при добавлении соседнего поля по стороне.`;
     }
+  }else if(t.type==='lighthouse'){
+    ui.tileCopy.textContent='Маяк освещает море в радиусе 3 клеток. В этом радиусе островные тайлы можно ставить без соприкосновения с существующей сушей.';
+  }else if(t.type==='fishingShop'){
+    const houses=nearby(t,'house');
+    const piers=nearbyPiers(t);
+    ui.tileCopy.textContent=`Рыболовный магазин · домов рядом: ${houses}, причалов рядом: ${piers}. Сочетание порта и поселения даёт максимальную карточную награду.`;
   }else if(t.type==='tree'||t.type==='rock'){
     const progress=t.resourceSources?.size||0;
     ui.tileCopy.textContent=`${t.type==='tree'?'Лес':'Камни'}: обработка ${progress}/2. Первая обработка даёт ресурс, вторая освобождает клетку.`;
@@ -1802,6 +2086,44 @@ async function apply(card,t){
     return;
   }
 
+  if(card.type==='lighthouse'){
+    if(t.type!=='empty')return toast('Для маяка нужна свободная клетка суши.');
+    state.inputLocked=true;
+    await setLighthouse(t,true);
+    spend(card.id);
+    state.inputLocked=false;
+    status();
+    return toast('Маяк зажжён. Он открывает удалённое строительство островов в радиусе 3 клеток.');
+  }
+
+  if(card.type==='fishingShop'){
+    if(t.type!=='empty')return toast('Рыболовному магазину нужна свободная клетка суши.');
+    state.inputLocked=true;
+    await setFishingShop(t,true);
+    spend(card.id);
+
+    const houses=nearby(t,'house');
+    const piers=nearbyPiers(t);
+    const nearPier=piers>0;
+    const nearHomes=houses>=2;
+    let bonusCards=(nearPier?1:0)+(nearHomes?1:0)+(nearPier&&nearHomes?1:0);
+    const score=45+Math.min(3,houses)*20+Math.min(2,piers)*35;
+    state.harvestScore+=score;
+    if(bonusCards){
+      grantCards(bonusCards);
+      spawnCardBurst(t.visual.position.clone(),bonusCards);
+    }
+    if(nearPier&&nearHomes)state.comboCount++;
+    spawnBurst(t.visual.position.clone(),0x71b7a0,14);
+    state.inputLocked=false;
+    status();
+
+    if(nearPier&&nearHomes)return toast(`Портовый квартал! +${score} очков и +3 карты за причал и жилой район.`);
+    if(nearPier)return toast(`Магазин у причала: +${score} очков и +1 карта.`);
+    if(nearHomes)return toast(`Магазин у жилого квартала: +${score} очков и +1 карта.`);
+    return toast(`Рыболовный магазин открыт, но без причала и жилого района пока не даёт карты. +${score} очков.`);
+  }
+
   if(['house','market','lumbermill','quarry'].includes(card.type)){
     const isProducer=card.type==='lumbermill'||card.type==='quarry';
 
@@ -1896,7 +2218,11 @@ renderer.domElement.onpointerup=async e=>{
   if(card&&!canAfford(card.type))return toast('Не хватает ресурсов для установки.');
   const tileHit=hits.find(h=>tileOf(h.object));
   const t=tileHit?tileOf(tileHit.object):null;
-  if(!card)return tileInfo(t);
+  if(!card){
+    if(t)return tileInfo(t);
+    const structureHit=hits.find(h=>waterStructureOf(h.object));
+    return structureHit?waterStructureInfo(waterStructureOf(structureHit.object)):tileInfo(null);
+  }
 
   if(card.type==='expand'){
     const wh=hits.find(h=>h.object===waterPlane);
@@ -1916,19 +2242,53 @@ renderer.domElement.onpointerup=async e=>{
     return toast('Новый кусок острова поднялся из воды.');
   }
 
+  if(card.type==='pier'||card.type==='island'){
+    const cell=snappedWaterCell(hits);
+    if(!cell)return toast('Эту карту нужно поставить на воду.');
+    if(card.type==='pier')return placePier(card,cell.x,cell.z);
+    return placeIsland(card,cell.x,cell.z);
+  }
+
+  if(card.type==='lighthouse'&&!t){
+    const cell=snappedWaterCell(hits);
+    if(!cell)return toast('Маяк нужно поставить на сушу или в море недалеко от известного берега.');
+    return placeRemoteLighthouse(card,cell.x,cell.z);
+  }
+
   if(!t)return toast('Эту карту нужно применить к клетке острова.');
   await apply(card,t);
 };
 renderer.domElement.onpointermove=e=>{
   if(state.inputLocked){hoverMarker.visible=false;return;}
   const hits=hitsAt(e.clientX,e.clientY);
+  const card=state.hand.find(c=>c.id===state.selectedCardId);
   const tileHit=hits.find(h=>tileOf(h.object));
   const t=tileHit?tileOf(tileHit.object):null;
+
+  if(card&&['expand','pier','island'].includes(card.type)||card?.type==='lighthouse'&&!t){
+    const cell=snappedWaterCell(hits);
+    if(!cell){hoverMarker.visible=false;return;}
+    const valid=
+      card.type==='expand'?canExpand(cell.x,cell.z):
+      card.type==='pier'?canPlacePier(cell.x,cell.z):
+      card.type==='island'?canPlaceIsland(cell.x,cell.z):
+      canPlaceRemoteLighthouse(cell.x,cell.z);
+    hoverMarker.visible=true;
+    hoverMarker.position.set(cell.x*GRID.tileSize,-.45,cell.z*GRID.tileSize);
+    hoverMarker.material.color.setHex(valid?0x86dec3:0xd97b6f);
+    hoverMarker.material.opacity=valid?.27:.17;
+    return;
+  }
+
   if(t){
     hoverMarker.visible=true;
     hoverMarker.position.set(t.visual.position.x,.17,t.visual.position.z);
-    const card=state.hand.find(c=>c.id===state.selectedCardId);
-    const valid=!card||card.type==='clear'?true:t.type==='empty'||card.type==='field'&&t.type==='field'||card.type==='mill'&&((!state.millCell&&t.type==='empty')||(state.millCell&&t.type==='mill'))||(card.type==='lumbermill'||card.type==='quarry')&&t.type===card.type;
+    const valid=!card||card.type==='clear'?true:
+      card.type==='lighthouse'?t.type==='empty':
+      card.type==='fishingShop'?t.type==='empty':
+      t.type==='empty'||card.type==='field'&&t.type==='field'||
+      card.type==='mill'&&((!state.millCell&&t.type==='empty')||(state.millCell&&t.type==='mill'))||
+      (card.type==='lumbermill'||card.type==='quarry')&&t.type===card.type;
     hoverMarker.material.color.setHex(valid?0xf6df86:0xd97b6f);
     hoverMarker.material.opacity=valid?.24:.16;
   }else{
@@ -1944,6 +2304,12 @@ function rotate(a){
   camera.lookAt(controls.target);
   controls.update();
 }
+ui.marineChoice.addEventListener('click',e=>{
+  const button=e.target.closest('[data-marine-choice]');
+  if(!button)return;
+  resolveMarineChoice(button.dataset.marineChoice);
+});
+
 window.onkeydown=e=>{
   if(e.key==='Escape'){
     state.selectedCardId=null;
@@ -1964,6 +2330,12 @@ function tick(time){
   updateFieldMotion(time);
   const bladeSpeed=.75+state.bladeBoost;
   for(const blades of state.millBlades)blades.rotation.z+=dt*bladeSpeed;
+  for(const beam of state.lighthouseBeams)beam.rotation.y+=dt*.72;
+  for(const actor of state.marineActors){
+    if(!actor.object?.parent)continue;
+    actor.object.position.y=actor.baseY+Math.sin(time*.00145+actor.phase)*.055;
+    actor.object.rotation.z=Math.sin(time*.0011+actor.phase)*.025;
+  }
   state.bladeBoost=Math.max(0,state.bladeBoost-dt*1.8);
   water.material.opacity=.90+Math.sin(time*.0006)*.025;
   water.rotation.z=Math.sin(time*.00015)*.01;
@@ -1975,6 +2347,7 @@ async function boot(){
   startLoadingPhrases();
   seed();
   ['tree','lumbermill','rock','quarry','field'].forEach(t=>addCard(draw(t)));
+  addCard(draw('pier'));
   renderHand();
   status();
   const loading=preload();
@@ -1984,7 +2357,7 @@ async function boot(){
   refreshLucide();
   status();
   await finishLoadingScreen();
-  toast('Стадия поля теперь растёт от соседних частей: соберите связную группу из 4.');
+  toast('В запасе уже лежит причал: потратьте карту из руки, чтобы открыть морскую ветку.');
 }
 boot().catch(e=>{
   console.error(e);

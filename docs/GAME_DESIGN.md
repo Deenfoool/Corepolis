@@ -210,3 +210,41 @@ Mill fields use the same spatial idea, with the Mill acting as the shared centre
 A large Mill harvest clears the four planted field cells after collecting them. This is required by the spatial model: the next crop cycle must be grown by placing neighbouring fields again rather than repeatedly stacking cards on existing plots.
 
 The large numeric stage sprites above fields were removed. Wheat_1 through Wheat_4 are now the primary stage indicator; exact stage remains available in the objective panel and tile information.
+
+
+## Maritime progression
+
+The maritime branch begins with a **Pier** card.
+
+### Pier
+- Pier placement targets a water grid cell and requires cardinal contact with land.
+- The Pier automatically faces away from its shore attachment.
+- A small boat lives beside every Pier and receives a restrained water bob animation.
+- The first Pier opens a one-time expedition choice and unlocks the Fishing Shop.
+- A Pier built on a landmass different from an existing Pier creates a sea route: +125 score and +2 cards.
+
+### First expedition choice
+**Explore the archipelago**
+- gain 7 Island Tile cards.
+
+**Light a fire in the distance**
+- gain 1 Lighthouse card;
+- gain 2 Island Tile cards.
+
+Both paths also grant the first Fishing Shop card.
+
+### Island Tile
+Island Tile raises a new terrain cell from the sea. Normally it must touch existing land. A Lighthouse extends this rule: Island Tiles can also be founded within 3 grid cells of any Lighthouse even with open water between them.
+
+### Lighthouse
+A Lighthouse can be placed on normal empty land, or directly into water up to about 4 grid cells from known land. Water placement raises a one-cell lighthouse island first. This gives the player a deliberate way to seed distant archipelagos.
+
+### Fishing Shop
+Fishing Shop is a land building unlocked by the first Pier.
+- adjacent Pier: +1 card;
+- at least 2 nearby Houses: +1 card;
+- satisfying both at once creates a **Port Quarter** combo for one additional card (3 total).
+The building also awards placement score scaled by nearby houses and piers.
+
+### TIDELINE visual source
+The intended production models are from **TIDELINE — Coastal Harbor** by Candle Light. The free sample is advertised as 12 selected GLB + FBX models with commercial project use. itch.io gates the actual archive behind its interactive download screen, so no TIDELINE binary files are vendored in the repository yet. Current marine visuals are isolated in `src/marine-visuals.js` and must be replaced/deleted as soon as the exact TIDELINE GLBs are added.

@@ -345,6 +345,48 @@ h1{font-size:21px;line-height:1;letter-spacing:.13em;margin:5px 0 0;color:#2f402
   52%{transform:translateY(-4px) scale(1.008)}
   100%{transform:translateY(0) scale(1)}
 }
+.marine-choice{
+  position:fixed;inset:0;z-index:8500;display:grid;place-items:center;padding:24px;
+  background:rgba(31,65,70,.36);backdrop-filter:blur(8px);
+  animation:marine-choice-in .24s ease both
+}
+.marine-choice-card{
+  width:min(720px,100%);padding:26px;border-radius:24px;
+  background:linear-gradient(155deg,rgba(255,253,238,.985),rgba(234,235,212,.97));
+  box-shadow:0 34px 90px rgba(32,61,63,.34),inset 0 1px rgba(255,255,255,.9)
+}
+.marine-choice-card h2{margin:5px 0 6px;font-size:27px;color:#30483e}
+.marine-choice-card>p{margin:0 0 20px;color:#718070;font-size:12px;line-height:1.55}
+.marine-choice-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.marine-choice-grid button{
+  appearance:none;border:1px solid rgba(79,100,77,.14);border-radius:18px;padding:18px;
+  text-align:left;cursor:pointer;color:#354a3d;
+  background:linear-gradient(145deg,rgba(255,255,248,.9),rgba(224,232,206,.86));
+  box-shadow:0 9px 20px rgba(52,74,61,.09);
+  transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease
+}
+.marine-choice-grid button:hover{
+  transform:translateY(-3px);border-color:rgba(99,139,91,.42);
+  box-shadow:0 14px 28px rgba(52,74,61,.14)
+}
+.marine-choice-grid strong{display:block;margin:10px 0 7px;font-size:17px}
+.marine-choice-grid small{display:block;min-height:42px;color:#68766a;font-size:10px;line-height:1.5}
+.marine-choice-grid em{
+  display:block;margin-top:13px;font-style:normal;font-size:8px;font-weight:900;letter-spacing:.12em;color:#9b7b3c
+}
+.marine-choice-icon{
+  display:grid;place-items:center;width:38px;height:38px;border-radius:12px;
+  color:#f8f3da;background:#557360;box-shadow:0 7px 15px rgba(54,80,64,.18)
+}
+.marine-choice-icon svg{width:19px;height:19px}
+.marine-choice-note{
+  display:flex;align-items:center;gap:7px;margin-top:14px;color:#738071;font-size:9px
+}
+.marine-choice-note svg{width:14px;height:14px}
+@keyframes marine-choice-in{
+  from{opacity:0}
+  to{opacity:1}
+}
 @media(max-width:900px){
   .objective{width:232px}.tile-info{display:none}.resource-chip{min-width:64px}.resource-chip.material{min-width:82px}.resource-chip.compact{display:none}.resource-icon{display:none}
   .hand{justify-content:flex-start;overflow-x:auto;padding:10px 2px 3px}.card{flex:0 0 158px;height:220px}
@@ -352,6 +394,7 @@ h1{font-size:21px;line-height:1;letter-spacing:.13em;margin:5px 0 0;color:#2f402
   .reserve-zone{right:8px;bottom:8px;width:118px;height:190px}.reserve-stack{width:110px;height:175px}.reserve-card{width:88px;height:124px;border-radius:12px}.reserve-meta{top:0;right:0}
 }
 @media(max-width:620px){
+  .marine-choice{padding:12px}.marine-choice-card{padding:18px;border-radius:19px}.marine-choice-card h2{font-size:22px}.marine-choice-grid{grid-template-columns:1fr}.marine-choice-grid small{min-height:0}
   .topbar{align-items:center}.brand-gem{width:32px;height:32px;border-radius:10px}h1{font-size:16px}
   .resource-row{gap:3px}.resource-chip{padding:5px 6px;min-width:48px;height:40px}.resource-chip.material{min-width:64px}.resource-chip small{font-size:6px}.resource-chip strong{font-size:12px}
   .objective{top:87px;width:205px;padding:11px}.objective>p{display:none}.objective-meter{margin-top:9px}
