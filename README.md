@@ -48,4 +48,4 @@ Costs are real gameplay rules. Resource/producers remain free so a run cannot de
 
 ### Hand and reserve
 
-The active hand is capped at five cards. Combo rewards beyond that limit are kept in a visible card-back reserve to the right of the hand. Playing a card promotes the next reserve card before a new random card is drawn.
+The active hand is capped at five cards. Combo rewards beyond that limit are kept in a dedicated lower-right reserve deck using the Corepolis card back. Each reserved card remains visible as a layered back, with a compact count badge for large combos. Playing a card promotes the next reserve card before a new random card is drawn, with a short deck-to-hand flight animation.

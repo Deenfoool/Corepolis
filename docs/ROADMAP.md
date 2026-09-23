@@ -38,7 +38,7 @@
 - [x] Rounded island tile visual pass
 - [x] Hovered-cell world highlight
 - [x] Per-building construction animations
-- [x] House smoke, market halo, lumbermill saw and mine lamp idle effects
+- [x] House smoke, market halo, lumbermill saw and quarry lamp idle effects
 - [x] High-quality HUD and card-hand visual pass
 - [x] Wood and Stone resource counters
 - [x] Two-step Tree/Lumbermill resource cycle
@@ -86,3 +86,8 @@
 - [x] Five-card hand limit with visible card-back reserve stack
 - [x] Bonus cards overflow into reserve and refill the hand before random draws
 - [x] Removed obsolete camera-help HUD
+
+- [x] Lower-right reserve deck with enlarged Corepolis card back
+- [x] Reserve-to-hand flight animation and reserve gain pulse
+- [x] Reserve count badge while keeping individual backs visible
+- [x] Hand cards no longer replay deal animation on every selection

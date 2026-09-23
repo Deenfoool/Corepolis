@@ -88,7 +88,7 @@ const pointer=new THREE.Vector2();
 
 const ui={
   loadingScreen:$('#loading-screen'),loadingBar:$('#loading-bar'),loadingProgress:$('#loading-progress'),
-  loadingDetail:$('#loading-detail'),hand:$('#hand'),handCount:$('#hand-count'),reserveStack:$('#reserve-stack'),
+  loadingDetail:$('#loading-detail'),hand:$('#hand'),handCount:$('#hand-count'),reserveZone:$('#reserve-zone'),reserveStack:$('#reserve-stack'),reserveCount:$('#reserve-count'),
   selectionHint:$('#selection-hint'),harvestScore:$('#harvest-score'),comboCount:$('#combo-count'),
   landCount:$('#land-count'),woodCount:$('#wood-count'),stoneCount:$('#stone-count'),
   objectiveTitle:$('#objective-title'),objectiveCopy:$('#objective-copy'),
@@ -114,6 +114,7 @@ const state={
   tweens:[],
   ambientActors:[],
   cardPreviews:new Map(),
+  knownHandCardIds:new Set(),
   inputLocked:false
 };
 
@@ -1102,8 +1103,10 @@ function addCard(card,{priority=false}={}){
   state.reserve.push(card);
 }
 function grantCards(count){
+  const reserveBefore=state.reserve.length;
   for(let i=0;i<count;i++)addCard(draw());
   renderHand();
+  if(state.reserve.length>reserveBefore)animateReserveGain();
 }
 async function setMill(t){
   clearContent(t);
@@ -1148,9 +1151,17 @@ function randomType(){
 }
 const draw=(type=randomType())=>({id:state.nextCardId++,type});
 function refillHand(){
+  const promoted=[];
   while(state.hand.length<HAND_LIMIT){
-    state.hand.push(state.reserve.length?state.reserve.shift():draw());
+    if(state.reserve.length){
+      const card=state.reserve.shift();
+      state.hand.push(card);
+      promoted.push(card);
+    }else{
+      state.hand.push(draw());
+    }
   }
+  return promoted;
 }
 function cardCost(type){
   return CARD_DEFS[type]?.cost||{};
@@ -1184,37 +1195,91 @@ function spend(id){
   if(i<0)return false;
   const card=state.hand[i];
   if(!canAfford(card.type))return false;
+
+  const nextReserve=state.reserve[0];
+  const sourceEl=nextReserve?ui.reserveStack.querySelector(`[data-card-id="${nextReserve.id}"]`):null;
+  const sourceRect=sourceEl?.getBoundingClientRect?.()||null;
+
   payCardCost(card.type);
   state.hand.splice(i,1);
   state.selectedCardId=null;
-  refillHand();
+  const promoted=refillHand();
   renderHand();
+
+  if(promoted.length&&sourceRect){
+    requestAnimationFrame(()=>animateReserveDraw(promoted[0].id,sourceRect));
+  }
+
   status();
   return true;
 }
 function ensureUpgrade(){
   const hasUpgrade=[...state.hand,...state.reserve].some(c=>c.type==='millUpgrade');
+  const reserveBefore=state.reserve.length;
   if(ready()&&!hasUpgrade)addCard(draw('millUpgrade'),{priority:true});
   renderHand();
+  if(state.reserve.length>reserveBefore)animateReserveGain();
+}
+function animateReserveGain(){
+  if(!ui.reserveStack||matchMedia('(prefers-reduced-motion: reduce)').matches)return;
+  ui.reserveStack.classList.remove('gain');
+  void ui.reserveStack.offsetWidth;
+  ui.reserveStack.classList.add('gain');
+  setTimeout(()=>ui.reserveStack.classList.remove('gain'),520);
+}
+function animateReserveDraw(cardId,sourceRect){
+  const target=ui.hand.querySelector(`[data-card-id="${cardId}"]`);
+  if(!target||!sourceRect||matchMedia('(prefers-reduced-motion: reduce)').matches)return;
+
+  const targetRect=target.getBoundingClientRect();
+  const flyer=document.createElement('span');
+  flyer.className='reserve-fly-card';
+  flyer.style.left=`${sourceRect.left}px`;
+  flyer.style.top=`${sourceRect.top}px`;
+  flyer.style.width=`${sourceRect.width}px`;
+  flyer.style.height=`${sourceRect.height}px`;
+  document.body.appendChild(flyer);
+
+  const dx=targetRect.left-sourceRect.left;
+  const dy=targetRect.top-sourceRect.top;
+  const scaleX=targetRect.width/sourceRect.width;
+  const scaleY=targetRect.height/sourceRect.height;
+  const flight=flyer.animate([
+    {transform:'translate3d(0,0,0) rotate(-4deg) scale(1)',opacity:1},
+    {offset:.58,transform:`translate3d(${dx*.62}px,${dy*.48-82}px,0) rotate(7deg) scale(1.08)`,opacity:1},
+    {transform:`translate3d(${dx}px,${dy}px,0) rotate(0deg) scale(${scaleX},${scaleY})`,opacity:.12}
+  ],{
+    duration:560,
+    easing:'cubic-bezier(.2,.78,.2,1)',
+    fill:'forwards'
+  });
+
+  flight.finished.finally(()=>{
+    flyer.remove();
+    target.animate(
+      [{filter:'brightness(1.24)'},{filter:'brightness(1)'}],
+      {duration:260,easing:'ease-out'}
+    );
+  });
 }
 function renderReserve(){
   ui.reserveStack.replaceChildren();
   const count=state.reserve.length;
-  ui.reserveStack.classList.toggle('hidden',count===0);
-  ui.reserveStack.setAttribute('aria-label',count?`Запас: ${count} карт`:'Запас пуст');
-  ui.reserveStack.title=count?`Запас: ${count} карт`:'';
+  ui.reserveZone.classList.toggle('hidden',count===0);
+  ui.reserveZone.setAttribute('aria-label',count?`Запас: ${count} карт`:'Запас пуст');
+  ui.reserveCount.textContent=String(count);
   if(!count)return;
 
-  const yStep=count>1?Math.min(10,96/(count-1)):0;
-  const xStep=count>1?Math.min(1.6,14/(count-1)):0;
+  const yStep=count>1?Math.min(8.5,78/(count-1)):0;
+  const xStep=count>1?Math.min(1.25,12/(count-1)):0;
   state.reserve.forEach((card,index)=>{
     const back=document.createElement('span');
     back.className='reserve-card';
     back.dataset.cardId=String(card.id);
     back.style.setProperty('--stack-y',(index*yStep).toFixed(2));
     back.style.setProperty('--stack-x',(index*xStep).toFixed(2));
-    back.style.setProperty('--stack-index',String(index+1));
-    back.style.setProperty('--stack-tilt',`${((index%3)-1)*.75}deg`);
+    back.style.setProperty('--stack-index',String(count-index));
+    back.style.setProperty('--stack-tilt',`${((index%3)-1)*.55}deg`);
     back.setAttribute('aria-hidden','true');
     ui.reserveStack.appendChild(back);
   });
@@ -1225,10 +1290,12 @@ function renderHand(){
     const d=CARD_DEFS[c.type];
     const b=document.createElement('button');
     const affordable=canAfford(c.type);
-    b.className=`card ${d.tone}${state.selectedCardId===c.id?' active':''}${affordable?'':' unaffordable'}`;
+    const isNew=!state.knownHandCardIds.has(c.id);
+    b.className=`card ${d.tone}${state.selectedCardId===c.id?' active':''}${affordable?'':' unaffordable'}${isNew?' deal-in':''}`;
     b.dataset.cardId=String(c.id);
     b.disabled=!affordable;
     b.style.setProperty('--deal-index',String(state.hand.indexOf(c)));
+    state.knownHandCardIds.add(c.id);
 
     const preview=state.cardPreviews.get(c.type);
     b.innerHTML=`
@@ -1595,7 +1662,7 @@ async function boot(){
   await buildCardPreviews();
   refreshLucide();
   status();
-  toast('В руке максимум 5 карт — бонусные карты складываются справа в запас.');
+  toast('Колода запаса перенесена вправо: бонусные карты складываются туда и прилетают в руку при розыгрыше.');
 }
 boot().catch(e=>{
   console.error(e);

@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#8dc9d7" />
   <title>Corepolis — Island Card Builder</title>
   <link rel="preload" as="image" href="./assets/cards/corepolis-card-back.webp" type="image/webp" />
-  <link rel="stylesheet" href="./styles.css?v=hand-reserve-1" />
+  <link rel="stylesheet" href="./styles.css?v=corner-deck-1" />
   <script defer src="https://unpkg.com/lucide@1.47.0"></script>
   <script type="importmap">
   {
@@ -76,11 +76,13 @@
         <div class="hand-label"><span class="section-icon"><i data-lucide="hand"></i></span><b>РУКА</b><span class="hand-count"><b id="hand-count">0</b> карт</span></div>
         <span id="selection-hint">Выберите карту</span>
       </div>
-      <div class="hand-row">
-        <div id="hand" class="hand" aria-label="Рука карт"></div>
-        <div id="reserve-stack" class="reserve-stack hidden" aria-label="Запас карт"></div>
-      </div>
+      <div id="hand" class="hand" aria-label="Рука карт"></div>
     </section>
+
+    <aside id="reserve-zone" class="reserve-zone hidden" aria-label="Запас карт">
+      <div class="reserve-meta"><span>ЗАПАС</span><b id="reserve-count">0</b></div>
+      <div id="reserve-stack" class="reserve-stack"></div>
+    </aside>
 
     <aside id="tile-info" class="tile-info panel hidden">
       <div class="panel-heading">
@@ -94,6 +96,6 @@
     </aside>
   </div>
 
-  <script type="module" src="./src/main.js?v=hand-reserve-1"></script>
+  <script type="module" src="./src/main.js?v=corner-deck-1"></script>
 </body>
 </html>
