@@ -120,3 +120,18 @@ Current installation costs:
 - New Windmill — 4 Wood + 3 Stone
 
 The cost is paid only after a legal action is committed.
+
+
+## Farmland visual language
+
+Fields use a dedicated farmland renderer rather than placeholder stalks:
+
+- stage I is mostly cultivated soil with sparse young rows;
+- stage II fills out into clear green crop rows;
+- stage III becomes taller and shifts toward harvest colors;
+- stage IV is dense golden wheat with visible grain heads;
+- mill-adjacent fields use a warmer highlight ring;
+- crop rows sway continuously and grow upward with a staggered animation;
+- field collapse pulls all four plots toward the oldest piece and finishes with a stronger harvest burst.
+
+The Field card preview is rendered from this same runtime field model, so card art and world art cannot drift apart.
