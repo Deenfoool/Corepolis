@@ -641,6 +641,24 @@ function fieldVisual(stage,synergy=false){
     ridge.position.set(0,.34,z); ridge.receiveShadow=true; g.add(ridge);
     const row=createFieldRow(stage,r,synergy); row.position.set(0,.355,z); g.add(row); g.userData.cropRows.push(row);
   }
+  const edgeMat=new THREE.MeshStandardMaterial({color:synergy?0xb89a57:0x8d7148,roughness:.96});
+  const edges=[
+    [0,.39,-1.82,3.64,.08,.09],[0,.39,1.82,3.64,.08,.09],
+    [-1.82,.39,0,.09,.08,3.64],[1.82,.39,0,.09,.08,3.64]
+  ];
+  for(const [x,y,z,w,h,d] of edges){
+    const edge=new THREE.Mesh(new RoundedBoxGeometry(w,h,d,2,.035),edgeMat);
+    edge.position.set(x,y,z); edge.castShadow=edge.receiveShadow=true; g.add(edge);
+  }
+  if(stage>=2){
+    const detailMat=new THREE.MeshStandardMaterial({color:synergy?0xf0d57a:0xc6d99a,roughness:.9});
+    const spots=[[-1.55,-1.55],[1.52,-1.5],[-1.48,1.54],[1.55,1.5]];
+    const count=stage===2?2:stage===3?3:4;
+    for(let n=0;n<count;n++){
+      const detail=new THREE.Mesh(new THREE.IcosahedronGeometry(.05+(n%2)*.01,1),detailMat);
+      detail.position.set(spots[n][0],.43,spots[n][1]); detail.scale.set(1,.7,1); detail.castShadow=true; g.add(detail);
+    }
+  }
   if(synergy){
     const glow=new THREE.Mesh(new THREE.RingGeometry(1.72,1.88,40),new THREE.MeshBasicMaterial({color:0xf2cf72,transparent:true,opacity:stage>=4?.30:.16,side:THREE.DoubleSide,depthWrite:false}));
     glow.rotation.x=-Math.PI/2; glow.position.y=.405; g.add(glow); g.userData.synergyGlow=glow;
