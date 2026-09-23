@@ -139,3 +139,9 @@
 - [x] Sea-route reward between piers on separate landmasses
 - [x] Replace Pier and Fishing Shop visuals with real TIDELINE free-sample GLBs
 - [ ] Replace the temporary boat and lighthouse visuals when matching TIDELINE models are available
+
+- [x] Remove the raised border/rim from farmland tiles completely
+- [x] Replace rectangular furrow bars with rounded low-poly sculpted ridges
+- [x] Merge adjacent field soil visually across shared tile boundaries
+- [x] Rebuild field edges when neighbouring field connectivity changes
+- [x] Replace Mill-field perimeter glow with warmer borderless soil styling

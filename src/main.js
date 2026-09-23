@@ -1093,7 +1093,104 @@ function createWheatRow(stage,rowIndex,synergy=false){
   return row;
 }
 
-function fieldVisual(stage,synergy=false){
+function fieldAdjacency(t){
+  if(!t)return{north:false,east:false,south:false,west:false};
+  return{
+    north:state.land.get(key(t.x,t.z-1))?.type==='field',
+    east:state.land.get(key(t.x+1,t.z))?.type==='field',
+    south:state.land.get(key(t.x,t.z+1))?.type==='field',
+    west:state.land.get(key(t.x-1,t.z))?.type==='field'
+  };
+}
+function fieldAdjacencySignature(t){
+  const a=fieldAdjacency(t);
+  return `${a.north?1:0}${a.east?1:0}${a.south?1:0}${a.west?1:0}`;
+}
+function createFieldRidge(length,width,height,{westConnected=false,eastConnected=false,seed=0}={}){
+  const xSegments=10;
+  const zSegments=6;
+  const positions=[];
+  const colors=[];
+  const indices=[];
+  const baseColor=new THREE.Color(0x8a5b2d);
+  const crestColor=new THREE.Color(0xa36d36);
+
+  for(let xi=0;xi<=xSegments;xi++){
+    const tx=xi/xSegments;
+    const x=(tx-.5)*length;
+    const leftTaper=westConnected?1:Math.min(1,tx/.13);
+    const rightTaper=eastConnected?1:Math.min(1,(1-tx)/.13);
+    const endTaper=Math.sin(Math.min(1,leftTaper,rightTaper)*Math.PI*.5);
+    const longWobble=Math.sin((xi+seed*.73)*1.37)*.026;
+
+    for(let zi=0;zi<=zSegments;zi++){
+      const tz=zi/zSegments;
+      const z=(tz-.5)*width;
+      const arch=Math.sin(Math.PI*tz);
+      const facet=1+Math.sin((xi*3+zi*5+seed)*1.11)*.035;
+      const y=.285+height*arch*endTaper*facet+longWobble*arch;
+      positions.push(x,y,z);
+
+      const c=baseColor.clone().lerp(crestColor,Math.pow(arch,1.25)*.72);
+      const shade=((xi*17+zi*11+seed*13)%5-2)*.018;
+      c.offsetHSL(0,0,shade);
+      colors.push(c.r,c.g,c.b);
+    }
+  }
+
+  const row=zSegments+1;
+  for(let xi=0;xi<xSegments;xi++)for(let zi=0;zi<zSegments;zi++){
+    const a=xi*row+zi;
+    const b=(xi+1)*row+zi;
+    const c=(xi+1)*row+zi+1;
+    const d=xi*row+zi+1;
+    indices.push(a,b,d,b,c,d);
+  }
+
+  const geometry=new THREE.BufferGeometry();
+  geometry.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));
+  geometry.setAttribute('color',new THREE.Float32BufferAttribute(colors,3));
+  geometry.setIndex(indices);
+  geometry.computeVertexNormals();
+
+  const mesh=new THREE.Mesh(
+    geometry,
+    new THREE.MeshStandardMaterial({
+      vertexColors:true,
+      roughness:1,
+      flatShading:true
+    })
+  );
+  mesh.castShadow=mesh.receiveShadow=true;
+  return mesh;
+}
+function addFieldClods(group,stage,west,east,north,south,synergy=false){
+  const clodMaterial=new THREE.MeshStandardMaterial({
+    color:synergy?0xa47238:0x7b4f28,
+    roughness:1,
+    flatShading:true
+  });
+  const count=[7,9,11,13][stage-1];
+  const maxX=Math.min(1.86,Math.max(.9,(west+east)*.36));
+  const maxZ=Math.min(1.86,Math.max(.9,(north+south)*.36));
+
+  for(let i=0;i<count;i++){
+    const px=((i*47+stage*19)%101)/100;
+    const pz=((i*71+stage*13)%97)/96;
+    const x=(px*2-1)*maxX;
+    const z=(pz*2-1)*maxZ;
+    const clod=new THREE.Mesh(
+      new THREE.IcosahedronGeometry(.045+(i%3)*.016,0),
+      clodMaterial
+    );
+    clod.position.set(x,.32+(i%2)*.008,z);
+    clod.rotation.set((i%5)*.27,(i%7)*.39,(i%3)*.18);
+    clod.scale.set(1.25,.72,.94);
+    clod.castShadow=true;
+    group.add(clod);
+  }
+}
+function fieldVisual(stage,synergy=false,tile=null){
   const g=new THREE.Group();
   g.userData.isField=true;
   g.userData.stage=stage;
@@ -1101,93 +1198,61 @@ function fieldVisual(stage,synergy=false){
   g.userData.cropRows=[];
 
   const safeStage=Math.max(1,Math.min(4,stage));
-  const patch=GRID.tileSize*.82;
-  const soilColors=[0x684622,0x6c4925,0x71502a,0x76552d];
+  const adjacency=fieldAdjacency(tile);
+  g.userData.adjacencySignature=tile?fieldAdjacencySignature(tile):'0000';
 
+  const joined=GRID.tileSize*.505;
+  const exposed=GRID.tileSize*.425;
+  const west=adjacency.west?joined:exposed;
+  const east=adjacency.east?joined:exposed;
+  const north=adjacency.north?joined:exposed;
+  const south=adjacency.south?joined:exposed;
+  const width=west+east;
+  const depth=north+south;
+  const offsetX=(east-west)*.5;
+  const offsetZ=(south-north)*.5;
+
+  const soilColors=[0x68431f,0x6c4822,0x724d27,0x79542c];
   const soil=new THREE.Mesh(
-    new RoundedBoxGeometry(patch,.20,patch,4,.16),
-    new THREE.MeshStandardMaterial({color:soilColors[safeStage-1],roughness:.98})
+    new RoundedBoxGeometry(width,.18,depth,3,.20),
+    new THREE.MeshStandardMaterial({
+      color:synergy?0x765027:soilColors[safeStage-1],
+      roughness:1,
+      flatShading:true
+    })
   );
-  soil.position.y=.17;
+  soil.position.set(offsetX,.205,offsetZ);
   soil.castShadow=soil.receiveShadow=true;
   g.add(soil);
 
-  const inner=new THREE.Mesh(
-    new RoundedBoxGeometry(patch*.91,.035,patch*.91,3,.12),
-    new THREE.MeshStandardMaterial({color:safeStage>=3?0x7d5a2e:0x60411f,roughness:1})
-  );
-  inner.position.y=.285;
-  inner.receiveShadow=true;
-  g.add(inner);
+  const ridgeCount=5;
+  const rowSpacing=GRID.tileSize/ridgeCount;
+  const ridgeWidth=.54;
+  const ridgeHeight=[.15,.17,.19,.21][safeStage-1];
+  const ridgeLength=width-.14;
 
-  const rows=safeStage===1?4:5;
-  const gap=2.95/Math.max(1,rows-1);
-  for(let r=0;r<rows;r++){
-    const z=-1.475+r*gap;
+  for(let r=0;r<ridgeCount;r++){
+    const z=-GRID.tileSize*.5+rowSpacing*(r+.5);
+    if(z<-north+.10||z>south-.10)continue;
 
-    const furrow=new THREE.Mesh(
-      new THREE.BoxGeometry(3.35,.026,.16),
-      new THREE.MeshStandardMaterial({color:0x4f351c,roughness:1})
-    );
-    furrow.position.set(0,.315,z);
-    furrow.receiveShadow=true;
-    g.add(furrow);
-
-    const ridge=new THREE.Mesh(
-      new THREE.BoxGeometry(3.22,.055,.26),
-      new THREE.MeshStandardMaterial({color:safeStage>=3?0x76502a:0x6f4b27,roughness:1})
-    );
-    ridge.position.set(0,.34,z);
-    ridge.receiveShadow=true;
+    const ridge=createFieldRidge(ridgeLength,ridgeWidth,ridgeHeight,{
+      westConnected:adjacency.west,
+      eastConnected:adjacency.east,
+      seed:r+safeStage*7
+    });
+    ridge.position.set(offsetX,0,z);
+    if(synergy)ridge.material.color?.offsetHSL?.(.015,.03,.035);
     g.add(ridge);
 
     const row=createWheatRow(safeStage,r,synergy);
-    row.position.set(0,.355,z);
+    row.position.set(offsetX,.43+ridgeHeight*.55,z);
+    const cropSpan=Math.max(2.6,ridgeLength-.48);
+    row.scale.x=cropSpan/3.05;
     g.add(row);
     g.userData.cropRows.push(row);
   }
 
-  const edgeMat=new THREE.MeshStandardMaterial({color:synergy?0xb89a57:0x8d7148,roughness:.96});
-  const edges=[
-    [0,.39,-1.82,3.64,.08,.09],[0,.39,1.82,3.64,.08,.09],
-    [-1.82,.39,0,.09,.08,3.64],[1.82,.39,0,.09,.08,3.64]
-  ];
-  for(const [x,y,z,w,h,d] of edges){
-    const edge=new THREE.Mesh(new RoundedBoxGeometry(w,h,d,2,.035),edgeMat);
-    edge.position.set(x,y,z);
-    edge.castShadow=edge.receiveShadow=true;
-    g.add(edge);
-  }
-
-  if(safeStage>=2){
-    const detailMat=new THREE.MeshStandardMaterial({color:synergy?0xf0d57a:0xc6d99a,roughness:.9});
-    const spots=[[-1.55,-1.55],[1.52,-1.5],[-1.48,1.54],[1.55,1.5]];
-    const count=safeStage===2?2:safeStage===3?3:4;
-    for(let n=0;n<count;n++){
-      const detail=new THREE.Mesh(new THREE.IcosahedronGeometry(.05+(n%2)*.01,1),detailMat);
-      detail.position.set(spots[n][0],.43,spots[n][1]);
-      detail.scale.set(1,.7,1);
-      detail.castShadow=true;
-      g.add(detail);
-    }
-  }
-
-  if(synergy){
-    const glow=new THREE.Mesh(
-      new THREE.RingGeometry(1.72,1.88,40),
-      new THREE.MeshBasicMaterial({
-        color:0xf2cf72,
-        transparent:true,
-        opacity:safeStage>=4?.30:.16,
-        side:THREE.DoubleSide,
-        depthWrite:false
-      })
-    );
-    glow.rotation.x=-Math.PI/2;
-    glow.position.y=.405;
-    g.add(glow);
-    g.userData.synergyGlow=glow;
-  }
+  addFieldClods(g,safeStage,west,east,north,south,synergy);
 
   return g;
 }
@@ -1206,7 +1271,6 @@ function animateFieldGrowth(field,stage,synergy=false){
       row.scale.set(baseScales[i].x,(.06+.94*q)*bounce,baseScales[i].z);
       row.position.y=THREE.MathUtils.lerp(baseYs[i]-.08,baseYs[i],q);
     });
-    if(field.userData.synergyGlow)field.userData.synergyGlow.material.opacity=(stage>=4?.30:.16)*(.45+.55*p);
   }).then(()=>{
     rows.forEach((row,i)=>{ row.scale.copy(baseScales[i]); row.position.y=baseYs[i]; });
   });
@@ -1219,11 +1283,6 @@ function updateFieldMotion(time){
       const amount=row.userData.swayAmount;
       row.rotation.z=Math.sin(phase)*amount;
       row.rotation.x=Math.cos(phase*.73)*amount*.32;
-    }
-    const glow=tile.content.userData.synergyGlow;
-    if(glow){
-      const base=tile.stage>=4?.30:.16;
-      glow.material.opacity=base+Math.sin(time*.0022+tile.x*.8+tile.z*.5)*.025;
     }
   }
 }
@@ -1276,7 +1335,7 @@ function setField(t,stage=1,animated=false,fieldOrder=null){
   clearContent(t);
   t.type='field'; t.stage=stage; t.fieldOrder=order;
   const synergy=isMillZone(t);
-  t.content=fieldVisual(stage,synergy);
+  t.content=fieldVisual(stage,synergy,t);
   t.visual.add(t.content);
   if(!animated)return Promise.resolve();
 
@@ -1470,10 +1529,13 @@ async function syncFieldCells(cells,stage,{animated=false,forceKeys=new Set()}={
   for(const cell of cells){
     const expectedSynergy=isMillZone(cell);
     const visualSynergy=!!cell.content?.userData?.synergy;
+    const expectedAdjacency=fieldAdjacencySignature(cell);
+    const visualAdjacency=cell.content?.userData?.adjacencySignature||'0000';
     const needsUpdate=
       forceKeys.has(cell.key)||
       cell.stage!==safeStage||
-      visualSynergy!==expectedSynergy;
+      visualSynergy!==expectedSynergy||
+      visualAdjacency!==expectedAdjacency;
     if(!needsUpdate)continue;
     tasks.push(setField(cell,safeStage,animated,cell.fieldOrder));
   }
@@ -2043,6 +2105,7 @@ async function harvest(){
     spawnBurst(t.visual.position.clone(),0xe5bd55,10);
     clearContent(t);
   }
+  await syncAllNormalFieldStages(false);
   grantCards(reward);
   spawnCardBurst(mill.visual.position.clone(),Math.min(4,reward));
   toast(`Большой урожай! +${reward} бонусных карт. Поля собраны — начинайте новый цикл.`);

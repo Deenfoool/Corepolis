@@ -124,20 +124,25 @@ The cost is paid only after a legal action is committed.
 
 ## Farmland visual language
 
-Fields use a dedicated farmland renderer rather than placeholder stalks:
+Fields use a dedicated borderless farmland renderer rather than a framed plot:
 
+- the old raised perimeter edging is removed completely;
+- the soil is a low rounded low-poly mass with no lip or fence around it;
+- five sculpted low-poly ridges form soft rounded furrows instead of flat rectangular strips;
 - stage I uses `Wheat_1.glb` in sparse young rows;
 - stage II uses `Wheat_2.glb` with denser growth;
 - stage III uses `Wheat_3.glb` as taller pre-harvest wheat;
 - stage IV uses `Wheat_4.glb` as the mature crop;
-- mill-adjacent fields use a warmer highlight ring;
+- small deterministic soil clods add surface variation without noisy random placement;
+- neighbouring Field cells extend their soil surface to the shared grid boundary, removing the visual gap between plots;
+- adjacency is tracked in the field visual signature so exposed edges are rebuilt when a neighbour appears or disappears;
+- mill-adjacent fields use warmer soil rather than a perimeter ring;
 - crop rows sway continuously and grow upward with a staggered animation;
 - field collapse pulls all four plots toward the oldest piece and finishes with a stronger harvest burst.
 
 The Field card preview is rendered from this same runtime field model, so card art and world art cannot drift apart.
 
-
-The crop meshes come from Quaternius Ultimate Crops Pack (CC0) and are stored locally as optimized GLB files. Corepolis keeps its own soil, furrows, edging, wind motion, mill-zone highlight and collapse effects around those meshes.
+The crop meshes come from Quaternius Ultimate Crops Pack (CC0) and are stored locally as optimized GLB files. Corepolis owns the procedural soil, rounded furrows, borderless merging, wind motion and collapse effects around those meshes.
 
 
 ## Building unlock progression
