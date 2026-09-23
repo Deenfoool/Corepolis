@@ -54,3 +54,8 @@ The active hand is capped at five cards. Combo rewards beyond that limit are kep
 ### Building unlocks
 
 Runs begin without constructed buildings. The first four-field combo unlocks the Mill card; the player chooses where to build it. The first connected six-house district unlocks Market. Locked building cards are excluded from random draws until their condition has been completed.
+
+
+### Seamless island terrain
+
+Corepolis now uses neighbour-aware procedural autotiling for island land. Grid seams remain geometrically fixed while exposed coastlines receive layered soil/rock cliffs, irregular silhouettes, deterministic variants and occasional hero details. Adding land rebuilds only the affected 3×3 neighbourhood, leaving buildings, resources and fields untouched.

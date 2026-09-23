@@ -4,6 +4,7 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { CARD_DEFS, DECK_WEIGHTS, DIRECTIONS, GRID } from './config.js';
 import { ASSETS } from './models.js?v=wheat-material-fix-1';
+import { buildTerrainTile, disposeTerrainTile } from './terrain.js?v=terrain-system-1';
 
 const $=s=>document.querySelector(s);
 const canvas=$('#game');
@@ -414,7 +415,14 @@ const CARD_PREVIEW_ASSET={
 };
 async function previewObjectFor(type){
   if(type==='field')return fieldVisual(2,false);
-  if(type==='expand')return tileMesh(0,0);
+  if(type==='expand'){
+    const preview=new THREE.Group();
+    preview.add(buildTerrainTile({
+      x:0,z:0,tileSize:GRID.tileSize,cellKey:'preview',
+      hasLand:()=>false
+    }));
+    return preview;
+  }
   const asset=CARD_PREVIEW_ASSET[type];
   if(!asset)return null;
   const model=(await load(ASSETS[asset])).clone(true);
@@ -485,47 +493,61 @@ async function preload(){
   setTimeout(()=>ui.loadingScreen.remove(),500);
 }
 
-function tileMesh(x,z){
-  const g=new THREE.Group();
-  g.position.copy(pos(x,z));
-  g.userData.cellKey=key(x,z);
-  const shade=((x*11+z*17)%7-3)*.012;
-  const soilColor=new THREE.Color(0x84683f).offsetHSL(0,0,shade*.5);
-  const grassColor=new THREE.Color(0x7faa5f).offsetHSL(0,.01,shade);
-  const soil=new THREE.Mesh(
-    new RoundedBoxGeometry(GRID.tileSize*.94,.72,GRID.tileSize*.94,4,.18),
-    new THREE.MeshStandardMaterial({color:soilColor,roughness:.96})
-  );
-  soil.position.y=-.38;
-  soil.castShadow=soil.receiveShadow=true;
-  g.add(soil);
-  const grass=new THREE.Mesh(
-    new RoundedBoxGeometry(GRID.tileSize*.97,.18,GRID.tileSize*.97,4,.20),
-    new THREE.MeshStandardMaterial({color:grassColor,roughness:.9})
-  );
-  grass.position.y=.03;
-  grass.castShadow=grass.receiveShadow=true;
-  grass.userData.cellKey=g.userData.cellKey;
-  g.add(grass);
-  const rim=new THREE.Mesh(
-    new RoundedBoxGeometry(GRID.tileSize*.91,.035,GRID.tileSize*.91,3,.17),
-    new THREE.MeshBasicMaterial({color:0xc7d98d,transparent:true,opacity:.13,depthWrite:false})
-  );
-  rim.position.y=.135;
-  rim.userData.cellKey=g.userData.cellKey;
-  g.add(rim);
-  return g;
+function createTileRoot(x,z){
+  const root=new THREE.Group();
+  root.position.copy(pos(x,z));
+  root.userData.cellKey=key(x,z);
+  return root;
 }
-function addLand(x,z){
+function rebuildTerrainTile(tile){
+  if(!tile)return;
+  if(tile.terrain){
+    if(tile.terrain.parent)tile.terrain.parent.remove(tile.terrain);
+    disposeTerrainTile(tile.terrain);
+    tile.terrain=null;
+  }
+
+  const terrain=buildTerrainTile({
+    x:tile.x,
+    z:tile.z,
+    tileSize:GRID.tileSize,
+    cellKey:tile.key,
+    hasLand:(x,z)=>state.land.has(key(x,z))
+  });
+  tile.visual.add(terrain);
+  tile.terrain=terrain;
+  tile.terrainType=terrain.userData.terrainType;
+  tile.terrainVariant=terrain.userData.terrainVariant;
+}
+function terrainNeighborhood(x,z){
+  const cells=[];
+  for(let dx=-1;dx<=1;dx++)for(let dz=-1;dz<=1;dz++){
+    const tile=state.land.get(key(x+dx,z+dz));
+    if(tile)cells.push(tile);
+  }
+  return cells;
+}
+function refreshTerrainNeighborhood(x,z){
+  for(const tile of terrainNeighborhood(x,z))rebuildTerrainTile(tile);
+}
+function refreshAllTerrain(){
+  for(const tile of state.land.values())rebuildTerrainTile(tile);
+}
+function addLand(x,z,{refresh=true}={}){
   const k=key(x,z);
   if(state.land.has(k))return state.land.get(k);
-  const t={
-    x,z,key:k,type:'empty',stage:0,visual:tileMesh(x,z),content:null,fieldOrder:null,
+
+  const tile={
+    x,z,key:k,type:'empty',stage:0,visual:createTileRoot(x,z),terrain:null,
+    terrainType:'island',terrainVariant:0,content:null,fieldOrder:null,
     resourceSources:new Set(),resourceMarker:null,ambientObjects:[]
   };
-  state.land.set(k,t);
-  world.add(t.visual);
-  return t;
+  state.land.set(k,tile);
+  world.add(tile.visual);
+
+  rebuildTerrainTile(tile);
+  if(refresh)refreshTerrainNeighborhood(x,z);
+  return tile;
 }
 function clearContent(t){
   if(t.content){
@@ -1199,8 +1221,9 @@ async function setMill(t){
 }
 function seed(){
   for(let x=-2;x<=2;x++)for(let z=-2;z<=2;z++){
-    if(Math.abs(x)+Math.abs(z)<=3||(Math.abs(x)<=1&&Math.abs(z)<=2))addLand(x,z);
+    if(Math.abs(x)+Math.abs(z)<=3||(Math.abs(x)<=1&&Math.abs(z)<=2))addLand(x,z,{refresh:false});
   }
+  refreshAllTerrain();
 }
 async function decorate(){
   for(const [x,z] of [[-2,-1],[2,1],[-1,2],[2,-1]]){
@@ -1511,6 +1534,12 @@ function tileInfo(t){
     ui.tileCopy.textContent=`${t.type==='tree'?'Лес':'Камни'}: обработка ${progress}/2. Первая обработка даёт ресурс, вторая освобождает клетку.`;
   }else if(t.type==='lumbermill'||t.type==='quarry'){
     ui.tileCopy.textContent='Положите такую же карту поверх постройки, чтобы завершить цикл: истощить соседнее сырьё, получить награду и освободить клетку производства.';
+  }else if(t.type==='empty'){
+    const terrainNames={
+      center:'внутренняя',edge:'берег', 'outer-corner':'внешний угол',
+      'inner-corner':'внутренний угол',channel:'пролив',peninsula:'полуостров',island:'отдельный островок'
+    };
+    ui.tileCopy.textContent=`Свободная земля · ${terrainNames[t.terrainType]||'остров'} · вариант ${(t.terrainVariant??0)+1}/5.`;
   }else{
     ui.tileCopy.textContent=`Клетка ${t.x}, ${t.z}.`;
   }
@@ -1732,10 +1761,11 @@ renderer.domElement.onpointerup=async e=>{
     const x=Math.round(wh.point.x/GRID.tileSize);
     const z=Math.round(wh.point.z/GRID.tileSize);
     if(!canExpand(x,z))return toast('Новая земля должна касаться существующего острова.');
-    const nt=addLand(x,z);
+    const nt=addLand(x,z,{refresh:false});
     spend(card.id);
     state.inputLocked=true;
     await animateLandRise(nt);
+    refreshTerrainNeighborhood(x,z);
     spawnBurst(nt.visual.position.clone(),0x9bc86d,10);
     state.inputLocked=false;
     status();

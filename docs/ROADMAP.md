@@ -95,3 +95,11 @@
 - [x] Reserve-to-hand flight animation and reserve gain pulse
 - [x] Reserve count badge while keeping individual backs visible
 - [x] Hand cards no longer replay deal animation on every selection
+
+- [x] Seamless 8-neighbour terrain autotiling
+- [x] Center / edge / outer-corner / inner-corner / channel / peninsula / island terrain classes
+- [x] Five deterministic visual variants per terrain tile
+- [x] Layered grass, soil, submerged stone and irregular cliff walls
+- [x] Coastline micro-detail and rare hero-edge decoration
+- [x] Rebuild neighbouring terrain after island expansion without touching tile content
+- [x] GPU cleanup for superseded terrain geometry/materials

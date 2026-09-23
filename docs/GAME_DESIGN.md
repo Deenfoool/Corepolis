@@ -154,3 +154,23 @@ Corepolis now starts with no constructed buildings on the island.
 - Unlocking Market immediately gives the player one Market card while preserving the five-card hand limit.
 
 Unlocks are one-time progression events and do not consume the triggering houses.
+
+
+## Seamless island terrain system
+
+The island is no longer rendered as repeated rounded boxes. Every land cell has a stable terrain root rebuilt from its eight neighbours.
+
+The top surface uses the exact grid size and a shared elevation, so cardinal neighbours meet without gaps, bevel seams or height steps. Visual irregularity is kept away from shared seams and moved to exposed coastlines, cliff walls and interior overlays.
+
+Autotile classes:
+- `center` — four cardinal neighbours;
+- `edge` — one exposed cardinal side;
+- `outer-corner` — two adjacent exposed sides;
+- `inner-corner` — all cardinal neighbours exist but a diagonal corner is open;
+- `channel` — opposite sides are exposed;
+- `peninsula` — only one cardinal neighbour remains;
+- `island` — fully isolated cell.
+
+Each coordinate deterministically selects one of five visual variants. The variation affects cliff faceting, embedded rocks, grass tufts and subtle interior tone without moving the shared tile boundary.
+
+Rare coastline cells receive a restrained hero treatment with an extra stone/flower cluster. Expansion rises with the previous coastline still visible; after the animation the new cell and its eight-neighbour area are rebuilt so obsolete cliff faces disappear and the joined surface becomes seamless.
