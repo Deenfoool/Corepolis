@@ -138,3 +138,19 @@ The Field card preview is rendered from this same runtime field model, so card a
 
 
 The crop meshes come from Quaternius Ultimate Crops Pack (CC0) and are stored locally as optimized GLB files. Corepolis keeps its own soil, furrows, edging, wind motion, mill-zone highlight and collapse effects around those meshes.
+
+
+## Building unlock progression
+
+Corepolis now starts with no constructed buildings on the island.
+
+- The first orthogonally connected four-field collapse unlocks **Mill**.
+- Unlocking Mill immediately places one Mill card into the active hand (displacing a normal card into reserve if the hand is full).
+- Until that first field combo, Mill is excluded from random draws.
+- The Mill is placed by the player on any empty land tile; its four cardinal neighbours become its growth zone.
+- After the Mill is built, a later Mill card can be played on the existing Mill when all four adjacent fields reach 4/4 to trigger the large harvest.
+- The first orthogonally connected group of six Houses unlocks **Market**.
+- Until that six-house combo exists, Market is excluded from random draws.
+- Unlocking Market immediately gives the player one Market card while preserving the five-card hand limit.
+
+Unlocks are one-time progression events and do not consume the triggering houses.

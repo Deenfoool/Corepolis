@@ -45,13 +45,13 @@ export const CARD_DEFS = {
     tone: 'red',
     description: 'Убрать дерево или камень и освободить клетку.',
   },
-  millUpgrade: {
-    category: 'АПГРЕЙД',
-    name: 'Новая мельница',
+  mill: {
+    category: 'ПОСТРОЙКА',
+    name: 'Мельница',
     icon: 'wind',
     cost: { wood: 4, stone: 3 },
     tone: 'blue',
-    description: 'Обновить мельницу. При 4 зрелых полях запускает большой урожай.',
+    description: 'Открывается первым комбо из 4 полей. Сначала строит мельницу, затем запускает большой урожай.',
   },
   house: {
     category: 'ПОСЕЛЕНИЕ',
@@ -67,7 +67,7 @@ export const CARD_DEFS = {
     icon: 'store',
     cost: { wood: 2, stone: 2 },
     tone: 'gold',
-    description: 'Даёт больше очков за каждый соседний дом.',
+    description: 'Открывается первым связным комбо из 6 домов. Даёт больше очков за соседние дома.',
   },
   lumbermill: {
     category: 'ПРОИЗВОДСТВО',
@@ -97,7 +97,7 @@ export const DECK_WEIGHTS = [
   ['market', 6],
   ['lumbermill', 7],
   ['quarry', 7],
-  ['millUpgrade', 6],
+  ['mill', 6],
 ];
 
 export const DIRECTIONS = [

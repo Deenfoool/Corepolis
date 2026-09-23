@@ -94,7 +94,7 @@ const ui={
   objectiveTitle:$('#objective-title'),objectiveCopy:$('#objective-copy'),
   fieldStatus:$('#field-status'),toast:$('#toast'),tileInfo:$('#tile-info'),
   tileTitle:$('#tile-title'),tileCopy:$('#tile-copy'),objectiveProgress:$('#objective-progress'),
-  objectiveProgressLabel:$('#objective-progress-label')
+  objectiveProgressName:$('#objective-progress-name'),objectiveProgressLabel:$('#objective-progress-label')
 };
 
 const state={
@@ -108,7 +108,8 @@ const state={
   resources:{wood:0,stone:0},
   comboCount:0,
   millLevel:1,
-  millCell:'0,0',
+  millCell:null,
+  unlocks:{mill:false,market:false},
   millBlades:[],
   bladeBoost:0,
   tweens:[],
@@ -405,7 +406,7 @@ const CARD_PREVIEW_ASSET={
   tree:'treeA',
   rock:'rockA',
   clear:'treeA',
-  millUpgrade:'windmill',
+  mill:'windmill',
   house:'house',
   market:'market',
   lumbermill:'lumbermill',
@@ -814,8 +815,13 @@ async function setBuilding(t,type,animated=false){
   registerBuildingAmbient(t,type,m);
   t.type=type;
 }
+function millTile(){
+  return state.millCell?state.land.get(state.millCell)||null:null;
+}
 function isMillZone(t){
-  return DIRECTIONS.some(d=>t.x===d.dx&&t.z===d.dz);
+  const mill=millTile();
+  if(!mill)return false;
+  return DIRECTIONS.some(d=>t.x===mill.x+d.dx&&t.z===mill.z+d.dz);
 }
 function setField(t,stage=1,animated=false,fieldOrder=null){
   const order=fieldOrder??t.fieldOrder??state.nextFieldOrder++;
@@ -1024,6 +1030,45 @@ function isConnectedSet(cells){
   }
   return seen.size===cells.length;
 }
+function connectedTypeGroup(start,type){
+  if(!start||start.type!==type)return[];
+  const seen=new Set([start.key]);
+  const queue=[start];
+  const result=[];
+  while(queue.length){
+    const cell=queue.shift();
+    result.push(cell);
+    for(const d of DIRECTIONS){
+      const next=state.land.get(key(cell.x+d.dx,cell.z+d.dz));
+      if(next?.type!==type||seen.has(next.key))continue;
+      seen.add(next.key);
+      queue.push(next);
+    }
+  }
+  return result;
+}
+function largestConnectedTypeCount(type){
+  let best=0;
+  const visited=new Set();
+  for(const cell of state.land.values()){
+    if(cell.type!==type||visited.has(cell.key))continue;
+    const group=connectedTypeGroup(cell,type);
+    for(const member of group)visited.add(member.key);
+    best=Math.max(best,group.length);
+  }
+  return best;
+}
+function largestNormalFieldCount(){
+  let best=0;
+  const visited=new Set();
+  for(const cell of state.land.values()){
+    if(cell.type!=='field'||isMillZone(cell)||visited.has(cell.key))continue;
+    const group=connectedNormalFields(cell);
+    for(const member of group)visited.add(member.key);
+    best=Math.max(best,group.length);
+  }
+  return best;
+}
 function findCollapseGroup(newField){
   const component=connectedNormalFields(newField);
   if(component.length<4)return null;
@@ -1041,6 +1086,32 @@ function findCollapseGroup(newField){
     return a.reduce((s,t)=>s+t.fieldOrder,0)-b.reduce((s,t)=>s+t.fieldOrder,0);
   });
   return candidates[0];
+}
+function pushPriorityUnlock(type){
+  const reserveBefore=state.reserve.length;
+  addCard(draw(type),{priority:true});
+  renderHand();
+  if(state.reserve.length>reserveBefore)animateReserveGain();
+}
+function unlockMill(position){
+  if(state.unlocks.mill)return false;
+  state.unlocks.mill=true;
+  pushPriorityUnlock('mill');
+  if(position){
+    spawnRing(position,0xf0cb63);
+    spawnCardBurst(position,1);
+  }
+  return true;
+}
+function unlockMarket(position){
+  if(state.unlocks.market)return false;
+  state.unlocks.market=true;
+  pushPriorityUnlock('market');
+  if(position){
+    spawnRing(position,0xe3b957);
+    spawnCardBurst(position,1);
+  }
+  return true;
 }
 async function collapseFields(group){
   if(!group)return;
@@ -1084,8 +1155,11 @@ async function collapseFields(group){
   state.harvestScore+=120;
   state.comboCount++;
   grantCards(1);
+  const openedMill=unlockMill(target);
   spawnCardBurst(target,1);
-  toast('4 части поля схлопнулись в первую: +120 очков и +1 карта.');
+  toast(openedMill
+    ?'Первое комбо из 4 полей! Мельница открыта и добавлена в руку.'
+    :'4 части поля схлопнулись в первую: +120 очков и +1 карта.');
   status();
   state.inputLocked=false;
 }
@@ -1110,11 +1184,18 @@ function grantCards(count){
 }
 async function setMill(t){
   clearContent(t);
+  state.millCell=t.key;
   t.type='mill';
   const m=await modelOn(t,'windmill',3.55,Math.PI*.25,false);
   const blades=m.getObjectByName('building_windmill_top_fan_green');
   state.millBlades=blades?[blades]:[];
   t.type='mill';
+
+  for(const field of millFields()){
+    if(field.type!=='field')continue;
+    const order=field.fieldOrder;
+    setField(field,field.stage||1,false,order);
+  }
 }
 function seed(){
   for(let x=-2;x<=2;x++)for(let z=-2;z<=2;z++){
@@ -1122,7 +1203,6 @@ function seed(){
   }
 }
 async function decorate(){
-  await setMill(state.land.get(state.millCell));
   for(const [x,z] of [[-2,-1],[2,1],[-1,2],[2,-1]]){
     const t=state.land.get(key(x,z));
     if(t&&t.type==='empty')await setTree(t,false);
@@ -1133,14 +1213,20 @@ async function decorate(){
   }
 }
 function millFields(){
-  return DIRECTIONS.map(d=>state.land.get(key(d.dx,d.dz))).filter(Boolean);
+  const mill=millTile();
+  if(!mill)return[];
+  return DIRECTIONS.map(d=>state.land.get(key(mill.x+d.dx,mill.z+d.dz))).filter(Boolean);
 }
 function ready(){
   const fields=millFields();
-  return fields.length===4&&fields.every(t=>t.type==='field'&&t.stage>=4);
+  return !!millTile()&&fields.length===4&&fields.every(t=>t.type==='field'&&t.stage>=4);
 }
 function randomType(){
-  const pool=ready()?DECK_WEIGHTS:DECK_WEIGHTS.filter(([t])=>t!=='millUpgrade');
+  const pool=DECK_WEIGHTS.filter(([type])=>{
+    if(type==='mill'&&!state.unlocks.mill)return false;
+    if(type==='market'&&!state.unlocks.market)return false;
+    return true;
+  });
   const total=pool.reduce((s,[,w])=>s+w,0);
   let r=Math.random()*total;
   for(const [t,w] of pool){
@@ -1214,10 +1300,11 @@ function spend(id){
   status();
   return true;
 }
-function ensureUpgrade(){
-  const hasUpgrade=[...state.hand,...state.reserve].some(c=>c.type==='millUpgrade');
+function ensureMillCard(){
+  if(!state.unlocks.mill)return;
+  const hasMillCard=[...state.hand,...state.reserve].some(c=>c.type==='mill');
   const reserveBefore=state.reserve.length;
-  if(ready()&&!hasUpgrade)addCard(draw('millUpgrade'),{priority:true});
+  if(ready()&&!hasMillCard)addCard(draw('mill'),{priority:true});
   renderHand();
   if(state.reserve.length>reserveBefore)animateReserveGain();
 }
@@ -1343,19 +1430,58 @@ function status(){
   ui.comboCount.textContent=state.comboCount;
   ui.landCount.textContent=state.land.size;
   syncCardAffordability();
+
+  const mill=millTile();
+  const millProgress=millFields().reduce((sum,t)=>sum+(t?.type==='field'?Math.min(4,t.stage):0),0);
+  const fieldCombo=Math.min(4,largestNormalFieldCount());
+  const houseCombo=Math.min(6,largestConnectedTypeCount('house'));
+
+  if(!state.unlocks.mill){
+    ui.objectiveProgressName.textContent='ПЕРВОЕ КОМБО';
+    ui.objectiveProgressLabel.textContent=`${fieldCombo} / 4`;
+    ui.objectiveProgress.style.width=`${fieldCombo/4*100}%`;
+    ui.objectiveTitle.textContent='Откройте мельницу';
+    ui.objectiveCopy.textContent='Соедините по стороне любые 4 обычных поля. Первое такое комбо откроет карту мельницы.';
+    ui.fieldStatus.innerHTML=`
+      <div class="field-chip"><div><span>Мельница</span><i><em style="width:${fieldCombo/4*100}%"></em></i></div><b>🔒</b></div>
+      <div class="field-chip"><div><span>Рынок</span><i><em style="width:0%"></em></i></div><b>🔒</b></div>`;
+    return;
+  }
+
+  if(!mill){
+    ui.objectiveProgressName.textContent='МЕЛЬНИЦА';
+    ui.objectiveProgressLabel.textContent='ОТКРЫТА';
+    ui.objectiveProgress.style.width='100%';
+    ui.objectiveTitle.textContent='Постройте мельницу';
+    ui.objectiveCopy.textContent='Карта мельницы уже открыта. Поставьте её на свободную клетку острова.';
+    ui.fieldStatus.innerHTML=`
+      <div class="field-chip ready"><div><span>Мельница</span><i><em style="width:100%"></em></i></div><b>✓</b></div>
+      <div class="field-chip"><div><span>Рынок: 6 домов</span><i><em style="width:${houseCombo/6*100}%"></em></i></div><b>${houseCombo}/6</b></div>`;
+    return;
+  }
+
+  if(!state.unlocks.market){
+    ui.objectiveProgressName.textContent='ПОСЕЛЕНИЕ';
+    ui.objectiveProgressLabel.textContent=`${houseCombo} / 6`;
+    ui.objectiveProgress.style.width=`${houseCombo/6*100}%`;
+    ui.objectiveTitle.textContent='Откройте рынок';
+    ui.objectiveCopy.textContent='Соберите связную по сторонам группу из 6 домов. Первый такой жилой квартал откроет рынок.';
+  }else{
+    ui.objectiveProgressName.textContent='МЕЛЬНИЦА';
+    ui.objectiveProgressLabel.textContent=`${millProgress} / 16`;
+    ui.objectiveProgress.style.width=`${Math.min(100,millProgress/16*100)}%`;
+    ui.objectiveTitle.textContent=ready()?'Большой урожай готов':'Развивайте мельницу';
+    ui.objectiveCopy.textContent=ready()
+      ?'Положите карту «Мельница» на существующую мельницу, чтобы собрать большой урожай.'
+      :'Четыре соседних поля мельницы растут до 4/4. Доведите все до зрелости.';
+  }
+
   const names={north:'Север',east:'Восток',south:'Юг',west:'Запад'};
   ui.fieldStatus.innerHTML=DIRECTIONS.map(d=>{
-    const t=state.land.get(key(d.dx,d.dz));
+    const t=state.land.get(key(mill.x+d.dx,mill.z+d.dz));
     const s=t?.type==='field'?t.stage:0;
     return`<div class="field-chip ${s>=4?'ready':''}"><div><span>${names[d.key]}</span><i><em style="width:${s?Math.min(100,s/4*100):0}%"></em></i></div><b>${s?`${s}/4`:'—'}</b></div>`;
   }).join('');
-  const millProgress=millFields().reduce((sum,t)=>sum+(t?.type==='field'?Math.min(4,t.stage):0),0);
-  if(ui.objectiveProgress)ui.objectiveProgress.style.width=`${Math.min(100,millProgress/16*100)}%`;
-  if(ui.objectiveProgressLabel)ui.objectiveProgressLabel.textContent=`${millProgress} / 16`;
-  ui.objectiveTitle.textContent=ready()?'Урожай готов — нужна новая мельница':'Соединяйте любые 4 части поля';
-  ui.objectiveCopy.textContent=ready()
-    ?'Положите карту «Новая мельница» на центральную мельницу, чтобы собрать комбо.'
-    :'Без мельницы любая связная фигура из 4 частей сразу схлопывается в самую первую поставленную часть.';
 }
 let toastTimer;
 function toast(s){
@@ -1379,7 +1505,7 @@ function tileInfo(t){
   ui.tileTitle.textContent=names[t.type];
   if(t.type==='field'){
     ui.tileCopy.textContent=isMillZone(t)
-      ?`Поле у мельницы: ${t.stage}/4. Оно не схлопывается автоматически и ждёт апгрейда мельницы.`
+      ?`Поле у мельницы: ${t.stage}/4. Оно не схлопывается автоматически и ждёт большого урожая.`
       :'Обычная часть поля. Соедините её по стороне ещё с тремя частями любой формы.';
   }else if(t.type==='tree'||t.type==='rock'){
     const progress=t.resourceSources?.size||0;
@@ -1398,7 +1524,11 @@ async function harvest(){
   state.millLevel++;
   state.bladeBoost=5.5;
   const reward=4+Math.min(4,state.comboCount-1);
-  const mill=state.land.get(state.millCell);
+  const mill=millTile();
+  if(!mill){
+    state.inputLocked=false;
+    return;
+  }
   spawnRing(mill.visual.position.clone(),0xf6ce58);
   spawnBurst(mill.visual.position.clone(),0xffdf72,22);
   pulse(mill.content,.65,.18);
@@ -1423,7 +1553,7 @@ async function apply(card,t){
       if(t.type==='empty'){
         setField(t,1,true);
         spend(card.id);
-        ensureUpgrade();
+        ensureMillCard();
         status();
         return;
       }
@@ -1431,7 +1561,7 @@ async function apply(card,t){
       const order=t.fieldOrder;
       setField(t,t.stage+1,true,order);
       spend(card.id);
-      ensureUpgrade();
+      ensureMillCard();
       status();
       if(t.stage>=4)toast('Поле у мельницы готово и теперь ждёт большую комбинацию.');
       return;
@@ -1481,8 +1611,20 @@ async function apply(card,t){
     return;
   }
 
-  if(card.type==='millUpgrade'){
-    if(t.type!=='mill')return toast('Новую мельницу нужно положить на старую.');
+  if(card.type==='mill'){
+    if(!state.unlocks.mill)return toast('Мельница ещё не открыта.');
+
+    if(!state.millCell){
+      if(t.type!=='empty')return toast('Для мельницы нужна свободная клетка.');
+      await setMill(t);
+      spend(card.id);
+      spawnRing(t.visual.position.clone(),0xe7bd5c);
+      spawnBurst(t.visual.position.clone(),0xf0d67c,16);
+      status();
+      return toast('Мельница построена. Четыре соседние клетки теперь её поля.');
+    }
+
+    if(t.type!=='mill')return toast('На острове уже есть мельница.');
     if(!ready())return toast('Сначала доведите четыре поля у мельницы до 4/4.');
     spend(card.id);
     await harvest();
@@ -1505,11 +1647,16 @@ async function apply(card,t){
       state.harvestScore+=30;
       spend(card.id);
       spawnBurst(t.visual.position.clone(),0xf0d67c,10);
+      const houseGroup=connectedTypeGroup(t,'house');
+      const openedMarket=houseGroup.length>=6&&unlockMarket(t.visual.position.clone());
       status();
-      return toast('Дом построен. Рынок рядом с домами будет выгоднее.');
+      return toast(openedMarket
+        ?'Комбо из 6 связанных домов! Рынок открыт и добавлен в руку.'
+        :`Дом построен. Связный квартал: ${Math.min(6,houseGroup.length)}/6 до открытия рынка.`);
     }
 
     if(card.type==='market'){
+      if(!state.unlocks.market)return toast('Рынок ещё не открыт.');
       const houses=nearby(t,'house');
       const score=45+houses*45;
       const bonusCards=houses>=2?1:0;
@@ -1609,7 +1756,7 @@ renderer.domElement.onpointermove=e=>{
     hoverMarker.visible=true;
     hoverMarker.position.set(t.visual.position.x,.17,t.visual.position.z);
     const card=state.hand.find(c=>c.id===state.selectedCardId);
-    const valid=!card||card.type==='clear'?true:t.type==='empty'||card.type==='field'&&t.type==='field'||card.type==='millUpgrade'&&t.type==='mill'||(card.type==='lumbermill'||card.type==='quarry')&&t.type===card.type;
+    const valid=!card||card.type==='clear'?true:t.type==='empty'||card.type==='field'&&t.type==='field'||card.type==='mill'&&((!state.millCell&&t.type==='empty')||(state.millCell&&t.type==='mill'))||(card.type==='lumbermill'||card.type==='quarry')&&t.type===card.type;
     hoverMarker.material.color.setHex(valid?0xf6df86:0xd97b6f);
     hoverMarker.material.opacity=valid?.24:.16;
   }else{
@@ -1663,7 +1810,7 @@ async function boot(){
   await buildCardPreviews();
   refreshLucide();
   status();
-  toast('Колода запаса перенесена вправо: бонусные карты складываются туда и прилетают в руку при розыгрыше.');
+  toast('Начните без построек: первое комбо из 4 полей откроет мельницу.');
 }
 boot().catch(e=>{
   console.error(e);

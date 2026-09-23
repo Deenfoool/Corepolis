@@ -49,3 +49,8 @@ Costs are real gameplay rules. Resource/producers remain free so a run cannot de
 ### Hand and reserve
 
 The active hand is capped at five cards. Combo rewards beyond that limit are kept in a dedicated lower-right reserve deck using the Corepolis card back. Each reserved card remains visible as a layered back, with a compact count badge for large combos. Playing a card promotes the next reserve card before a new random card is drawn, with a short deck-to-hand flight animation.
+
+
+### Building unlocks
+
+Runs begin without constructed buildings. The first four-field combo unlocks the Mill card; the player chooses where to build it. The first connected six-house district unlocks Market. Locked building cards are excluded from random draws until their condition has been completed.

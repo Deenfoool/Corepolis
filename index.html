@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#8dc9d7" />
   <title>Corepolis — Island Card Builder</title>
   <link rel="preload" as="image" href="./assets/cards/corepolis-card-back.webp" type="image/webp" />
-  <link rel="stylesheet" href="./styles.css?v=corner-deck-1" />
+  <link rel="stylesheet" href="./styles.css?v=unlock-progression-1" />
   <script defer src="https://unpkg.com/lucide@1.47.0"></script>
   <script type="importmap">
   {
@@ -63,7 +63,7 @@
       </div>
       <p id="objective-copy">Форма не важна: линия, угол, зигзаг — без мельницы 4 связанные части схлопываются в самую первую.</p>
       <div class="objective-meter">
-        <div class="objective-meter-head"><span>Мельница</span><b id="objective-progress-label">0 / 16</b></div>
+        <div class="objective-meter-head"><span id="objective-progress-name">ПЕРВОЕ КОМБО</span><b id="objective-progress-label">0 / 4</b></div>
         <div class="objective-track"><i id="objective-progress"></i></div>
       </div>
       <div class="field-status" id="field-status"></div>
@@ -96,6 +96,6 @@
     </aside>
   </div>
 
-  <script type="module" src="./src/main.js?v=corner-deck-1"></script>
+  <script type="module" src="./src/main.js?v=unlock-progression-1"></script>
 </body>
 </html>

@@ -8,6 +8,10 @@
 - [x] Five-card starting hand
 - [x] Card selection and world targeting
 - [x] Windmill using CC0 KayKit art
+- [x] Start with no constructed buildings
+- [x] Unlock Mill after the first four-field combo
+- [x] Place the unlocked Mill on a player-chosen tile
+- [x] Unlock Market after the first connected six-house combo
 - [x] Trees and rocks using CC0 KayKit art
 - [x] Free field placement across the island
 - [x] Any-shape four-piece field collapse using edge connectivity
@@ -18,7 +22,7 @@
 - [x] Normal-field small harvest loop
 - [x] Field growth stages I–IV
 - [x] Mature-field waiting state
-- [x] New Windmill trigger card
+- [x] Reusable Mill card for initial construction and mature-field harvest
 - [x] Four-field windmill harvest combo and reset
 - [x] Continuously rotating windmill blades
 - [x] Blade speed boost on large harvest
