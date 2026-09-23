@@ -15,11 +15,10 @@ const addBox=(root,size,pos,color,rotationY=0)=>{
 export function createBoatVisual(){
   const boat=new THREE.Group();
   const hull=new THREE.Mesh(
-    new THREE.CapsuleGeometry(.48,1.55,5,10),
+    new THREE.SphereGeometry(.82,14,9),
     material(0x7a4f2c,.94)
   );
-  hull.rotation.z=Math.PI/2;
-  hull.scale.set(1,.52,1.18);
+  hull.scale.set(1.28,.42,.62);
   hull.castShadow=hull.receiveShadow=true;
   boat.add(hull);
 
