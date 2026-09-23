@@ -56,6 +56,8 @@
 - [x] Runtime 3D object previews for cards
 - [x] Dark rectangular card redesign with preview fade/blur
 - [x] Rebuilt farmland visuals with furrows and staged crop density
+- [x] Quaternius Wheat GLB stages replace procedural crop stalks
+- [x] Crop assets moved from repository root to `assets/crops/`
 - [x] Mature wheat heads and wind-sway animation
 - [x] Premium mill-adjacent field treatment
 - [x] Enhanced four-field collapse animation

@@ -11,6 +11,10 @@ export const ASSETS = {
   market: `${KAYKIT_ROOT}/buildings/green/building_market_green.gltf`,
   lumbermill: `${KAYKIT_ROOT}/buildings/green/building_lumbermill_green.gltf`,
   quarry: `${KAYKIT_ROOT}/buildings/green/building_mine_green.gltf`,
+  wheat1: './assets/crops/Wheat_1.glb',
+  wheat2: './assets/crops/Wheat_2.glb',
+  wheat3: './assets/crops/Wheat_3.glb',
+  wheat4: './assets/crops/Wheat_4.glb',
 };
 
 export const ASSET_LICENSE = {

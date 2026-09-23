@@ -34,6 +34,7 @@ Trees and rocks are now productive setup cards rather than dead draws: a first n
 - Three.js via jsDelivr ES modules
 - Lucide 1.47.0 for pinned interface/card icons
 - CC0 KayKit game assets loaded from a commit-pinned official GitHub repository
+- CC0 Quaternius crop models stored locally as GLB runtime assets
 
 See `docs/GAME_DESIGN.md`, `docs/ARCHITECTURE.md`, and `docs/ROADMAP.md`.
 

@@ -75,6 +75,7 @@ scene.add(waterPlane);
 
 const loader=new GLTFLoader();
 const cache=new Map();
+const resolvedAssets=new Map();
 const previewRenderer=new THREE.WebGLRenderer({antialias:true,alpha:true,preserveDrawingBuffer:true,powerPreference:'low-power'});
 previewRenderer.setPixelRatio(1);
 previewRenderer.setSize(512,320,false);
@@ -127,7 +128,12 @@ function refreshLucide(){
 }
 
 const load=url=>{
-  if(!cache.has(url))cache.set(url,loader.loadAsync(url).then(g=>g.scene));
+  if(!cache.has(url)){
+    cache.set(url,loader.loadAsync(url).then(g=>{
+      resolvedAssets.set(url,g.scene);
+      return g.scene;
+    }));
+  }
   return cache.get(url);
 };
 
@@ -596,51 +602,95 @@ function updateResourceMarker(t){
     t.visual.add(t.resourceMarker);
   }
 }
-function createFieldStalk(height,color,mature=false,lean=0){
-  const group=new THREE.Group();
-  const stem=new THREE.Mesh(new THREE.CylinderGeometry(.022,.032,height,5),new THREE.MeshStandardMaterial({color,roughness:.9}));
-  stem.position.y=height*.5; stem.rotation.z=lean; stem.castShadow=true; group.add(stem);
-  if(mature){
-    const head=new THREE.Mesh(new THREE.CapsuleGeometry(.04,.12,3,6),new THREE.MeshStandardMaterial({color:0xe8c764,roughness:.82}));
-    head.scale.set(.82,1,.82); head.position.set(Math.sin(lean)*height*.45,height*.9,0); head.rotation.z=lean*.65; head.castShadow=true; group.add(head);
-  }
-  return group;
+function cloneWheatStage(stage){
+  const safeStage=Math.max(1,Math.min(4,stage));
+  const source=resolvedAssets.get(ASSETS[`wheat${safeStage}`]);
+  if(!source)return null;
+
+  const crop=source.clone(true);
+  shadows(crop);
+  const height=[.34,.48,.64,.82][safeStage-1];
+  fit(crop,.48,height);
+  return crop;
 }
-function createFieldRow(stage,rowIndex,synergy=false){
+
+function createWheatRow(stage,rowIndex,synergy=false){
   const row=new THREE.Group();
-  const count=[3,4,5,7][Math.max(0,Math.min(3,stage-1))];
-  const palette=[0x86ad51,0x91b34d,0xb5ae45,synergy?0xe1bc54:0xd4ad43];
-  const base=[.22,.34,.48,.64][Math.max(0,Math.min(3,stage-1))];
+  const safeStage=Math.max(1,Math.min(4,stage));
+  const count=[4,5,6,7][safeStage-1];
   const spacing=3.05/Math.max(1,count-1);
+
   for(let i=0;i<count;i++){
-    const wave=((i*17+rowIndex*11+stage*7)%9)/8;
-    const h=base+(wave-.5)*(stage>=3?.13:.08);
-    const lean=(((i*13+rowIndex*19)%7)-3)*.018;
-    const stalk=createFieldStalk(h,palette[stage-1]??palette[0],stage>=4,lean);
-    stalk.position.set(-1.525+i*spacing,0,(((i+rowIndex*2)%3)-1)*.035); row.add(stalk);
+    const crop=cloneWheatStage(safeStage);
+    if(!crop)continue;
+
+    const jitter=(((i*7+rowIndex*11+safeStage*3)%7)-3)*.014;
+    const size=.9+(((i*13+rowIndex*5)%5)-2)*.025;
+    crop.position.set(-1.525+i*spacing,0,jitter);
+    crop.rotation.y=((i*17+rowIndex*23)%24)/24*Math.PI*2;
+    crop.scale.multiplyScalar(size);
+    row.add(crop);
   }
-  row.userData.swayPhase=rowIndex*.72+stage*.31;
-  row.userData.swayAmount=(stage>=3?.032:.018)*(synergy?1.12:1);
+
+  row.userData.swayPhase=rowIndex*.72+safeStage*.31;
+  row.userData.swayAmount=(safeStage>=3?.028:.015)*(synergy?1.12:1);
   return row;
 }
+
 function fieldVisual(stage,synergy=false){
   const g=new THREE.Group();
-  g.userData.isField=true; g.userData.stage=stage; g.userData.synergy=synergy; g.userData.cropRows=[];
+  g.userData.isField=true;
+  g.userData.stage=stage;
+  g.userData.synergy=synergy;
+  g.userData.cropRows=[];
+
+  const safeStage=Math.max(1,Math.min(4,stage));
   const patch=GRID.tileSize*.82;
   const soilColors=[0x684622,0x6c4925,0x71502a,0x76552d];
-  const soil=new THREE.Mesh(new RoundedBoxGeometry(patch,.20,patch,4,.16),new THREE.MeshStandardMaterial({color:soilColors[Math.max(0,Math.min(3,stage-1))],roughness:.98}));
-  soil.position.y=.17; soil.castShadow=soil.receiveShadow=true; g.add(soil);
-  const inner=new THREE.Mesh(new RoundedBoxGeometry(patch*.91,.035,patch*.91,3,.12),new THREE.MeshStandardMaterial({color:stage>=3?0x7d5a2e:0x60411f,roughness:1}));
-  inner.position.y=.285; inner.receiveShadow=true; g.add(inner);
-  const rows=stage===1?4:5; const gap=2.95/Math.max(1,rows-1);
+
+  const soil=new THREE.Mesh(
+    new RoundedBoxGeometry(patch,.20,patch,4,.16),
+    new THREE.MeshStandardMaterial({color:soilColors[safeStage-1],roughness:.98})
+  );
+  soil.position.y=.17;
+  soil.castShadow=soil.receiveShadow=true;
+  g.add(soil);
+
+  const inner=new THREE.Mesh(
+    new RoundedBoxGeometry(patch*.91,.035,patch*.91,3,.12),
+    new THREE.MeshStandardMaterial({color:safeStage>=3?0x7d5a2e:0x60411f,roughness:1})
+  );
+  inner.position.y=.285;
+  inner.receiveShadow=true;
+  g.add(inner);
+
+  const rows=safeStage===1?4:5;
+  const gap=2.95/Math.max(1,rows-1);
   for(let r=0;r<rows;r++){
     const z=-1.475+r*gap;
-    const furrow=new THREE.Mesh(new THREE.BoxGeometry(3.35,.026,.16),new THREE.MeshStandardMaterial({color:0x4f351c,roughness:1}));
-    furrow.position.set(0,.315,z); furrow.receiveShadow=true; g.add(furrow);
-    const ridge=new THREE.Mesh(new THREE.BoxGeometry(3.22,.055,.26),new THREE.MeshStandardMaterial({color:stage>=3?0x76502a:0x6f4b27,roughness:1}));
-    ridge.position.set(0,.34,z); ridge.receiveShadow=true; g.add(ridge);
-    const row=createFieldRow(stage,r,synergy); row.position.set(0,.355,z); g.add(row); g.userData.cropRows.push(row);
+
+    const furrow=new THREE.Mesh(
+      new THREE.BoxGeometry(3.35,.026,.16),
+      new THREE.MeshStandardMaterial({color:0x4f351c,roughness:1})
+    );
+    furrow.position.set(0,.315,z);
+    furrow.receiveShadow=true;
+    g.add(furrow);
+
+    const ridge=new THREE.Mesh(
+      new THREE.BoxGeometry(3.22,.055,.26),
+      new THREE.MeshStandardMaterial({color:safeStage>=3?0x76502a:0x6f4b27,roughness:1})
+    );
+    ridge.position.set(0,.34,z);
+    ridge.receiveShadow=true;
+    g.add(ridge);
+
+    const row=createWheatRow(safeStage,r,synergy);
+    row.position.set(0,.355,z);
+    g.add(row);
+    g.userData.cropRows.push(row);
   }
+
   const edgeMat=new THREE.MeshStandardMaterial({color:synergy?0xb89a57:0x8d7148,roughness:.96});
   const edges=[
     [0,.39,-1.82,3.64,.08,.09],[0,.39,1.82,3.64,.08,.09],
@@ -648,22 +698,45 @@ function fieldVisual(stage,synergy=false){
   ];
   for(const [x,y,z,w,h,d] of edges){
     const edge=new THREE.Mesh(new RoundedBoxGeometry(w,h,d,2,.035),edgeMat);
-    edge.position.set(x,y,z); edge.castShadow=edge.receiveShadow=true; g.add(edge);
+    edge.position.set(x,y,z);
+    edge.castShadow=edge.receiveShadow=true;
+    g.add(edge);
   }
-  if(stage>=2){
+
+  if(safeStage>=2){
     const detailMat=new THREE.MeshStandardMaterial({color:synergy?0xf0d57a:0xc6d99a,roughness:.9});
     const spots=[[-1.55,-1.55],[1.52,-1.5],[-1.48,1.54],[1.55,1.5]];
-    const count=stage===2?2:stage===3?3:4;
+    const count=safeStage===2?2:safeStage===3?3:4;
     for(let n=0;n<count;n++){
       const detail=new THREE.Mesh(new THREE.IcosahedronGeometry(.05+(n%2)*.01,1),detailMat);
-      detail.position.set(spots[n][0],.43,spots[n][1]); detail.scale.set(1,.7,1); detail.castShadow=true; g.add(detail);
+      detail.position.set(spots[n][0],.43,spots[n][1]);
+      detail.scale.set(1,.7,1);
+      detail.castShadow=true;
+      g.add(detail);
     }
   }
+
   if(synergy){
-    const glow=new THREE.Mesh(new THREE.RingGeometry(1.72,1.88,40),new THREE.MeshBasicMaterial({color:0xf2cf72,transparent:true,opacity:stage>=4?.30:.16,side:THREE.DoubleSide,depthWrite:false}));
-    glow.rotation.x=-Math.PI/2; glow.position.y=.405; g.add(glow); g.userData.synergyGlow=glow;
+    const glow=new THREE.Mesh(
+      new THREE.RingGeometry(1.72,1.88,40),
+      new THREE.MeshBasicMaterial({
+        color:0xf2cf72,
+        transparent:true,
+        opacity:safeStage>=4?.30:.16,
+        side:THREE.DoubleSide,
+        depthWrite:false
+      })
+    );
+    glow.rotation.x=-Math.PI/2;
+    glow.position.y=.405;
+    g.add(glow);
+    g.userData.synergyGlow=glow;
   }
-  const badgeNode=badge(stage); badgeNode.position.set(1.52,.72,-1.52); badgeNode.scale.set(.78,.78,.78); g.add(badgeNode);
+
+  const badgeNode=badge(safeStage);
+  badgeNode.position.set(1.52,.72,-1.52);
+  badgeNode.scale.set(.78,.78,.78);
+  g.add(badgeNode);
   return g;
 }
 function animateFieldGrowth(field,stage,synergy=false){
