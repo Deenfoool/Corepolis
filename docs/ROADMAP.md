@@ -152,3 +152,8 @@
 - [x] Add darker voxel troughs between planting ridges
 - [x] Replace rounded soil clods with box-shaped voxel chunks
 - [x] Align furrow rows across neighbouring field tiles
+
+- [x] Replace voxel farmland with rounded faceted low-poly farmland
+- [x] Keep the plowed surface full-tile and borderless
+- [x] Restore custom rounded furrows with corrected outward face winding
+- [x] Keep aligned furrows seamless across neighbouring field cells

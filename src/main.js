@@ -1073,7 +1073,7 @@ function cloneWheatStage(stage){
 function createWheatRow(stage,rowIndex,synergy=false){
   const row=new THREE.Group();
   const safeStage=Math.max(1,Math.min(4,stage));
-  const count=[3,5,6,8][safeStage-1];
+  const count=[4,5,6,8][safeStage-1];
   const spacing=3.05/Math.max(1,count-1);
 
   for(let i=0;i<count;i++){
@@ -1106,9 +1106,9 @@ function fieldAdjacencySignature(t){
   const a=fieldAdjacency(t);
   return `${a.north?1:0}${a.east?1:0}${a.south?1:0}${a.west?1:0}`;
 }
-function createVoxelFieldBase(size,height,color){
+function createLowPolyFieldBase(size,height,color){
   const mesh=new THREE.Mesh(
-    new THREE.BoxGeometry(size,height,size),
+    new RoundedBoxGeometry(size,height,size,3,.14),
     new THREE.MeshStandardMaterial({
       color,
       roughness:1,
@@ -1118,78 +1118,91 @@ function createVoxelFieldBase(size,height,color){
   mesh.castShadow=mesh.receiveShadow=true;
   return mesh;
 }
-function createVoxelFurrow(length,width,height,seed=0,synergy=false){
-  const root=new THREE.Group();
-  const baseColor=new THREE.Color(synergy?0x8c6133:0x81552b);
-  const midColor=baseColor.clone().offsetHSL(0,0,.035);
-  const topColor=baseColor.clone().offsetHSL(0,0,.07);
+function createFieldRidge(length,width,height,{westConnected=false,eastConnected=false,seed=0,synergy=false}={}){
+  const xSegments=12;
+  const zSegments=6;
+  const positions=[];
+  const colors=[];
+  const indices=[];
+  const baseColor=new THREE.Color(synergy?0x8f6334:0x83572d);
+  const crestColor=new THREE.Color(synergy?0xb07b40:0xa46d37);
 
-  const lowerH=height*.34;
-  const middleH=height*.31;
-  const topH=height-lowerH-middleH;
-  const layers=[
-    {w:width,h:lowerH,y:lowerH*.5,color:baseColor},
-    {w:width*.72,h:middleH,y:lowerH+middleH*.5,color:midColor},
-    {w:width*.40,h:topH,y:lowerH+middleH+topH*.5,color:topColor}
-  ];
+  for(let xi=0;xi<=xSegments;xi++){
+    const tx=xi/xSegments;
+    const x=(tx-.5)*length;
+    const leftTaper=westConnected?1:Math.min(1,tx/.10);
+    const rightTaper=eastConnected?1:Math.min(1,(1-tx)/.10);
+    const endTaper=Math.sin(Math.min(1,leftTaper,rightTaper)*Math.PI*.5);
+    const longWobble=Math.sin((xi+seed*.71)*1.23)*.022;
 
-  for(let i=0;i<layers.length;i++){
-    const layer=layers[i];
-    const mesh=new THREE.Mesh(
-      new THREE.BoxGeometry(length,layer.h,layer.w),
-      new THREE.MeshStandardMaterial({
-        color:layer.color,
-        roughness:1,
-        flatShading:true
-      })
-    );
-    mesh.position.y=layer.y;
-    mesh.castShadow=mesh.receiveShadow=true;
-    root.add(mesh);
+    for(let zi=0;zi<=zSegments;zi++){
+      const tz=zi/zSegments;
+      const z=(tz-.5)*width;
+      const rounded=Math.sin(Math.PI*tz);
+      const shoulder=Math.pow(rounded,.72);
+      const facet=1+Math.sin((xi*3+zi*5+seed)*1.07)*.035;
+      const y=.292+height*shoulder*endTaper*facet+longWobble*rounded;
+      positions.push(x,y,z);
+
+      const color=baseColor.clone().lerp(crestColor,Math.pow(rounded,1.15)*.68);
+      const shade=((xi*17+zi*11+seed*13)%5-2)*.016;
+      color.offsetHSL(0,0,shade);
+      colors.push(color.r,color.g,color.b);
+    }
   }
 
-  const endShade=new THREE.MeshStandardMaterial({
-    color:baseColor.clone().offsetHSL(0,0,-.045),
-    roughness:1,
-    flatShading:true
-  });
-  const capWidth=width*.40;
-  const capHeight=Math.max(.025,topH*.72);
-  for(const side of [-1,1]){
-    const cap=new THREE.Mesh(
-      new THREE.BoxGeometry(.055,capHeight,capWidth),
-      endShade
-    );
-    cap.position.set(side*(length*.5-.025),height-capHeight*.5,0);
-    cap.castShadow=cap.receiveShadow=true;
-    root.add(cap);
+  const row=zSegments+1;
+  for(let xi=0;xi<xSegments;xi++)for(let zi=0;zi<zSegments;zi++){
+    const a=xi*row+zi;
+    const b=(xi+1)*row+zi;
+    const c=(xi+1)*row+zi+1;
+    const d=xi*row+zi+1;
+    indices.push(a,d,b,b,d,c);
   }
 
-  root.userData.seed=seed;
-  return root;
+  const geometry=new THREE.BufferGeometry();
+  geometry.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));
+  geometry.setAttribute('color',new THREE.Float32BufferAttribute(colors,3));
+  geometry.setIndex(indices);
+  geometry.computeVertexNormals();
+  geometry.computeBoundingBox();
+  geometry.computeBoundingSphere();
+
+  const mesh=new THREE.Mesh(
+    geometry,
+    new THREE.MeshStandardMaterial({
+      vertexColors:true,
+      roughness:1,
+      flatShading:true,
+      side:THREE.FrontSide
+    })
+  );
+  mesh.castShadow=mesh.receiveShadow=true;
+  return mesh;
 }
-function addVoxelFieldClods(group,stage,tileSize,synergy=false){
+function addFieldClods(group,stage,tileSize,synergy=false){
   const material=new THREE.MeshStandardMaterial({
-    color:synergy?0x9b6a39:0x704722,
+    color:synergy?0xa6733d:0x744a27,
     roughness:1,
     flatShading:true
   });
-  const count=[4,6,8,10][stage-1];
-  const half=tileSize*.5-.18;
+  const count=[5,7,9,11][stage-1];
+  const half=tileSize*.5-.16;
 
   for(let i=0;i<count;i++){
     const px=((i*47+stage*19)%101)/100;
     const pz=((i*71+stage*13)%97)/96;
-    const sx=.07+(i%3)*.025;
-    const sy=.045+(i%2)*.018;
-    const sz=.06+((i+1)%3)*.02;
-    const clod=new THREE.Mesh(new THREE.BoxGeometry(sx,sy,sz),material);
+    const clod=new THREE.Mesh(
+      new THREE.IcosahedronGeometry(.045+(i%3)*.015,0),
+      material
+    );
     clod.position.set(
       THREE.MathUtils.lerp(-half,half,px),
-      .335+sy*.5,
+      .335+(i%2)*.008,
       THREE.MathUtils.lerp(-half,half,pz)
     );
-    clod.rotation.y=(i%4)*Math.PI*.5;
+    clod.rotation.set((i%5)*.27,(i%7)*.39,(i%3)*.18);
+    clod.scale.set(1.22,.68,.94);
     clod.castShadow=true;
     group.add(clod);
   }
@@ -1205,62 +1218,44 @@ function fieldVisual(stage,synergy=false,tile=null){
   const adjacency=fieldAdjacency(tile);
   g.userData.adjacencySignature=tile?fieldAdjacencySignature(tile):'0000';
 
-  // Field soil deliberately fills the whole logical tile.
-  // A tiny overlap hides sub-pixel seams between adjacent field cells.
-  const seamOverlap=.035;
+  // Borderless farmland fills the complete tile.
+  // Tiny overlap hides seams while the rounded top still reads as low-poly soil.
+  const seamOverlap=.03;
   const tileSize=GRID.tileSize+seamOverlap*2;
-  const soilColors=[0x5e3d1e,0x63421f,0x694724,0x704d28];
-  const soil=createVoxelFieldBase(
+  const soilColors=[0x5f3f20,0x644421,0x6a4925,0x714f29];
+  const soil=createLowPolyFieldBase(
     tileSize,.16,
-    synergy?0x714b26:soilColors[safeStage-1]
+    synergy?0x734e29:soilColors[safeStage-1]
   );
-  soil.position.y=.235;
+  soil.position.y=.23;
   g.add(soil);
 
   const ridgeCount=5;
   const rowSpacing=GRID.tileSize/ridgeCount;
-  const ridgeWidth=.70;
-  const ridgeHeight=[.16,.18,.20,.22][safeStage-1];
-  const ridgeLength=tileSize+.01;
+  const ridgeWidth=.72;
+  const ridgeHeight=[.15,.17,.19,.21][safeStage-1];
+  const ridgeLength=tileSize+.02;
   const firstZ=-GRID.tileSize*.5+rowSpacing*.5;
-
-  // Dark voxel troughs make the stepped ridge profile read more clearly.
-  const troughMaterial=new THREE.MeshStandardMaterial({
-    color:synergy?0x5f4023:0x4f331a,
-    roughness:1,
-    flatShading:true
-  });
-  for(let i=0;i<ridgeCount-1;i++){
-    const z=firstZ+rowSpacing*(i+.5);
-    const trough=new THREE.Mesh(
-      new THREE.BoxGeometry(tileSize+.01,.018,rowSpacing*.27),
-      troughMaterial
-    );
-    trough.position.set(0,.324,z);
-    trough.receiveShadow=true;
-    g.add(trough);
-  }
 
   for(let r=0;r<ridgeCount;r++){
     const z=firstZ+rowSpacing*r;
-    const ridge=createVoxelFurrow(
-      ridgeLength,
-      ridgeWidth,
-      ridgeHeight,
-      r+safeStage*7,
+    const ridge=createFieldRidge(ridgeLength,ridgeWidth,ridgeHeight,{
+      westConnected:adjacency.west,
+      eastConnected:adjacency.east,
+      seed:r+safeStage*7,
       synergy
-    );
-    ridge.position.set(0,.32,z);
+    });
+    ridge.position.set(0,0,z);
     g.add(ridge);
 
     const row=createWheatRow(safeStage,r,synergy);
-    row.position.set(0,.34+ridgeHeight,z);
-    row.scale.x=Math.max(1,(GRID.tileSize-.42)/3.05);
+    row.position.set(0,.425+ridgeHeight*.56,z);
+    row.scale.x=Math.max(1,(GRID.tileSize-.38)/3.05);
     g.add(row);
     g.userData.cropRows.push(row);
   }
 
-  addVoxelFieldClods(g,safeStage,GRID.tileSize,synergy);
+  addFieldClods(g,safeStage,GRID.tileSize,synergy);
   return g;
 }
 function animateFieldGrowth(field,stage,synergy=false){

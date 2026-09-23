@@ -124,23 +124,23 @@ The cost is paid only after a legal action is committed.
 
 ## Farmland visual language
 
-Farmland now uses a full-tile voxel language instead of rounded garden-bed geometry:
+Farmland uses a full-tile rounded low-poly language:
 
-- plowed soil fills the complete logical tile from edge to edge, with only a tiny overlap to hide rendering seams;
-- there is no perimeter rim, fence, lip or inset patch;
-- the soil base is a flat-shaded box rather than rounded geometry;
-- each furrow is built from three stacked rectangular steps: broad lower shoulder, narrower middle step and a flat narrow crest;
-- shallow dark voxel troughs separate the furrows and improve depth readability;
-- soil clods are small box-shaped chunks rather than rounded rocks;
-- all five rows align to the same grid on every field cell, so neighbouring cells read as one continuous cultivated surface;
-- stage I is deliberately sparse, while stages II–IV progressively increase crop density;
-- stage I uses `Wheat_1.glb`, stage II uses `Wheat_2.glb`, stage III uses `Wheat_3.glb`, and stage IV uses `Wheat_4.glb`;
-- mill-adjacent fields keep the same geometry and differ only through warmer soil tones;
+- plowed soil fills the complete logical tile from edge to edge with only a tiny seam overlap;
+- there is no perimeter rim, fence, lip or inset garden-bed frame;
+- the soil base is softly rounded in silhouette but rendered with flat-shaded low-poly faces;
+- each furrow is a custom faceted mesh with a rounded cross-section rather than a voxel staircase or smooth high-poly tube;
+- furrow faces use outward +Y winding and recomputed normals so lighting reads the ridges as convex;
+- all five rows align to the same world grid on every field cell, making neighbouring fields read as one continuous cultivated surface;
+- horizontal neighbours keep the furrow ends open so ridges continue cleanly across their shared seam;
+- small low-poly soil clods break up the surface without introducing a raised border;
+- stages I–IV use `Wheat_1.glb` through `Wheat_4.glb` with increasing density and height;
+- mill-adjacent fields keep identical geometry and differ only through warmer soil tones;
 - crop rows retain wind sway and staggered growth animation.
 
-The Field card preview is generated from this exact runtime renderer, keeping card art and world art synchronized.
+The Field card preview is generated from this same runtime renderer.
 
-The crop meshes come from Quaternius Ultimate Crops Pack (CC0). Corepolis owns the voxel soil, stepped furrows, troughs, clods, field merging, wind motion and collapse effects around those meshes.
+The crop meshes come from Quaternius Ultimate Crops Pack (CC0). Corepolis owns the borderless rounded low-poly soil, faceted furrows, field merging, wind motion and collapse effects around those meshes.
 
 
 ## Building unlock progression
