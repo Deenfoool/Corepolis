@@ -2,22 +2,30 @@
 
 Source: https://candlelightgame.itch.io/tideline-coastal-harbor
 
-Corepolis is targeting Candle Light's **TIDELINE — Coastal Harbor** for its production maritime visuals.
+Corepolis uses selected models from Candle Light's **TIDELINE — Coastal Harbor** free sample.
 
 Public pack information verified on 2026-09-23:
 - Free Sample: 12 selected models.
-- Formats: GLB + FBX.
-- Free sample size shown by itch.io: 295 kB.
+- Formats distributed by the author: GLB + FBX.
 - Personal and commercial project use is allowed under the included license.
 - Attribution is not required.
 - Redistribution/resale as standalone assets or reusable asset packs is not allowed.
 
-The itch.io download is gated behind the interactive "No thanks, just take me to the downloads" flow. No TIDELINE binary is currently vendored in this repository.
+## Runtime assets kept in Corepolis
 
-When the archive is available, the first required mappings are:
-1. pier/dock -> Pier world object and card preview;
-2. small boat -> Pier companion and route animation;
-3. lighthouse -> Lighthouse building and card preview;
-4. fishing shop / fishing structure -> Fishing Shop building and card preview.
+The following GLBs are actively used and stored in `assets/tideline/`:
 
-The procedural models in `src/marine-visuals.js` are currently active so the gameplay branch is testable. They must be deleted in the same change that replaces them with the TIDELINE GLBs.
+- `Boarding_Plank.glb`
+- `Railing_A.glb`
+- `Bollard_A.glb`
+- `Anchor_A.glb`
+- `Buoy_Garland.glb`
+- `Bell_Stand_A.glb`
+- `Dock_Chair_A.glb`
+- `Boat_House_A.glb`
+- `Bait_Box_A.glb`
+- `Cargo_Barrel_A.glb`
+
+`Boat_Stand_A.glb` and `Boat_Wash_Station.glb` were not used by the current game and were removed rather than retained as dead assets.
+
+The Pier and Fishing Shop now use the actual TIDELINE models. The free sample does not include a standalone boat or lighthouse, so those two visuals remain isolated procedural implementations in `src/marine-visuals.js` until matching licensed models are supplied.
