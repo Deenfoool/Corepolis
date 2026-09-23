@@ -3,9 +3,9 @@ import { MapControls } from 'three/addons/controls/MapControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { CARD_DEFS, DECK_WEIGHTS, DIRECTIONS, GRID } from './config.js';
-import { ASSETS } from './models.js?v=wheat-material-fix-1';
+import { ASSETS } from './models.js?v=tideline-sample-1';
 import { buildTerrainTile, disposeTerrainTile } from './terrain.js?v=coast-stitch-3';
-import { createBoatVisual, createPierVisual, createLighthouseVisual, createFishingShopVisual, marinePreviewVisual } from './marine-visuals.js?v=marine-branch-2';
+import { createBoatVisual, createLighthouseVisual } from './marine-visuals.js?v=tideline-sample-1';
 
 const $=s=>document.querySelector(s);
 const canvas=$('#game');
@@ -171,7 +171,17 @@ const LOADING_ASSET_STATUS={
   wheat1:'Готовим молодые посевы',
   wheat2:'Поднимаем первые ростки',
   wheat3:'Выращиваем поля',
-  wheat4:'Доводим урожай до зрелости'
+  wheat4:'Доводим урожай до зрелости',
+  tidelineBoardingPlank:'Собираем настил причала',
+  tidelineRailing:'Ставим портовые перила',
+  tidelineBollard:'Крепим швартовые тумбы',
+  tidelineAnchor:'Готовим якорь',
+  tidelineBuoyGarland:'Развешиваем портовые буи',
+  tidelineBellStand:'Ставим портовый колокол',
+  tidelineDockChair:'Обживаем причал',
+  tidelineBoatHouse:'Готовим рыбацкую лавку',
+  tidelineBaitBox:'Раскладываем снасти',
+  tidelineCargoBarrel:'Подвозим портовый груз'
 };
 let loadingPhraseIndex=1;
 let loadingPhraseTimer=null;
@@ -514,6 +524,48 @@ function fit(root,maxXZ,maxY=maxXZ*1.5){
   root.position.set(root.position.x-c.x,root.position.y-b.min.y,root.position.z-c.z);
 }
 
+function cloneLoadedAsset(assetKey,maxXZ,maxY=maxXZ*1.5){
+  const source=resolvedAssets.get(ASSETS[assetKey]);
+  if(!source)throw new Error(`Required asset is not loaded: ${assetKey}`);
+  const model=source.clone(true);
+  shadows(model);
+  fit(model,maxXZ,maxY);
+  return model;
+}
+function createTidelinePierVisual(yaw=0){
+  const root=new THREE.Group();
+  const deck=cloneLoadedAsset('tidelineBoardingPlank',3.85,1.1);
+  deck.rotation.y=Math.PI*.5;deck.position.z=.05;root.add(deck);
+  const leftRail=cloneLoadedAsset('tidelineRailing',2.65,.9);
+  leftRail.rotation.y=Math.PI*.5;leftRail.position.set(-.92,.17,.05);root.add(leftRail);
+  const rightRail=cloneLoadedAsset('tidelineRailing',2.65,.9);
+  rightRail.rotation.y=-Math.PI*.5;rightRail.position.set(.92,.17,-.18);root.add(rightRail);
+  const bollard=cloneLoadedAsset('tidelineBollard',.58,.75);
+  bollard.position.set(.72,.12,1.46);root.add(bollard);
+  const anchor=cloneLoadedAsset('tidelineAnchor',.72,.72);
+  anchor.position.set(-.92,.12,1.25);anchor.rotation.y=.36;root.add(anchor);
+  const bell=cloneLoadedAsset('tidelineBellStand',.78,1.25);
+  bell.position.set(-.78,.12,-1.25);root.add(bell);
+  const chair=cloneLoadedAsset('tidelineDockChair',.70,.82);
+  chair.position.set(.72,.12,-1.08);chair.rotation.y=-.45;root.add(chair);
+  const garland=cloneLoadedAsset('tidelineBuoyGarland',1.15,.72);
+  garland.position.set(1.02,.08,.72);garland.rotation.y=.28;root.add(garland);
+  const boat=createBoatVisual();
+  boat.position.set(1.62,-.02,.56);boat.rotation.y=-.18;root.add(boat);
+  root.userData.boat=boat;
+  root.rotation.y=yaw;
+  return root;
+}
+function createTidelineFishingShopVisual(){
+  const root=new THREE.Group();
+  const house=cloneLoadedAsset('tidelineBoatHouse',3.45,3.45);root.add(house);
+  const bait=cloneLoadedAsset('tidelineBaitBox',.72,.66);
+  bait.position.set(1.12,.08,.92);bait.rotation.y=-.22;root.add(bait);
+  const barrel=cloneLoadedAsset('tidelineCargoBarrel',.62,.78);
+  barrel.position.set(-1.02,.08,.82);barrel.rotation.y=.18;root.add(barrel);
+  return root;
+}
+
 const CARD_PREVIEW_ASSET={
   tree:'treeA',
   rock:'rockA',
@@ -534,12 +586,12 @@ async function previewObjectFor(type){
     }));
     return preview;
   }
-  if(['pier','lighthouse','fishingShop'].includes(type)){
-    const visual=marinePreviewVisual(type);
-    if(visual){
-      shadows(visual);
-      if(type==='lighthouse'&&visual.userData.beamPivot)visual.userData.beamPivot.visible=false;
-    }
+  if(type==='pier')return createTidelinePierVisual(.18);
+  if(type==='fishingShop')return createTidelineFishingShopVisual();
+  if(type==='lighthouse'){
+    const visual=createLighthouseVisual();
+    shadows(visual);
+    if(visual.userData.beamPivot)visual.userData.beamPivot.visible=false;
     return visual;
   }
   const asset=CARD_PREVIEW_ASSET[type];
@@ -785,8 +837,7 @@ async function setLighthouse(tile,animated=true){
 async function setFishingShop(tile,animated=true){
   clearContent(tile);
   tile.type='fishingShop';
-  const visual=createFishingShopVisual();
-  shadows(visual);
+  const visual=createTidelineFishingShopVisual();
   visual.position.y=.11;
   setMarineObjectCellKey(visual,tile);
   tile.visual.add(visual);
@@ -869,8 +920,7 @@ function awardSeaRoute(newPier){
 async function placePier(card,x,z){
   if(!canPlacePier(x,z))return toast('Причал ставится на свободную воду вплотную к берегу.');
   const shore=adjacentLandForWater(x,z)[0];
-  const visual=createPierVisual(shore.yaw);
-  shadows(visual);
+  const visual=createTidelinePierVisual(shore.yaw);
   visual.position.set(x*GRID.tileSize,-.48,z*GRID.tileSize);
   const wk=waterKey(x,z);
   visual.userData.waterKey=wk;
