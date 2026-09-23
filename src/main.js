@@ -1204,6 +1204,7 @@ function spend(id){
   state.hand.splice(i,1);
   state.selectedCardId=null;
   const promoted=refillHand();
+  for(const promotedCard of promoted)state.knownHandCardIds.add(promotedCard.id);
   renderHand();
 
   if(promoted.length&&sourceRect){
