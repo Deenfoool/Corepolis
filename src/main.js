@@ -596,27 +596,56 @@ function updateResourceMarker(t){
     t.visual.add(t.resourceMarker);
   }
 }
+function createFieldStalk(height,color,mature=false,lean=0){
+  const group=new THREE.Group();
+  const stem=new THREE.Mesh(new THREE.CylinderGeometry(.022,.032,height,5),new THREE.MeshStandardMaterial({color,roughness:.9}));
+  stem.position.y=height*.5; stem.rotation.z=lean; stem.castShadow=true; group.add(stem);
+  if(mature){
+    const head=new THREE.Mesh(new THREE.CapsuleGeometry(.04,.12,3,6),new THREE.MeshStandardMaterial({color:0xe8c764,roughness:.82}));
+    head.scale.set(.82,1,.82); head.position.set(Math.sin(lean)*height*.45,height*.9,0); head.rotation.z=lean*.65; head.castShadow=true; group.add(head);
+  }
+  return group;
+}
+function createFieldRow(stage,rowIndex,synergy=false){
+  const row=new THREE.Group();
+  const count=[3,4,5,7][Math.max(0,Math.min(3,stage-1))];
+  const palette=[0x86ad51,0x91b34d,0xb5ae45,synergy?0xe1bc54:0xd4ad43];
+  const base=[.22,.34,.48,.64][Math.max(0,Math.min(3,stage-1))];
+  const spacing=3.05/Math.max(1,count-1);
+  for(let i=0;i<count;i++){
+    const wave=((i*17+rowIndex*11+stage*7)%9)/8;
+    const h=base+(wave-.5)*(stage>=3?.13:.08);
+    const lean=(((i*13+rowIndex*19)%7)-3)*.018;
+    const stalk=createFieldStalk(h,palette[stage-1]??palette[0],stage>=4,lean);
+    stalk.position.set(-1.525+i*spacing,0,(((i+rowIndex*2)%3)-1)*.035); row.add(stalk);
+  }
+  row.userData.swayPhase=rowIndex*.72+stage*.31;
+  row.userData.swayAmount=(stage>=3?.032:.018)*(synergy?1.12:1);
+  return row;
+}
 function fieldVisual(stage,synergy=false){
   const g=new THREE.Group();
-  const dirt=new THREE.Mesh(
-    new THREE.BoxGeometry(GRID.tileSize*.82,.18,GRID.tileSize*.82),
-    new THREE.MeshStandardMaterial({color:synergy?0x8a642f:0x72502f,roughness:1})
-  );
-  dirt.position.y=.17;
-  dirt.castShadow=dirt.receiveShadow=true;
-  g.add(dirt);
-  const cropMat=new THREE.MeshStandardMaterial({color:stage>=3?0xd7ad3e:0xa7b947,roughness:.9});
-  const n=3+stage;
-  for(let x=0;x<n;x++)for(let z=0;z<n;z++){
-    if(((x*3+z*5+stage)%10)/10>.3+stage*.17)continue;
-    const stalk=new THREE.Mesh(new THREE.CylinderGeometry(.025,.035,.52+stage*.08,5),cropMat);
-    stalk.position.set((x-(n-1)/2)*.48,.48+stage*.04,(z-(n-1)/2)*.48);
-    stalk.castShadow=true;
-    g.add(stalk);
+  g.userData.isField=true; g.userData.stage=stage; g.userData.synergy=synergy; g.userData.cropRows=[];
+  const patch=GRID.tileSize*.82;
+  const soilColors=[0x684622,0x6c4925,0x71502a,0x76552d];
+  const soil=new THREE.Mesh(new RoundedBoxGeometry(patch,.20,patch,4,.16),new THREE.MeshStandardMaterial({color:soilColors[Math.max(0,Math.min(3,stage-1))],roughness:.98}));
+  soil.position.y=.17; soil.castShadow=soil.receiveShadow=true; g.add(soil);
+  const inner=new THREE.Mesh(new RoundedBoxGeometry(patch*.91,.035,patch*.91,3,.12),new THREE.MeshStandardMaterial({color:stage>=3?0x7d5a2e:0x60411f,roughness:1}));
+  inner.position.y=.285; inner.receiveShadow=true; g.add(inner);
+  const rows=stage===1?4:5; const gap=2.95/Math.max(1,rows-1);
+  for(let r=0;r<rows;r++){
+    const z=-1.475+r*gap;
+    const furrow=new THREE.Mesh(new THREE.BoxGeometry(3.35,.026,.16),new THREE.MeshStandardMaterial({color:0x4f351c,roughness:1}));
+    furrow.position.set(0,.315,z); furrow.receiveShadow=true; g.add(furrow);
+    const ridge=new THREE.Mesh(new THREE.BoxGeometry(3.22,.055,.26),new THREE.MeshStandardMaterial({color:stage>=3?0x76502a:0x6f4b27,roughness:1}));
+    ridge.position.set(0,.34,z); ridge.receiveShadow=true; g.add(ridge);
+    const row=createFieldRow(stage,r,synergy); row.position.set(0,.355,z); g.add(row); g.userData.cropRows.push(row);
   }
-  const b=badge(stage);
-  b.position.set(1.55,.48,-1.55);
-  g.add(b);
+  if(synergy){
+    const glow=new THREE.Mesh(new THREE.RingGeometry(1.72,1.88,40),new THREE.MeshBasicMaterial({color:0xf2cf72,transparent:true,opacity:stage>=4?.30:.16,side:THREE.DoubleSide,depthWrite:false}));
+    glow.rotation.x=-Math.PI/2; glow.position.y=.405; g.add(glow); g.userData.synergyGlow=glow;
+  }
+  const badgeNode=badge(stage); badgeNode.position.set(1.52,.72,-1.52); badgeNode.scale.set(.78,.78,.78); g.add(badgeNode);
   return g;
 }
 async function modelOn(t,id,size,yaw=0,animated=false){
