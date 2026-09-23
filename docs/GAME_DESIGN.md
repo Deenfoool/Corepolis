@@ -137,7 +137,7 @@ Farmland uses a full-tile rounded low-poly language:
 - stages I–IV use `Wheat_1.glb` through `Wheat_4.glb` with increasing density and height;
 - mill-adjacent fields keep identical geometry and differ only through warmer soil tones;
 - crop rows retain wind sway and staggered growth animation.
-- the complete field root is seated slightly into the island surface, hiding the lower soil seam without burying the furrows.
+- the field soil base is seated about halfway into the island surface; its lower half is buried while the furrows and crops remain clearly above the grass plane.
 
 The Field card preview is generated from this same runtime renderer.
 

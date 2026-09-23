@@ -1259,7 +1259,7 @@ function fieldVisual(stage,synergy=false,tile=null){
 
   // Seat the cultivated soil slightly into the island surface so the field
   // reads as plowed ground instead of a separate slab placed on top.
-  g.position.y=-.055;
+  g.position.y=-.12;
   return g;
 }
 function animateFieldGrowth(field,stage,synergy=false){
