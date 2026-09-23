@@ -247,4 +247,8 @@ Fishing Shop is a land building unlocked by the first Pier.
 The building also awards placement score scaled by nearby houses and piers.
 
 ### TIDELINE visual source
-The intended production models are from **TIDELINE — Coastal Harbor** by Candle Light. The free sample is advertised as 12 selected GLB + FBX models with commercial project use. itch.io gates the actual archive behind its interactive download screen, so no TIDELINE binary files are vendored in the repository yet. Current marine visuals are isolated in `src/marine-visuals.js` and must be replaced/deleted as soon as the exact TIDELINE GLBs are added.
+Corepolis now vendors the usable models from the **TIDELINE — Coastal Harbor** free sample by Candle Light under `assets/tideline/`.
+
+The Pier is assembled from the real TIDELINE `Boarding_Plank`, `Railing_A`, `Bollard_A`, `Anchor_A`, `Buoy_Garland`, `Bell_Stand_A` and `Dock_Chair_A` models. The Fishing Shop uses `Boat_House_A`, `Bait_Box_A` and `Cargo_Barrel_A`.
+
+The free sample does not contain a standalone boat or lighthouse model, so only those two visuals remain procedural in `src/marine-visuals.js`. They are isolated so they can be deleted in the same change that adds matching TIDELINE assets later.
