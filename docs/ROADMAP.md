@@ -115,3 +115,9 @@
 - [x] Turf/soil contact uses shared coastline profile with overlap
 - [x] Increase coastline sampling from 9 to 13 segments
 - [x] Reduce oversized embedded cliff rocks
+
+- [x] Atmospheric rotating loading phrases instead of a fixed loading headline
+- [x] Hide internal asset names behind friendly loading statuses
+- [x] Loading progress now includes card-preview generation
+- [x] Final «Остров готов.» transition before entering the game
+- [x] Reduced-motion-safe loading experience

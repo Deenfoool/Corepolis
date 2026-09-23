@@ -89,7 +89,9 @@ const pointer=new THREE.Vector2();
 
 const ui={
   loadingScreen:$('#loading-screen'),loadingBar:$('#loading-bar'),loadingProgress:$('#loading-progress'),
-  loadingDetail:$('#loading-detail'),hand:$('#hand'),handCount:$('#hand-count'),reserveZone:$('#reserve-zone'),reserveStack:$('#reserve-stack'),reserveCount:$('#reserve-count'),
+  loadingDetail:$('#loading-detail'),loadingStage:$('#loading-stage'),loadingPhraseWindow:$('#loading-phrase-window'),
+  loadingPhraseCurrent:$('#loading-phrase-current'),loadingPhraseNext:$('#loading-phrase-next'),
+  hand:$('#hand'),handCount:$('#hand-count'),reserveZone:$('#reserve-zone'),reserveStack:$('#reserve-stack'),reserveCount:$('#reserve-count'),
   selectionHint:$('#selection-hint'),harvestScore:$('#harvest-score'),comboCount:$('#combo-count'),
   landCount:$('#land-count'),woodCount:$('#wood-count'),stoneCount:$('#stone-count'),
   objectiveTitle:$('#objective-title'),objectiveCopy:$('#objective-copy'),
@@ -132,6 +134,108 @@ function refreshLucide(){
   }
 }
 
+const LOADING_PHRASES=[
+  'Поднимаем остров из воды',
+  'Собираем берег по кусочкам',
+  'Укладываем свежий дёрн',
+  'Расставляем камни у воды',
+  'Сажаем первые деревья',
+  'Разравниваем землю под поля',
+  'Проверяем, не уплыл ли остров',
+  'Готовим место для будущих построек',
+  'Перемешиваем колоду',
+  'Прячем лишние карты в запас',
+  'Разгоняем ветер над полями',
+  'Проверяем стыки берегов',
+  'Добавляем траву по краям',
+  'Будим остров',
+  'Последний штрих…'
+];
+const LOADING_ASSET_STATUS={
+  windmill:'Подготавливаем мельницу',
+  treeA:'Высаживаем первые деревья',
+  treeB:'Добавляем лесу разнообразия',
+  rockA:'Раскладываем камни у воды',
+  rockC:'Формируем каменистый берег',
+  house:'Готовим будущие дома',
+  market:'Собираем рыночную площадь',
+  lumbermill:'Подвозим брёвна к лесопилке',
+  quarry:'Готовим каменоломню',
+  wheat1:'Готовим молодые посевы',
+  wheat2:'Поднимаем первые ростки',
+  wheat3:'Выращиваем поля',
+  wheat4:'Доводим урожай до зрелости'
+};
+let loadingPhraseIndex=1;
+let loadingPhraseTimer=null;
+let loadingPhraseBusy=false;
+let pendingLoadingPhrase=null;
+
+const wait=ms=>new Promise(resolve=>setTimeout(resolve,ms));
+function reducedMotion(){
+  return matchMedia('(prefers-reduced-motion: reduce)').matches;
+}
+function setLoadingProgress(percent,stage,detail){
+  const safe=Math.max(0,Math.min(100,Math.round(percent)));
+  ui.loadingBar.style.width=`${safe}%`;
+  ui.loadingProgress.textContent=`${safe}%`;
+  if(stage)ui.loadingStage.textContent=stage.toUpperCase();
+  if(detail)ui.loadingDetail.textContent=detail;
+}
+function changeLoadingPhrase(text){
+  if(!text||!ui.loadingPhraseCurrent||ui.loadingPhraseCurrent.textContent===text)return Promise.resolve();
+  if(reducedMotion()){
+    ui.loadingPhraseCurrent.textContent=text;
+    ui.loadingPhraseNext.textContent='';
+    return Promise.resolve();
+  }
+  if(loadingPhraseBusy){
+    pendingLoadingPhrase=text;
+    return Promise.resolve();
+  }
+
+  loadingPhraseBusy=true;
+  ui.loadingPhraseNext.textContent=text;
+  ui.loadingPhraseWindow.classList.add('shifting');
+  return wait(430).then(()=>{
+    ui.loadingPhraseCurrent.textContent=text;
+    ui.loadingPhraseNext.textContent='';
+    ui.loadingPhraseWindow.classList.remove('shifting');
+    loadingPhraseBusy=false;
+    if(pendingLoadingPhrase){
+      const pending=pendingLoadingPhrase;
+      pendingLoadingPhrase=null;
+      return changeLoadingPhrase(pending);
+    }
+  });
+}
+function startLoadingPhrases(){
+  ui.loadingPhraseCurrent.textContent=LOADING_PHRASES[0];
+  loadingPhraseIndex=1;
+  if(reducedMotion())return;
+  clearInterval(loadingPhraseTimer);
+  loadingPhraseTimer=setInterval(()=>{
+    if(loadingPhraseBusy)return;
+    const phrase=LOADING_PHRASES[loadingPhraseIndex%LOADING_PHRASES.length];
+    loadingPhraseIndex++;
+    changeLoadingPhrase(phrase);
+  },1150);
+}
+function stopLoadingPhrases(){
+  clearInterval(loadingPhraseTimer);
+  loadingPhraseTimer=null;
+  pendingLoadingPhrase=null;
+}
+async function finishLoadingScreen(){
+  stopLoadingPhrases();
+  if(loadingPhraseBusy)await wait(440);
+  setLoadingProgress(100,'МИР ГОТОВ','Всё на своих местах');
+  await changeLoadingPhrase('Остров готов.');
+  ui.loadingScreen.querySelector('.loading-card')?.classList.add('ready');
+  if(!reducedMotion())await wait(520);
+  ui.loadingScreen.classList.add('done');
+  setTimeout(()=>ui.loadingScreen.remove(),620);
+}
 const load=url=>{
   if(!cache.has(url)){
     cache.set(url,loader.loadAsync(url).then(g=>{
@@ -472,25 +576,34 @@ async function renderCardPreview(type){
   }
 }
 async function buildCardPreviews(){
-  for(const type of Object.keys(CARD_DEFS)){
+  const types=Object.keys(CARD_DEFS);
+  for(let i=0;i<types.length;i++){
+    const type=types[i];
+    setLoadingProgress(
+      82+(i/types.length)*15,
+      'ГОТОВИМ КОЛОДУ',
+      i<types.length*.5?'Рисуем карточки':'Раскладываем карты по местам'
+    );
     const image=await renderCardPreview(type);
     if(image)state.cardPreviews.set(type,image);
   }
+  setLoadingProgress(97,'ГОТОВИМ КОЛОДУ','Последняя проверка');
   renderHand();
 }
 
 async function preload(){
   const entries=Object.entries(ASSETS);
-  let done=0;
-  for(const [name,url] of entries){
-    ui.loadingDetail.textContent=`Загружаем: ${name}`;
+  setLoadingProgress(2,'СТРОИМ МИР','Подготавливаем мир');
+  for(let i=0;i<entries.length;i++){
+    const [name,url]=entries[i];
+    setLoadingProgress(
+      4+(i/entries.length)*76,
+      'СТРОИМ МИР',
+      LOADING_ASSET_STATUS[name]||'Собираем остров'
+    );
     await load(url);
-    done++;
-    ui.loadingBar.style.width=`${Math.round(done/entries.length*100)}%`;
-    ui.loadingProgress.textContent=`${done} / ${entries.length}`;
   }
-  ui.loadingScreen.classList.add('done');
-  setTimeout(()=>ui.loadingScreen.remove(),500);
+  setLoadingProgress(80,'СТРОИМ МИР','Мир собран');
 }
 
 function createTileRoot(x,z){
@@ -1829,6 +1942,7 @@ function tick(time){
 }
 
 async function boot(){
+  startLoadingPhrases();
   seed();
   ['tree','lumbermill','rock','quarry','field'].forEach(t=>addCard(draw(t)));
   renderHand();
@@ -1839,11 +1953,14 @@ async function boot(){
   await buildCardPreviews();
   refreshLucide();
   status();
+  await finishLoadingScreen();
   toast('Начните без построек: первое комбо из 4 полей откроет мельницу.');
 }
 boot().catch(e=>{
   console.error(e);
-  ui.loadingDetail.textContent='Не удалось загрузить один из ассетов. Проверьте консоль.';
+  stopLoadingPhrases();
+  setLoadingProgress(100,'ОШИБКА','Не удалось подготовить мир');
+  changeLoadingPhrase('Остров не поднялся. Попробуйте обновить страницу.');
 });
 requestAnimationFrame(tick);
 

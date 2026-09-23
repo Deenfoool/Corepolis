@@ -19,18 +19,21 @@
 </head>
 <body>
   <div id="app">
-    <div id="loading-screen" class="loading-screen" aria-live="polite">
-      <div class="loading-card">
+    <div id="loading-screen" class="loading-screen">
+      <div class="loading-card" role="status" aria-live="polite" aria-atomic="true">
         <div class="loading-brand">
-          <span class="brand-gem">C</span>
-          <div>
+          <span class="brand-gem loading-gem">C</span>
+          <div class="loading-copy">
             <div class="eyebrow">COREPOLIS</div>
-            <strong>Поднимаем остров из воды</strong>
+            <div id="loading-phrase-window" class="loading-phrase-window">
+              <strong id="loading-phrase-current" class="loading-phrase loading-phrase-current">Поднимаем остров из воды</strong>
+              <strong id="loading-phrase-next" class="loading-phrase loading-phrase-next" aria-hidden="true"></strong>
+            </div>
           </div>
         </div>
-        <p id="loading-detail">Загружаем игровые ассеты…</p>
-        <div class="loading-track"><i id="loading-bar"></i></div>
-        <div class="loading-foot"><span>WORLD ASSETS</span><b id="loading-progress">0 / 0</b></div>
+        <p id="loading-detail" class="loading-detail">Подготавливаем мир</p>
+        <div class="loading-track" aria-hidden="true"><i id="loading-bar"></i></div>
+        <div class="loading-foot"><span id="loading-stage">СТРОИМ МИР</span><b id="loading-progress">0%</b></div>
       </div>
     </div>
 
@@ -96,6 +99,6 @@
     </aside>
   </div>
 
-  <script type="module" src="./src/main.js?v=coast-stitch-3"></script>
+  <script type="module" src="./src/main.js?v=loading-stories-1"></script>
 </body>
 </html>
