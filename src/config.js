@@ -41,7 +41,7 @@ export const CARD_DEFS = {
     category: 'НАВИГАЦИЯ',
     name: 'Маяк',
     icon: 'scan-line',
-    cost: { wood: 1, stone: 2 },
+    cost: {},
     tone: 'gold',
     description: 'Ставится на сушу или создаёт собственный остров вдали. Открывает удалённое строительство островов.',
   },

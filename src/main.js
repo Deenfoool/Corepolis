@@ -5,7 +5,7 @@ import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.j
 import { CARD_DEFS, DECK_WEIGHTS, DIRECTIONS, GRID } from './config.js';
 import { ASSETS } from './models.js?v=wheat-material-fix-1';
 import { buildTerrainTile, disposeTerrainTile } from './terrain.js?v=coast-stitch-3';
-import { createPierVisual, createLighthouseVisual, createFishingShopVisual, marinePreviewVisual } from './marine-visuals.js?v=marine-branch-1';
+import { createBoatVisual, createPierVisual, createLighthouseVisual, createFishingShopVisual, marinePreviewVisual } from './marine-visuals.js?v=marine-branch-2';
 
 const $=s=>document.querySelector(s);
 const canvas=$('#game');
@@ -536,7 +536,10 @@ async function previewObjectFor(type){
   }
   if(['pier','lighthouse','fishingShop'].includes(type)){
     const visual=marinePreviewVisual(type);
-    if(visual)shadows(visual);
+    if(visual){
+      shadows(visual);
+      if(type==='lighthouse'&&visual.userData.beamPivot)visual.userData.beamPivot.visible=false;
+    }
     return visual;
   }
   const asset=CARD_PREVIEW_ASSET[type];
@@ -769,7 +772,10 @@ async function setLighthouse(tile,animated=true){
   tile.visual.add(visual);
   tile.content=visual;
   const beam=visual.userData.beamPivot;
-  if(beam)state.lighthouseBeams.push(beam);
+  if(beam){
+    beam.traverse(object=>{if(object.isMesh){object.castShadow=false;object.receiveShadow=false;}});
+    state.lighthouseBeams.push(beam);
+  }
   if(animated){
     spawnRing(tile.visual.position.clone(),0xf4d778);
     spawnBurst(tile.visual.position.clone(),0xffdf85,14);
@@ -809,9 +815,9 @@ function resolveMarineChoice(choice){
     grantSpecificCards('lighthouse',1,{priorityFirst:true});
     grantSpecificCards('island',2);
   }else{
-    grantSpecificCards('island',7);
+    grantSpecificCards('island',7,{priorityFirst:true});
   }
-  grantSpecificCards('fishingShop',1,{priorityFirst:true});
+  grantSpecificCards('fishingShop',1);
   state.inputLocked=false;
   status();
   toast(choice==='lighthouse'
@@ -820,7 +826,7 @@ function resolveMarineChoice(choice){
 }
 function animateSeaRoute(from,to){
   if(!from?.visual||!to?.visual)return;
-  const boat=createPierVisual(0).userData.boat.clone(true);
+  const boat=createBoatVisual();
   shadows(boat);
   const start=from.visual.position.clone().add(new THREE.Vector3(0,.04,0));
   const end=to.visual.position.clone().add(new THREE.Vector3(0,.04,0));
@@ -832,7 +838,14 @@ function animateSeaRoute(from,to){
     boat.position.y+=Math.sin(p*Math.PI)*.20;
     const dx=end.x-start.x,dz=end.z-start.z;
     boat.rotation.y=Math.atan2(dx,dz);
-  },t=>t).then(()=>world.remove(boat));
+  },t=>t).then(()=>{
+    world.remove(boat);
+    boat.traverse(object=>{
+      object.geometry?.dispose?.();
+      const materials=Array.isArray(object.material)?object.material:[object.material];
+      for(const material of materials)material?.dispose?.();
+    });
+  });
 }
 function awardSeaRoute(newPier){
   const component=landComponent(newPier.shoreKey);
@@ -1914,7 +1927,7 @@ function toast(s){
   toastTimer=setTimeout(()=>ui.toast.classList.add('hidden'),2400);
 }
 const adjacent=(x,z)=>DIRECTIONS.some(d=>state.land.has(key(x+d.dx,z+d.dz)));
-const canExpand=(x,z)=>!state.land.has(key(x,z))&&Math.abs(x)<=GRID.maxRadius&&Math.abs(z)<=GRID.maxRadius&&adjacent(x,z);
+const canExpand=(x,z)=>!state.land.has(key(x,z))&&!state.waterStructures.has(waterKey(x,z))&&Math.abs(x)<=GRID.maxRadius&&Math.abs(z)<=GRID.maxRadius&&adjacent(x,z);
 
 function tileInfo(t){
   if(!t){
@@ -2265,7 +2278,7 @@ renderer.domElement.onpointermove=e=>{
   const tileHit=hits.find(h=>tileOf(h.object));
   const t=tileHit?tileOf(tileHit.object):null;
 
-  if(card&&['expand','pier','island'].includes(card.type)||card?.type==='lighthouse'&&!t){
+  if((card&&['expand','pier','island'].includes(card.type))||(card?.type==='lighthouse'&&!t)){
     const cell=snappedWaterCell(hits);
     if(!cell){hoverMarker.visible=false;return;}
     const valid=
