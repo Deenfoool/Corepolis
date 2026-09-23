@@ -55,6 +55,10 @@
 - [x] Disabled/dimmed unaffordable cards
 - [x] Runtime 3D object previews for cards
 - [x] Dark rectangular card redesign with preview fade/blur
+- [x] Rebuilt farmland visuals with furrows and staged crop density
+- [x] Mature wheat heads and wind-sway animation
+- [x] Premium mill-adjacent field treatment
+- [x] Enhanced four-field collapse animation
 - [x] Objective progress meter and richer field status chips
 - [ ] Browser play-test and balance pass
 
