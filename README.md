@@ -59,3 +59,8 @@ Runs begin without constructed buildings. The first four-field combo unlocks the
 ### Seamless island terrain
 
 Corepolis now uses neighbour-aware procedural autotiling for island land. Grid seams remain geometrically fixed while exposed coastlines receive layered soil/rock cliffs, irregular silhouettes, deterministic variants and occasional hero details. Adding land rebuilds only the affected 3×3 neighbourhood, leaving buildings, resources and fields untouched.
+
+
+### Spatial field growth
+
+Fields now mature by spreading across the island. Every orthogonally connected normal field shares a stage equal to its connected size, capped at four. Around the Mill, all planted cardinal fields share a stage equal to the number of planted Mill sides. Field cards can no longer be stacked repeatedly on one plot.

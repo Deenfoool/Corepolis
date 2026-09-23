@@ -192,3 +192,21 @@ Outer coastline corners now share explicit cliff row geometry. Adjacent cliff si
 The grass/soil contact was also rebuilt. The cliff's first row now reaches the actual grass elevation and tucks slightly beneath the top surface. A thin irregular turf skirt shares the same coastline profile and blends green grass into brown soil without a floating strip or straight trim geometry.
 
 Coastline sampling was increased from 9 to 13 segments per side. This gives smoother bays and protrusions while keeping interior tile seams exact.
+
+
+## Spatial field growth
+
+Field growth is now driven by placement, not by stacking Field cards on the same cell.
+
+Normal fields:
+- a single isolated field is stage 1;
+- adding an orthogonally adjacent second field makes the whole connected group stage 2;
+- a third connected field makes all three stage 3;
+- the fourth makes all four stage 4, then the existing four-field combo resolves;
+- placing another Field card on an occupied Field cell is no longer allowed.
+
+Mill fields use the same spatial idea, with the Mill acting as the shared centre. One occupied cardinal Mill slot means stage 1 for all planted Mill fields, two slots mean stage 2, three mean stage 3, and all four slots mean stage 4 / harvest-ready.
+
+A large Mill harvest clears the four planted field cells after collecting them. This is required by the spatial model: the next crop cycle must be grown by placing neighbouring fields again rather than repeatedly stacking cards on existing plots.
+
+The large numeric stage sprites above fields were removed. Wheat_1 through Wheat_4 are now the primary stage indicator; exact stage remains available in the objective panel and tile information.

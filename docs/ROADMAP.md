@@ -121,3 +121,9 @@
 - [x] Loading progress now includes card-preview generation
 - [x] Final «Остров готов.» transition before entering the game
 - [x] Reduced-motion-safe loading experience
+
+- [x] Field stage is determined by connected-field size instead of repeated placement
+- [x] All cells in a connected normal field visually grow together
+- [x] Mill-field stage is determined by occupied cardinal Mill slots
+- [x] Remove numeric 1/2/3/4 sprites above field plots
+- [x] Large harvest clears Mill fields for a new spatial planting cycle
