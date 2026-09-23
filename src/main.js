@@ -1106,6 +1106,70 @@ function fieldAdjacencySignature(t){
   const a=fieldAdjacency(t);
   return `${a.north?1:0}${a.east?1:0}${a.south?1:0}${a.west?1:0}`;
 }
+function createFieldRidge(length,width,height,{westConnected=false,eastConnected=false,seed=0}={}){
+  const xSegments=10;
+  const zSegments=6;
+  const positions=[];
+  const colors=[];
+  const indices=[];
+  const baseColor=new THREE.Color(0x8a5b2d);
+  const crestColor=new THREE.Color(0xa36d36);
+
+  for(let xi=0;xi<=xSegments;xi++){
+    const tx=xi/xSegments;
+    const x=(tx-.5)*length;
+    const leftTaper=westConnected?1:Math.min(1,tx/.13);
+    const rightTaper=eastConnected?1:Math.min(1,(1-tx)/.13);
+    const endTaper=Math.sin(Math.min(1,leftTaper,rightTaper)*Math.PI*.5);
+    const longWobble=Math.sin((xi+seed*.73)*1.37)*.026;
+
+    for(let zi=0;zi<=zSegments;zi++){
+      const tz=zi/zSegments;
+      const z=(tz-.5)*width;
+      const arch=Math.sin(Math.PI*tz);
+      const facet=1+Math.sin((xi*3+zi*5+seed)*1.11)*.035;
+      const y=.285+height*arch*endTaper*facet+longWobble*arch;
+      positions.push(x,y,z);
+
+      const color=baseColor.clone().lerp(crestColor,Math.pow(arch,1.25)*.72);
+      const shade=((xi*17+zi*11+seed*13)%5-2)*.018;
+      color.offsetHSL(0,0,shade);
+      colors.push(color.r,color.g,color.b);
+    }
+  }
+
+  const row=zSegments+1;
+  for(let xi=0;xi<xSegments;xi++)for(let zi=0;zi<zSegments;zi++){
+    const a=xi*row+zi;
+    const b=(xi+1)*row+zi;
+    const c=(xi+1)*row+zi+1;
+    const d=xi*row+zi+1;
+
+    // X/Z grid viewed from above: this winding points the face normal toward +Y.
+    indices.push(a,d,b,b,d,c);
+  }
+
+  const geometry=new THREE.BufferGeometry();
+  geometry.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));
+  geometry.setAttribute('color',new THREE.Float32BufferAttribute(colors,3));
+  geometry.setIndex(indices);
+  geometry.computeVertexNormals();
+  geometry.computeBoundingBox();
+  geometry.computeBoundingSphere();
+
+  const mesh=new THREE.Mesh(
+    geometry,
+    new THREE.MeshStandardMaterial({
+      vertexColors:true,
+      roughness:1,
+      flatShading:true,
+      side:THREE.FrontSide
+    })
+  );
+  mesh.castShadow=mesh.receiveShadow=true;
+  return mesh;
+}
+
 function roundedFieldMesh(width,height,depth,radius,color){
   const safeRadius=Math.min(radius,width*.24,height*.48,depth*.24);
   const mesh=new THREE.Mesh(
@@ -1176,8 +1240,7 @@ function fieldVisual(stage,synergy=false,tile=null){
 
   const ridgeCount=5;
   const ridgeWidth=.60;
-  const ridgeHeight=[.14,.15,.17,.18][safeStage-1];
-  const ridgeColor=synergy?0x8d6231:[0x7d5429,0x82582c,0x885d30,0x8e6334][safeStage-1];
+  const ridgeHeight=[.15,.17,.19,.21][safeStage-1];
   const availableDepth=depth-.38;
   const startZ=minZ+.19;
   const spacing=availableDepth/Math.max(1,ridgeCount-1);
@@ -1185,15 +1248,18 @@ function fieldVisual(stage,synergy=false,tile=null){
 
   for(let r=0;r<ridgeCount;r++){
     const z=startZ+spacing*r;
-    const ridge=roundedFieldMesh(
-      ridgeLength,ridgeHeight,ridgeWidth,.075,ridgeColor
-    );
-    ridge.position.set(centerX,.325,z);
+    const ridge=createFieldRidge(ridgeLength,ridgeWidth,ridgeHeight,{
+      westConnected:adjacency.west,
+      eastConnected:adjacency.east,
+      seed:r+safeStage*7+(synergy?19:0)
+    });
+    ridge.position.set(centerX,0,z);
+    if(synergy)ridge.material.color.setHex(0xfff3dc);
     g.add(ridge);
 
     const row=createWheatRow(safeStage,r,synergy);
-    row.position.set(centerX,.41+ridgeHeight*.5,z);
-    row.scale.x=Math.max(.78,(ridgeLength-.38)/3.05);
+    row.position.set(centerX,.43+ridgeHeight*.55,z);
+    row.scale.x=Math.max(.78,(ridgeLength-.42)/3.05);
     g.add(row);
     g.userData.cropRows.push(row);
   }
