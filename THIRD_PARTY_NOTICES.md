@@ -49,3 +49,26 @@ Corepolis uses the Wheat growth models from **Ultimate Crops Pack**, created by 
 - Used stages: `Wheat_1.glb`, `Wheat_2.glb`, `Wheat_3.glb`, `Wheat_4.glb`
 
 The local GLB files preserve the crop art while allowing direct loading in the browser runtime.
+
+
+## TIDELINE — Coastal Harbor
+
+Corepolis uses selected GLB models from the **TIDELINE — Coastal Harbor** free sample by **Candle Light**.
+
+- Source: https://candlelightgame.itch.io/tideline-coastal-harbor
+- Runtime files: `assets/tideline/`
+- Project use: personal and commercial use permitted under the creator's included license
+- Attribution: not required by the creator
+- Restriction noted by the creator: the assets may not be redistributed or resold as standalone assets or reusable asset packs
+
+Used models:
+- `Boarding_Plank.glb`
+- `Railing_A.glb`
+- `Bollard_A.glb`
+- `Anchor_A.glb`
+- `Buoy_Garland.glb`
+- `Bell_Stand_A.glb`
+- `Dock_Chair_A.glb`
+- `Boat_House_A.glb`
+- `Bait_Box_A.glb`
+- `Cargo_Barrel_A.glb`
