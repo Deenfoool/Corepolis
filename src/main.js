@@ -648,6 +648,42 @@ function fieldVisual(stage,synergy=false){
   const badgeNode=badge(stage); badgeNode.position.set(1.52,.72,-1.52); badgeNode.scale.set(.78,.78,.78); g.add(badgeNode);
   return g;
 }
+function animateFieldGrowth(field,stage,synergy=false){
+  if(!field?.userData?.cropRows)return Promise.resolve();
+  const rows=field.userData.cropRows;
+  const baseScales=rows.map(row=>row.scale.clone());
+  const baseYs=rows.map(row=>row.position.y);
+  rows.forEach((row,i)=>{ row.scale.set(baseScales[i].x,.06,baseScales[i].z); row.position.y=baseYs[i]-.08; });
+  return tween(.56,p=>{
+    rows.forEach((row,i)=>{
+      const delay=i/Math.max(1,rows.length)*.22;
+      const local=Math.max(0,Math.min(1,(p-delay)/(1-delay)));
+      const q=easeOut(local);
+      const bounce=1+Math.sin(q*Math.PI)*(stage>=4?.08:.045);
+      row.scale.set(baseScales[i].x,(.06+.94*q)*bounce,baseScales[i].z);
+      row.position.y=THREE.MathUtils.lerp(baseYs[i]-.08,baseYs[i],q);
+    });
+    if(field.userData.synergyGlow)field.userData.synergyGlow.material.opacity=(stage>=4?.30:.16)*(.45+.55*p);
+  }).then(()=>{
+    rows.forEach((row,i)=>{ row.scale.copy(baseScales[i]); row.position.y=baseYs[i]; });
+  });
+}
+function updateFieldMotion(time){
+  for(const tile of state.land.values()){
+    if(tile.type!=='field'||!tile.content?.userData?.cropRows)continue;
+    for(const row of tile.content.userData.cropRows){
+      const phase=time*.00125+row.userData.swayPhase;
+      const amount=row.userData.swayAmount;
+      row.rotation.z=Math.sin(phase)*amount;
+      row.rotation.x=Math.cos(phase*.73)*amount*.32;
+    }
+    const glow=tile.content.userData.synergyGlow;
+    if(glow){
+      const base=tile.stage>=4?.30:.16;
+      glow.material.opacity=base+Math.sin(time*.0022+tile.x*.8+tile.z*.5)*.025;
+    }
+  }
+}
 async function modelOn(t,id,size,yaw=0,animated=false){
   const m=(await load(ASSETS[id])).clone(true);
   shadows(m);
@@ -690,14 +726,17 @@ function isMillZone(t){
 function setField(t,stage=1,animated=false,fieldOrder=null){
   const order=fieldOrder??t.fieldOrder??state.nextFieldOrder++;
   clearContent(t);
-  t.type='field';
-  t.stage=stage;
-  t.fieldOrder=order;
-  t.content=fieldVisual(stage,isMillZone(t));
+  t.type='field'; t.stage=stage; t.fieldOrder=order;
+  const synergy=isMillZone(t);
+  t.content=fieldVisual(stage,synergy);
   t.visual.add(t.content);
   if(animated){
-    spawnRing(t.visual.position.clone(),isMillZone(t)?0xf1c75b:0xb4cc62);
-    animatePop(t.content,.28);
+    const mature=stage>=4;
+    const color=mature?0xe5bd55:synergy?0xe0c36b:0x9fca68;
+    spawnRing(t.visual.position.clone(),color);
+    spawnBurst(t.visual.position.clone(),color,mature?16:9);
+    animateFieldGrowth(t.content,stage,synergy);
+    pulse(t.content,mature?.54:.34,mature?.10:.055);
   }
 }
 function nearby(t,type,radius=1){
@@ -1400,6 +1439,7 @@ function tick(time){
   controls.update();
   updateTweens(dt);
   updateAmbientActors(time,dt);
+  updateFieldMotion(time);
   const bladeSpeed=.75+state.bladeBoost;
   for(const blades of state.millBlades)blades.rotation.z+=dt*bladeSpeed;
   state.bladeBoost=Math.max(0,state.bladeBoost-dt*1.8);
