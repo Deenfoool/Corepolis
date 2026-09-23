@@ -97,7 +97,6 @@ export const DECK_WEIGHTS = [
   ['market', 6],
   ['lumbermill', 7],
   ['quarry', 7],
-  ['mill', 6],
 ];
 
 export const DIRECTIONS = [

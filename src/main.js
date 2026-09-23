@@ -1223,7 +1223,6 @@ function ready(){
 }
 function randomType(){
   const pool=DECK_WEIGHTS.filter(([type])=>{
-    if(type==='mill'&&!state.unlocks.mill)return false;
     if(type==='market'&&!state.unlocks.market)return false;
     return true;
   });
@@ -1443,8 +1442,8 @@ function status(){
     ui.objectiveTitle.textContent='Откройте мельницу';
     ui.objectiveCopy.textContent='Соедините по стороне любые 4 обычных поля. Первое такое комбо откроет карту мельницы.';
     ui.fieldStatus.innerHTML=`
-      <div class="field-chip"><div><span>Мельница</span><i><em style="width:${fieldCombo/4*100}%"></em></i></div><b>🔒</b></div>
-      <div class="field-chip"><div><span>Рынок</span><i><em style="width:0%"></em></i></div><b>🔒</b></div>`;
+      <div class="field-chip"><div><span>Мельница</span><i><em style="width:${fieldCombo/4*100}%"></em></i></div><b>ЗАКР.</b></div>
+      <div class="field-chip"><div><span>Рынок</span><i><em style="width:0%"></em></i></div><b>ЗАКР.</b></div>`;
     return;
   }
 
