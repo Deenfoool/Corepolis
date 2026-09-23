@@ -137,4 +137,5 @@
 - [x] Lighthouse radius enables detached Island Tile placement
 - [x] Fishing Shop unlock and house/pier card synergies
 - [x] Sea-route reward between piers on separate landmasses
-- [ ] Replace isolated marine placeholder visuals with exact TIDELINE GLBs after archive is supplied
+- [x] Replace Pier and Fishing Shop visuals with real TIDELINE free-sample GLBs
+- [ ] Replace the temporary boat and lighthouse visuals when matching TIDELINE models are available
