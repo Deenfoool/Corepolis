@@ -66,7 +66,7 @@ function coastWave(x,z,sideIndex,i,segments,size){
 }
 function makeSideProfile(side,x,z,size,sideIndex,connected){
   const half=size*.5;
-  const segments=9;
+  const segments=13;
   const points=[];
   for(let i=0;i<=segments;i++){
     const u=i/segments;
@@ -151,6 +151,51 @@ function createTopSurface(profiles,x,z,variant){
   mesh.castShadow=false;
   return mesh;
 }
+function createTurfSkirt(side,profile,x,z,sideIndex){
+  const {normal}=cliffBasis(side);
+  const positions=[];
+  const colors=[];
+  const indices=[];
+  const topY=.113;
+  const bottomY=.018;
+
+  for(let i=0;i<profile.length;i++){
+    const p=profile[i];
+    const tuck=.012+(rand(x,z,1720+sideIndex*41+i)-.5)*.008;
+    const top=new THREE.Vector3(p.x-normal.x*.010,topY,p.y-normal.y*.010);
+    const bottom=new THREE.Vector3(p.x+normal.x*tuck,bottomY,p.y+normal.y*tuck);
+    for(const [point,color] of [[top,0x799e59],[bottom,0x73533a]]){
+      positions.push(point.x,point.y,point.z);
+      const c=shade(color,(rand(x,z,1760+sideIndex*47+i+positions.length)-.5)*.025);
+      colors.push(c.r,c.g,c.b);
+    }
+  }
+
+  for(let i=0;i<profile.length-1;i++){
+    const a=i*2;
+    const b=a+2;
+    indices.push(a,a+1,b,b,a+1,b+1);
+  }
+
+  const geometry=new THREE.BufferGeometry();
+  geometry.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));
+  geometry.setAttribute('color',new THREE.Float32BufferAttribute(colors,3));
+  geometry.setIndex(indices);
+  geometry.computeVertexNormals();
+
+  const mesh=new THREE.Mesh(
+    geometry,
+    new THREE.MeshStandardMaterial({
+      vertexColors:true,
+      roughness:.97,
+      metalness:0,
+      side:THREE.DoubleSide
+    })
+  );
+  mesh.castShadow=false;
+  mesh.receiveShadow=true;
+  return mesh;
+}
 function addInteriorTone(root,x,z,size,variant){
   const tones=[0x93b46e,0x739b58,0xa4bd79,0x88aa64,0x6f9857];
   const patch=new THREE.Mesh(
@@ -172,49 +217,64 @@ function addInteriorTone(root,x,z,size,variant){
   );
   root.add(patch);
 }
-function cliffVertexColor(row,x,z,sideIndex,segment){
-  const palette=[0x765438,0x735039,0x696052,0x555a54];
-  return shade(palette[row],(rand(x,z,200+sideIndex*40+row*9+segment)-.5)*.055);
-}
-function edgePoint(side,t,half,out){
-  if(side==='n')return[t,-half-out];
-  if(side==='s')return[t,half+out];
-  if(side==='e')return[half+out,t];
-  return[-half-out,t];
-}
-function createCliffWall(side,topProfile,x,z,sideIndex){
-  const rows=5;
-  const positions=[];
-  const colors=[];
-  const indices=[];
-  const rowY=[.085,-.10,-.36,-.72,-1.14];
-  const outward=[0,.025,.075,.12,.19];
-  const segments=topProfile.length-1;
+const CLIFF_ROW_Y=[.112,.018,-.20,-.48,-.82,-1.16];
+const CLIFF_ROW_OUT=[-.012,.006,.045,.09,.145,.205];
 
+function cliffBasis(side){
   const normal=
     side==='n'?new THREE.Vector2(0,-1):
     side==='s'?new THREE.Vector2(0,1):
     side==='e'?new THREE.Vector2(1,0):
     new THREE.Vector2(-1,0);
-  const tangent=new THREE.Vector2(-normal.y,normal.x);
+  return{normal,tangent:new THREE.Vector2(-normal.y,normal.x)};
+}
+function buildCliffRows(side,topProfile,x,z,sideIndex){
+  const {normal,tangent}=cliffBasis(side);
+  const segments=topProfile.length-1;
+  const rows=[];
 
-  for(let row=0;row<rows;row++){
+  for(let row=0;row<CLIFF_ROW_Y.length;row++){
+    const points=[];
     for(let i=0;i<=segments;i++){
       const top=topProfile[i];
-      const envelope=Math.sin(Math.PI*(i/segments));
-      const parallel=row===0?0:(rand(x,z,1210+sideIndex*170+row*23+i)-.5)*.13*envelope;
-      const bulge=row===0?0:(rand(x,z,1310+sideIndex*170+row*23+i)-.5)*.095;
-      const px=top.x+normal.x*(outward[row]+bulge)+tangent.x*parallel;
-      const pz=top.y+normal.y*(outward[row]+bulge)+tangent.y*parallel;
-      const y=rowY[row]+(row===rows-1?(rand(x,z,1410+sideIndex*37+i)-.5)*.18:0);
-      positions.push(px,y,pz);
-      const c=cliffVertexColor(Math.min(3,row),x,z,sideIndex,i);
-      if(row===0)c.lerp(new THREE.Color(0x718c55),.20);
+      const envelope=Math.pow(Math.sin(Math.PI*(i/segments)),.78);
+      const isTop=row===0;
+      const parallel=isTop?0:(rand(x,z,1210+sideIndex*211+row*29+i)-.5)*.105*envelope;
+      const broad=isTop?0:Math.sin((i/segments)*Math.PI*2+rand(x,z,1280+sideIndex*31)*2.2)*.018*row;
+      const local=isTop?0:(rand(x,z,1310+sideIndex*211+row*29+i)-.5)*(.055+.008*row);
+      const out=CLIFF_ROW_OUT[row]+broad+local;
+      const px=top.x+normal.x*out+tangent.x*parallel;
+      const pz=top.y+normal.y*out+tangent.y*parallel;
+      const bottomNoise=row===CLIFF_ROW_Y.length-1?(rand(x,z,1410+sideIndex*43+i)-.5)*.18:0;
+      points.push(new THREE.Vector3(px,CLIFF_ROW_Y[row]+bottomNoise,pz));
+    }
+    rows.push(points);
+  }
+  return rows;
+}
+function cliffColor(row,x,z,sideIndex,segment){
+  const palette=[0x708957,0x72533a,0x704f38,0x685b4d,0x5c5b53,0x4f544f];
+  return shade(
+    palette[Math.min(row,palette.length-1)],
+    (rand(x,z,1650+sideIndex*53+row*17+segment)-.5)*.05
+  );
+}
+function createCliffWallFromRows(rows,x,z,sideIndex){
+  const segments=rows[0].length-1;
+  const positions=[];
+  const colors=[];
+  const indices=[];
+
+  for(let row=0;row<rows.length;row++){
+    for(let i=0;i<=segments;i++){
+      const p=rows[row][i];
+      positions.push(p.x,p.y,p.z);
+      const c=cliffColor(row,x,z,sideIndex,i);
       colors.push(c.r,c.g,c.b);
     }
   }
 
-  for(let row=0;row<rows-1;row++){
+  for(let row=0;row<rows.length-1;row++){
     for(let i=0;i<segments;i++){
       const a=row*(segments+1)+i;
       const b=a+1;
@@ -222,6 +282,63 @@ function createCliffWall(side,topProfile,x,z,sideIndex){
       const d=c+1;
       indices.push(a,c,b,b,c,d);
     }
+  }
+
+  const geometry=new THREE.BufferGeometry();
+  geometry.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));
+  geometry.setAttribute('color',new THREE.Float32BufferAttribute(colors,3));
+  geometry.setIndex(indices);
+  geometry.computeVertexNormals();
+
+  const mesh=new THREE.Mesh(
+    geometry,
+    new THREE.MeshStandardMaterial({
+      vertexColors:true,
+      roughness:1,
+      metalness:0,
+      flatShading:true,
+      side:THREE.DoubleSide
+    })
+  );
+  mesh.castShadow=true;
+  mesh.receiveShadow=true;
+  return mesh;
+}
+function cliffCornerEndpoint(rows,which){
+  return rows.map(row=>which==='start'?row[0]:row[row.length-1]);
+}
+function createOuterCornerBridge(corner,rowsA,endA,rowsB,endB,x,z,index){
+  const aPoints=cliffCornerEndpoint(rowsA,endA);
+  const bPoints=cliffCornerEndpoint(rowsB,endB);
+  const positions=[];
+  const colors=[];
+  const indices=[];
+  const diag=new THREE.Vector2(corner.sx,corner.sz).normalize();
+
+  for(let row=0;row<aPoints.length;row++){
+    const a=aPoints[row];
+    const b=bPoints[row];
+    const depth=row/(aPoints.length-1);
+    const spread=.012+depth*.035;
+    const mid=new THREE.Vector3(
+      (a.x+b.x)*.5+diag.x*spread,
+      Math.min(a.y,b.y)-depth*.008,
+      (a.z+b.z)*.5+diag.y*spread
+    );
+    for(const p of [a,mid,b]){
+      positions.push(p.x,p.y,p.z);
+      const c=cliffColor(row,x,z,20+index,row);
+      colors.push(c.r,c.g,c.b);
+    }
+  }
+
+  for(let row=0;row<aPoints.length-1;row++){
+    const a=row*3;
+    const n=(row+1)*3;
+    indices.push(
+      a,n,a+1, a+1,n,n+1,
+      a+1,n+1,a+2, a+2,n+1,n+2
+    );
   }
 
   const geometry=new THREE.BufferGeometry();
@@ -273,7 +390,7 @@ function addCliffDetails(root,side,x,z,size,sideIndex){
     addRockChunk(
       root,
       new THREE.Vector3(px,y,pz),
-      .45+rand(x,z,740+sideIndex*20+i)*.52,
+      .36+rand(x,z,740+sideIndex*20+i)*.42,
       rand(x,z,750+sideIndex*20+i)>.52?0x696961:0x756755,
       rand(x,z,760+sideIndex*20+i)*Math.PI
     );
@@ -286,7 +403,7 @@ function addGrassTuft(root,px,pz,height=.18,color=0x6e9a55){
       new THREE.ConeGeometry(.032,height*(.78+i*.11),4),
       material.clone()
     );
-    blade.position.set(px+(i-1)*.045,.13+height*.42,pz+((i%2)-.5)*.04);
+    blade.position.set(px+(i-1)*.045,.112+height*.42,pz+((i%2)-.5)*.04);
     blade.rotation.z=(i-1)*.11;
     blade.castShadow=false;
     root.add(blade);
@@ -370,17 +487,36 @@ export function buildTerrainTile({x,z,tileSize,cellKey,hasLand}){
   root.add(createTopSurface(profiles,x,z,variant));
   addInteriorTone(root,x,z,tileSize,variant);
 
+  const cliffRows={};
   SIDES.forEach((side,index)=>{
     if(cardinal[side.key])return;
-    root.add(createCliffWall(side.key,profiles[side.key],x,z,index));
+    const rows=buildCliffRows(side.key,profiles[side.key],x,z,index);
+    cliffRows[side.key]=rows;
+    root.add(createCliffWallFromRows(rows,x,z,index));
+    root.add(createTurfSkirt(side.key,profiles[side.key],x,z,index));
     addCliffDetails(root,side.key,x,z,tileSize,index);
     addTopEdgeDecor(root,side.key,x,z,tileSize,index,hero&&index===Math.floor(rand(x,z,72)*4));
   });
 
+  const cornerJoins={
+    ne:['n','end','e','start'],
+    se:['e','end','s','start'],
+    sw:['s','end','w','start'],
+    nw:['w','end','n','start']
+  };
   DIAGONALS.forEach((corner,index)=>{
     const openA=!cardinal[corner.a];
     const openB=!cardinal[corner.b];
     if(openA&&openB){
+      const join=cornerJoins[corner.key];
+      if(join&&cliffRows[join[0]]&&cliffRows[join[2]]){
+        root.add(createOuterCornerBridge(
+          corner,
+          cliffRows[join[0]],join[1],
+          cliffRows[join[2]],join[3],
+          x,z,index
+        ));
+      }
       addOuterCorner(root,corner,x,z,tileSize,index);
       return;
     }

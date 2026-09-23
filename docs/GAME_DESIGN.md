@@ -183,3 +183,12 @@ The first procedural terrain pass preserved a square top plate and added a separ
 The coastline is now the actual boundary of the grass surface. Every exposed cardinal edge is sampled as an irregular deterministic curve. Exterior corners where two sides are open are cut inward independently, so isolated cells and outer corners do not keep a square silhouette. The cliff mesh starts from those exact same top-edge points, which removes the visual split between a rectangular grass cap and a separate cliff.
 
 Only seams that touch another land cell remain exact grid boundaries. Those seams are internal and share the same flat material/elevation, while exposed land-water boundaries are organic.
+
+
+### Coast seam stitching
+
+Outer coastline corners now share explicit cliff row geometry. Adjacent cliff sides are no longer allowed to terminate independently: every exposed outer corner receives a bridge mesh spanning all cliff depths, eliminating triangular holes.
+
+The grass/soil contact was also rebuilt. The cliff's first row now reaches the actual grass elevation and tucks slightly beneath the top surface. A thin irregular turf skirt shares the same coastline profile and blends green grass into brown soil without a floating strip or straight trim geometry.
+
+Coastline sampling was increased from 9 to 13 segments per side. This gives smoother bays and protrusions while keeping interior tile seams exact.

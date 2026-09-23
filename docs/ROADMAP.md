@@ -109,3 +109,9 @@
 - [x] Organic sampled coastline is now the actual top-surface boundary
 - [x] Cliff top row reuses the exact same irregular coastline points
 - [x] Organic cut outer corners instead of square land corners
+
+- [x] Stitch outer cliff corners through all depth rows
+- [x] Remove triangular coastline holes at exposed corners
+- [x] Turf/soil contact uses shared coastline profile with overlap
+- [x] Increase coastline sampling from 9 to 13 segments
+- [x] Reduce oversized embedded cliff rocks
