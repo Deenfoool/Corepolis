@@ -46,7 +46,7 @@ scene.add(sun);
 const world=new THREE.Group();
 scene.add(world);
 const waterTime={value:0};
-const waterGeometry=new THREE.PlaneGeometry(140,140,72,72);
+const waterGeometry=new THREE.PlaneGeometry(140,140,44,44);
 waterGeometry.rotateX(-Math.PI/2);
 
 const waterMaterial=new THREE.ShaderMaterial({
@@ -67,15 +67,39 @@ const waterMaterial=new THREE.ShaderMaterial({
   vertexShader:`
     uniform float uTime;
     varying vec3 vWorldPosition;
-    varying vec3 vWorldNormal;
     varying float vWave;
     #include <fog_pars_vertex>
 
+    vec2 perlinGradient(vec2 p){
+      vec2 h=vec2(
+        dot(p,vec2(127.1,311.7)),
+        dot(p,vec2(269.5,183.3))
+      );
+      return normalize(-1.0+2.0*fract(sin(h)*43758.5453123));
+    }
+
+    float perlinNoise(vec2 p){
+      vec2 i=floor(p);
+      vec2 f=fract(p);
+      vec2 u=f*f*f*(f*(f*6.0-15.0)+10.0);
+
+      float n00=dot(perlinGradient(i+vec2(0.0,0.0)),f-vec2(0.0,0.0));
+      float n10=dot(perlinGradient(i+vec2(1.0,0.0)),f-vec2(1.0,0.0));
+      float n01=dot(perlinGradient(i+vec2(0.0,1.0)),f-vec2(0.0,1.0));
+      float n11=dot(perlinGradient(i+vec2(1.0,1.0)),f-vec2(1.0,1.0));
+
+      return mix(mix(n00,n10,u.x),mix(n01,n11,u.x),u.y)*1.41421356;
+    }
+
     float waveHeight(vec2 p){
-      float broad=sin(p.x*.16+uTime*.58)*.050;
-      float cross=sin(p.y*.23-uTime*.44)*.028;
-      float diagonal=sin((p.x+p.y)*.48+uTime*1.08)*.012;
-      return broad+cross+diagonal;
+      vec2 largeDrift=vec2(uTime*.055,uTime*.032);
+      vec2 detailDrift=vec2(-uTime*.030,uTime*.043);
+
+      float large=perlinNoise(p*.055+largeDrift)*.165;
+      float secondary=perlinNoise(p*.115+detailDrift)*.050;
+      float swell=sin(dot(p,vec2(.073,.031))-uTime*.18)*.026;
+
+      return large+secondary+swell;
     }
 
     void main(){
@@ -83,15 +107,8 @@ const waterMaterial=new THREE.ShaderMaterial({
       float h=waveHeight(p.xz);
       p.y+=h;
 
-      float dx=.050*.16*cos(p.x*.16+uTime*.58)
-        +.012*.48*cos((p.x+p.z)*.48+uTime*1.08);
-      float dz=.028*.23*cos(p.z*.23-uTime*.44)
-        +.012*.48*cos((p.x+p.z)*.48+uTime*1.08);
-
-      vec3 localNormal=normalize(vec3(-dx,1.0,-dz));
       vec4 worldPosition=modelMatrix*vec4(p,1.0);
       vWorldPosition=worldPosition.xyz;
-      vWorldNormal=normalize(mat3(modelMatrix)*localNormal);
       vWave=h;
 
       vec4 mvPosition=viewMatrix*worldPosition;
@@ -107,27 +124,29 @@ const waterMaterial=new THREE.ShaderMaterial({
     uniform vec3 uSky;
     uniform vec3 uSunDir;
     varying vec3 vWorldPosition;
-    varying vec3 vWorldNormal;
     varying float vWave;
     #include <fog_pars_fragment>
 
     void main(){
-      vec3 n=normalize(vWorldNormal);
-      vec3 viewDir=normalize(cameraPosition-vWorldPosition);
+      vec3 n=normalize(cross(dFdx(vWorldPosition),dFdy(vWorldPosition)));
+      if(n.y<0.0)n=-n;
 
+      vec3 viewDir=normalize(cameraPosition-vWorldPosition);
       float distanceTone=smoothstep(7.0,58.0,length(vWorldPosition.xz));
       vec3 base=mix(uMid,uDeep,distanceTone*.72);
 
-      float fresnel=pow(1.0-max(dot(n,viewDir),0.0),2.7);
+      float facing=max(dot(n,viewDir),0.0);
+      float fresnel=pow(1.0-facing,2.5);
+      float diffuse=max(dot(n,uSunDir),0.0);
+
       vec3 halfDir=normalize(viewDir+uSunDir);
-      float glint=pow(max(dot(n,halfDir),0.0),72.0);
+      float glint=pow(max(dot(n,halfDir),0.0),46.0);
 
-      vec3 color=base;
-      color=mix(color,uSky,fresnel*.34);
-      color+=vec3(1.0,.96,.78)*glint*.48;
-      color+=vWave*.07;
+      vec3 color=base*(.88+diffuse*.16);
+      color=mix(color,uSky,fresnel*.30);
+      color+=vec3(1.0,.96,.80)*glint*.40;
 
-      float alpha=.76+fresnel*.10+glint*.025;
+      float alpha=.77+fresnel*.09+glint*.02;
       gl_FragColor=vec4(color,alpha);
       #include <fog_fragment>
     }

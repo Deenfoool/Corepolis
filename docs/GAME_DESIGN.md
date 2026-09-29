@@ -258,16 +258,19 @@ The Pier is assembled from the real TIDELINE `Boarding_Plank`, `Railing_A`, `Bol
 The free sample does not contain a standalone boat or lighthouse model, so only those two visuals remain procedural in `src/marine-visuals.js`. They are isolated so they can be deleted in the same change that adds matching TIDELINE assets later.
 
 
-## Water V2
+## Water V3
 
 Corepolis uses a lightweight stylized water renderer designed for GitHub Pages and mobile-friendly WebGL.
 
-- one subdivided water plane covers the world instead of per-cell water meshes;
-- three vertex-wave layers create broad swell, cross-wave motion and restrained micro-ripples;
+- one coarse subdivided water plane covers the world instead of per-cell water meshes;
+- the open-water mesh uses 44×44 segments so individual triangular faces remain readable;
+- large moving forms are driven by animated 2D gradient Perlin noise instead of repeating sine-wave patterns;
+- a weaker second Perlin octave and a very subtle directional swell keep motion coherent without making the sea look periodic;
 - water uses a deep-to-mid turquoise gradient rather than a flat material;
+- face normals are reconstructed from fragment derivatives, so each deformed triangle shades as a true low-poly facet;
 - Fresnel brightens grazing angles toward the sky color;
 - a cheap directional specular term creates occasional warm sunlight glints without a reflection render pass;
-- open water deliberately avoids procedural bright blotches or repeating ripple masks; visible animation comes from the moving surface itself;
+- open water deliberately avoids procedural bright blotches or color ripple masks; visible animation comes from the Perlin-deformed geometry itself;
 - the main surface remains translucent enough for the submerged cliff rows and seabed to remain visible near shore;
 - shoreline effects reuse the exact procedural coast profiles from terrain generation, so they follow natural cliff edges instead of square tile boundaries;
 - a shallow turquoise band extends outward from every exposed coast;

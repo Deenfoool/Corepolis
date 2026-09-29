@@ -167,3 +167,9 @@
 - [x] Add animated shoreline foam following natural coast profiles
 - [x] Keep water visuals out of gameplay raycasting
 - [x] Avoid expensive realtime reflection render passes
+
+- [x] Water V3: replace periodic sine-wave surface with animated gradient Perlin noise
+- [x] Increase open-water wave scale and amplitude
+- [x] Reduce ocean mesh density to expose larger low-poly triangles
+- [x] Shade water from per-triangle derivative normals for faceted lighting
+- [x] Keep open-water color clean with no procedural blotch masks
