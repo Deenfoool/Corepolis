@@ -53,14 +53,17 @@ const waterMaterial=new THREE.ShaderMaterial({
   transparent:true,
   depthWrite:false,
   fog:true,
-  uniforms:{
-    uTime:waterTime,
-    uDeep:{value:new THREE.Color(0x167f9f)},
-    uMid:{value:new THREE.Color(0x31a9b8)},
-    uShallow:{value:new THREE.Color(0x72d5c7)},
-    uSky:{value:new THREE.Color(0xb9edf0)},
-    uSunDir:{value:new THREE.Vector3(.42,.83,.36).normalize()}
-  },
+  uniforms:THREE.UniformsUtils.merge([
+    THREE.UniformsLib.fog,
+    {
+      uTime:waterTime,
+      uDeep:{value:new THREE.Color(0x167f9f)},
+      uMid:{value:new THREE.Color(0x31a9b8)},
+      uShallow:{value:new THREE.Color(0x72d5c7)},
+      uSky:{value:new THREE.Color(0xb9edf0)},
+      uSunDir:{value:new THREE.Vector3(.42,.83,.36).normalize()}
+    }
+  ]),
   vertexShader:`
     uniform float uTime;
     varying vec3 vWorldPosition;
@@ -783,17 +786,21 @@ function disposeShoreWaterTile(cellKey){
 function rebuildShoreWaterTile(tile){
   if(!tile)return;
   disposeShoreWaterTile(tile.key);
-  const shoreline=buildShoreWater({
-    x:tile.x,
-    z:tile.z,
-    tileSize:GRID.tileSize,
-    hasLand:(x,z)=>state.land.has(key(x,z)),
-    timeUniform:waterTime
-  });
-  if(!shoreline||!shoreline.children.length)return;
-  shoreline.position.copy(tile.visual.position);
-  shoreWaterRoot.add(shoreline);
-  shoreWaterByCell.set(tile.key,shoreline);
+  try{
+    const shoreline=buildShoreWater({
+      x:tile.x,
+      z:tile.z,
+      tileSize:GRID.tileSize,
+      hasLand:(x,z)=>state.land.has(key(x,z)),
+      timeUniform:waterTime
+    });
+    if(!shoreline||!shoreline.children.length)return;
+    shoreline.position.copy(tile.visual.position);
+    shoreWaterRoot.add(shoreline);
+    shoreWaterByCell.set(tile.key,shoreline);
+  }catch(error){
+    console.warn('[Corepolis] shoreline effect disabled for tile',tile.key,error);
+  }
 }
 
 function createTileRoot(x,z){
