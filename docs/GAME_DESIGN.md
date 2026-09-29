@@ -256,3 +256,23 @@ Corepolis now vendors the usable models from the **TIDELINE — Coastal Harbor**
 The Pier is assembled from the real TIDELINE `Boarding_Plank`, `Railing_A`, `Bollard_A`, `Anchor_A`, `Buoy_Garland`, `Bell_Stand_A` and `Dock_Chair_A` models. The Fishing Shop uses `Boat_House_A`, `Bait_Box_A` and `Cargo_Barrel_A`.
 
 The free sample does not contain a standalone boat or lighthouse model, so only those two visuals remain procedural in `src/marine-visuals.js`. They are isolated so they can be deleted in the same change that adds matching TIDELINE assets later.
+
+
+## Water V2
+
+Corepolis uses a lightweight stylized water renderer designed for GitHub Pages and mobile-friendly WebGL.
+
+- one subdivided water plane covers the world instead of per-cell water meshes;
+- three vertex-wave layers create broad swell, cross-wave motion and restrained micro-ripples;
+- water uses a deep-to-mid turquoise gradient rather than a flat material;
+- Fresnel brightens grazing angles toward the sky color;
+- a cheap directional specular term creates occasional warm sunlight glints without a reflection render pass;
+- the main surface remains translucent enough for the submerged cliff rows and seabed to remain visible near shore;
+- shoreline effects reuse the exact procedural coast profiles from terrain generation, so they follow natural cliff edges instead of square tile boundaries;
+- a shallow turquoise band extends outward from every exposed coast;
+- animated procedural caustic highlights move through the shallow band;
+- a narrower animated foam ribbon sits directly against the coast;
+- all water and shoreline animation shares one time uniform, avoiding per-tile animation timers;
+- invisible `waterPlane` remains the only water placement hit target, so visual water effects do not interfere with Pier, Island Tile or Lighthouse placement.
+
+Water deliberately avoids realtime planar reflections / Water.js-style second scene renders because those would roughly double scene rendering cost for a relatively small visual gain in the current stylized art direction.

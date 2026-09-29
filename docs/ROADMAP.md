@@ -157,3 +157,13 @@
 - [x] Keep the plowed surface full-tile and borderless
 - [x] Restore custom rounded furrows with corrected outward face winding
 - [x] Keep aligned furrows seamless across neighbouring field cells
+
+- [x] Water V2 shader with three lightweight animated wave layers
+- [x] Deep/mid turquoise water gradient and Fresnel edge light
+- [x] Cheap moving sunlight glints and micro-ripple highlights
+- [x] Keep submerged island cliffs visible through translucent water
+- [x] Generate shallow-water bands from the exact procedural coastline
+- [x] Add animated shallow-water caustics
+- [x] Add animated shoreline foam following natural coast profiles
+- [x] Keep water visuals out of gameplay raycasting
+- [x] Avoid expensive realtime reflection render passes

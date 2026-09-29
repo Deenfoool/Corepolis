@@ -4,7 +4,7 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { CARD_DEFS, DECK_WEIGHTS, DIRECTIONS, GRID } from './config.js';
 import { ASSETS } from './models.js?v=tideline-sample-1';
-import { buildTerrainTile, disposeTerrainTile } from './terrain.js?v=coast-stitch-3';
+import { buildTerrainTile, buildShoreWater, disposeTerrainTile } from './terrain.js?v=water-v2-1';
 import { createBoatVisual, createLighthouseVisual } from './marine-visuals.js?v=tideline-sample-1';
 
 const $=s=>document.querySelector(s);
@@ -45,21 +45,121 @@ scene.add(sun);
 
 const world=new THREE.Group();
 scene.add(world);
-const water=new THREE.Mesh(
-  new THREE.CircleGeometry(70,96),
-  new THREE.MeshPhysicalMaterial({color:0x4db3c7,roughness:.28,transparent:true,opacity:.93})
-);
-water.rotation.x=-Math.PI/2;
+const waterTime={value:0};
+const waterGeometry=new THREE.PlaneGeometry(140,140,72,72);
+waterGeometry.rotateX(-Math.PI/2);
+
+const waterMaterial=new THREE.ShaderMaterial({
+  transparent:true,
+  depthWrite:false,
+  fog:true,
+  uniforms:{
+    uTime:waterTime,
+    uDeep:{value:new THREE.Color(0x167f9f)},
+    uMid:{value:new THREE.Color(0x31a9b8)},
+    uShallow:{value:new THREE.Color(0x72d5c7)},
+    uSky:{value:new THREE.Color(0xb9edf0)},
+    uSunDir:{value:new THREE.Vector3(.42,.83,.36).normalize()}
+  },
+  vertexShader:`
+    uniform float uTime;
+    varying vec3 vWorldPosition;
+    varying vec3 vWorldNormal;
+    varying float vWave;
+    #include <fog_pars_vertex>
+
+    float waveHeight(vec2 p){
+      float broad=sin(p.x*.16+uTime*.58)*.050;
+      float cross=sin(p.y*.23-uTime*.44)*.028;
+      float diagonal=sin((p.x+p.y)*.48+uTime*1.08)*.012;
+      return broad+cross+diagonal;
+    }
+
+    void main(){
+      vec3 p=position;
+      float h=waveHeight(p.xz);
+      p.y+=h;
+
+      float dx=.050*.16*cos(p.x*.16+uTime*.58)
+        +.012*.48*cos((p.x+p.z)*.48+uTime*1.08);
+      float dz=.028*.23*cos(p.z*.23-uTime*.44)
+        +.012*.48*cos((p.x+p.z)*.48+uTime*1.08);
+
+      vec3 localNormal=normalize(vec3(-dx,1.0,-dz));
+      vec4 worldPosition=modelMatrix*vec4(p,1.0);
+      vWorldPosition=worldPosition.xyz;
+      vWorldNormal=normalize(mat3(modelMatrix)*localNormal);
+      vWave=h;
+
+      vec4 mvPosition=viewMatrix*worldPosition;
+      gl_Position=projectionMatrix*mvPosition;
+      #include <fog_vertex>
+    }
+  `,
+  fragmentShader:`
+    uniform float uTime;
+    uniform vec3 uDeep;
+    uniform vec3 uMid;
+    uniform vec3 uShallow;
+    uniform vec3 uSky;
+    uniform vec3 uSunDir;
+    varying vec3 vWorldPosition;
+    varying vec3 vWorldNormal;
+    varying float vWave;
+    #include <fog_pars_fragment>
+
+    void main(){
+      vec3 n=normalize(vWorldNormal);
+      vec3 viewDir=normalize(cameraPosition-vWorldPosition);
+
+      float distanceTone=smoothstep(7.0,58.0,length(vWorldPosition.xz));
+      vec3 base=mix(uMid,uDeep,distanceTone*.72);
+
+      float broadPattern=.5+.5*sin(vWorldPosition.x*.18+vWorldPosition.z*.13+uTime*.42);
+      base=mix(base,uShallow,broadPattern*.055);
+
+      float fresnel=pow(1.0-max(dot(n,viewDir),0.0),2.7);
+      vec3 halfDir=normalize(viewDir+uSunDir);
+      float glint=pow(max(dot(n,halfDir),0.0),72.0);
+
+      float ripple=.5+.5*sin(vWorldPosition.x*1.35-vWorldPosition.z*1.08+uTime*1.65);
+      ripple*=.5+.5*sin(vWorldPosition.z*1.72+uTime*1.14);
+      ripple=smoothstep(.72,1.0,ripple);
+
+      vec3 color=base;
+      color=mix(color,uSky,fresnel*.34);
+      color+=vec3(1.0,.96,.78)*glint*.48;
+      color+=vec3(.30,.72,.72)*ripple*.035;
+      color+=vWave*.12;
+
+      float alpha=.76+fresnel*.10+glint*.025;
+      gl_FragColor=vec4(color,alpha);
+      #include <fog_fragment>
+    }
+  `
+});
+const water=new THREE.Mesh(waterGeometry,waterMaterial);
 water.position.y=-.62;
 water.receiveShadow=true;
+water.renderOrder=0;
 scene.add(water);
+
 const seabed=new THREE.Mesh(
   new THREE.CircleGeometry(72,96),
-  new THREE.MeshStandardMaterial({color:0x83c6b7,roughness:1})
+  new THREE.MeshStandardMaterial({
+    color:0x69b3a8,
+    roughness:1,
+    metalness:0
+  })
 );
 seabed.rotation.x=-Math.PI/2;
 seabed.position.y=-1.28;
 scene.add(seabed);
+
+const shoreWaterRoot=new THREE.Group();
+shoreWaterRoot.name='shore-water-fx';
+scene.add(shoreWaterRoot);
+const shoreWaterByCell=new Map();
 const waterPlane=new THREE.Mesh(
   new THREE.PlaneGeometry(140,140),
   new THREE.MeshBasicMaterial({transparent:true,opacity:0,depthWrite:false})
@@ -673,6 +773,29 @@ async function preload(){
   setLoadingProgress(80,'СТРОИМ МИР','Мир собран');
 }
 
+function disposeShoreWaterTile(cellKey){
+  const current=shoreWaterByCell.get(cellKey);
+  if(!current)return;
+  if(current.parent)current.parent.remove(current);
+  disposeTerrainTile(current);
+  shoreWaterByCell.delete(cellKey);
+}
+function rebuildShoreWaterTile(tile){
+  if(!tile)return;
+  disposeShoreWaterTile(tile.key);
+  const shoreline=buildShoreWater({
+    x:tile.x,
+    z:tile.z,
+    tileSize:GRID.tileSize,
+    hasLand:(x,z)=>state.land.has(key(x,z)),
+    timeUniform:waterTime
+  });
+  if(!shoreline||!shoreline.children.length)return;
+  shoreline.position.copy(tile.visual.position);
+  shoreWaterRoot.add(shoreline);
+  shoreWaterByCell.set(tile.key,shoreline);
+}
+
 function createTileRoot(x,z){
   const root=new THREE.Group();
   root.position.copy(pos(x,z));
@@ -698,6 +821,7 @@ function rebuildTerrainTile(tile){
   tile.terrain=terrain;
   tile.terrainType=terrain.userData.terrainType;
   tile.terrainVariant=terrain.userData.terrainVariant;
+  rebuildShoreWaterTile(tile);
 }
 function terrainNeighborhood(x,z){
   const cells=[];
@@ -2469,8 +2593,7 @@ function tick(time){
     actor.object.rotation.z=Math.sin(time*.0011+actor.phase)*.025;
   }
   state.bladeBoost=Math.max(0,state.bladeBoost-dt*1.8);
-  water.material.opacity=.90+Math.sin(time*.0006)*.025;
-  water.rotation.z=Math.sin(time*.00015)*.01;
+  waterTime.value=time*.001;
   renderer.render(scene,camera);
   requestAnimationFrame(tick);
 }

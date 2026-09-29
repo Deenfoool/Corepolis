@@ -468,6 +468,165 @@ function addInnerCornerDetail(root,corner,x,z,size,index){
   }
 }
 
+function appendBandSide(data,side,profile,offsets,y){
+  const {normal}=cliffBasis(side);
+  const segments=profile.length-1;
+  const base=data.positions.length/3;
+
+  for(let row=0;row<offsets.length;row++){
+    const across=row/(offsets.length-1);
+    for(let i=0;i<=segments;i++){
+      const p=profile[i];
+      data.positions.push(
+        p.x+normal.x*offsets[row],
+        y,
+        p.y+normal.y*offsets[row]
+      );
+      data.across.push(across);
+      data.along.push(i/segments);
+    }
+  }
+
+  const stride=segments+1;
+  for(let row=0;row<offsets.length-1;row++){
+    for(let i=0;i<segments;i++){
+      const a=base+row*stride+i;
+      const b=a+1;
+      const c=base+(row+1)*stride+i;
+      const d=c+1;
+      data.indices.push(a,c,b,b,c,d);
+    }
+  }
+}
+function createShoreBandGeometry(openSides,profiles,offsets,y){
+  const data={positions:[],across:[],along:[],indices:[]};
+  for(const side of openSides)appendBandSide(data,side.key,profiles[side.key],offsets,y);
+  const geometry=new THREE.BufferGeometry();
+  geometry.setAttribute('position',new THREE.Float32BufferAttribute(data.positions,3));
+  geometry.setAttribute('aAcross',new THREE.Float32BufferAttribute(data.across,1));
+  geometry.setAttribute('aAlong',new THREE.Float32BufferAttribute(data.along,1));
+  geometry.setIndex(data.indices);
+  geometry.computeBoundingBox();
+  geometry.computeBoundingSphere();
+  return geometry;
+}
+function createShallowWaterMaterial(timeUniform){
+  return new THREE.ShaderMaterial({
+    transparent:true,
+    depthWrite:false,
+    side:THREE.DoubleSide,
+    uniforms:{
+      uTime:timeUniform||{value:0},
+      uNear:{value:new THREE.Color(0x8be4cf)},
+      uFar:{value:new THREE.Color(0x4cc5c0)}
+    },
+    vertexShader:`
+      attribute float aAcross;
+      attribute float aAlong;
+      varying float vAcross;
+      varying float vAlong;
+      varying vec3 vWorldPosition;
+      void main(){
+        vAcross=aAcross;
+        vAlong=aAlong;
+        vec4 world=modelMatrix*vec4(position,1.0);
+        vWorldPosition=world.xyz;
+        gl_Position=projectionMatrix*viewMatrix*world;
+      }
+    `,
+    fragmentShader:`
+      uniform float uTime;
+      uniform vec3 uNear;
+      uniform vec3 uFar;
+      varying float vAcross;
+      varying float vAlong;
+      varying vec3 vWorldPosition;
+      void main(){
+        float fade=pow(1.0-vAcross,1.3);
+        float c1=sin(vWorldPosition.x*2.25+uTime*1.25);
+        float c2=sin(vWorldPosition.z*2.05-uTime*.92);
+        float c3=sin((vWorldPosition.x-vWorldPosition.z)*1.38+uTime*.68);
+        float caustic=smoothstep(.40,.93,abs(c1*c2*c3));
+        vec3 color=mix(uFar,uNear,fade*.82);
+        color+=vec3(.55,.92,.72)*caustic*.16*fade;
+        float alpha=(.05+.18*fade)+caustic*.08*fade;
+        gl_FragColor=vec4(color,alpha);
+      }
+    `
+  });
+}
+function createFoamMaterial(timeUniform){
+  return new THREE.ShaderMaterial({
+    transparent:true,
+    depthWrite:false,
+    side:THREE.DoubleSide,
+    blending:THREE.NormalBlending,
+    uniforms:{
+      uTime:timeUniform||{value:0},
+      uFoam:{value:new THREE.Color(0xe5f6df)}
+    },
+    vertexShader:`
+      attribute float aAcross;
+      attribute float aAlong;
+      varying float vAcross;
+      varying float vAlong;
+      varying vec3 vWorldPosition;
+      void main(){
+        vAcross=aAcross;
+        vAlong=aAlong;
+        vec4 world=modelMatrix*vec4(position,1.0);
+        vWorldPosition=world.xyz;
+        gl_Position=projectionMatrix*viewMatrix*world;
+      }
+    `,
+    fragmentShader:`
+      uniform float uTime;
+      uniform vec3 uFoam;
+      varying float vAcross;
+      varying float vAlong;
+      varying vec3 vWorldPosition;
+      void main(){
+        float travel=sin(vAlong*38.0+uTime*1.55+sin(vAlong*10.0-uTime*.72));
+        float broken=.5+.5*sin(vWorldPosition.x*3.1+vWorldPosition.z*2.7-uTime*.85);
+        float pulse=.56+.44*smoothstep(-.15,.86,travel)*(.72+.28*broken);
+        float edge=pow(1.0-vAcross,1.65);
+        float alpha=edge*pulse*.36;
+        gl_FragColor=vec4(uFoam,alpha);
+      }
+    `
+  });
+}
+
+export function buildShoreWater({x,z,tileSize,hasLand,timeUniform}){
+  const root=new THREE.Group();
+  root.name='shore-water';
+  root.userData.ignorePicking=true;
+
+  const {cardinal}=cardinalProfile(x,z,hasLand);
+  const openSides=SIDES.filter(side=>!cardinal[side.key]);
+  if(!openSides.length)return root;
+
+  const profiles=makeCoastProfiles(x,z,tileSize,cardinal);
+
+  const shallow=new THREE.Mesh(
+    createShoreBandGeometry(openSides,profiles,[.04,.62,1.42],-.598),
+    createShallowWaterMaterial(timeUniform)
+  );
+  shallow.renderOrder=2;
+  shallow.frustumCulled=true;
+  root.add(shallow);
+
+  const foam=new THREE.Mesh(
+    createShoreBandGeometry(openSides,profiles,[.025,.20,.38],-.584),
+    createFoamMaterial(timeUniform)
+  );
+  foam.renderOrder=3;
+  foam.frustumCulled=true;
+  root.add(foam);
+
+  return root;
+}
+
 export function buildTerrainTile({x,z,tileSize,cellKey,hasLand}){
   const root=new THREE.Group();
   root.name='terrain';
