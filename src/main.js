@@ -118,22 +118,14 @@ const waterMaterial=new THREE.ShaderMaterial({
       float distanceTone=smoothstep(7.0,58.0,length(vWorldPosition.xz));
       vec3 base=mix(uMid,uDeep,distanceTone*.72);
 
-      float broadPattern=.5+.5*sin(vWorldPosition.x*.18+vWorldPosition.z*.13+uTime*.42);
-      base=mix(base,uShallow,broadPattern*.055);
-
       float fresnel=pow(1.0-max(dot(n,viewDir),0.0),2.7);
       vec3 halfDir=normalize(viewDir+uSunDir);
       float glint=pow(max(dot(n,halfDir),0.0),72.0);
 
-      float ripple=.5+.5*sin(vWorldPosition.x*1.35-vWorldPosition.z*1.08+uTime*1.65);
-      ripple*=.5+.5*sin(vWorldPosition.z*1.72+uTime*1.14);
-      ripple=smoothstep(.72,1.0,ripple);
-
       vec3 color=base;
       color=mix(color,uSky,fresnel*.34);
       color+=vec3(1.0,.96,.78)*glint*.48;
-      color+=vec3(.30,.72,.72)*ripple*.035;
-      color+=vWave*.12;
+      color+=vWave*.07;
 
       float alpha=.76+fresnel*.10+glint*.025;
       gl_FragColor=vec4(color,alpha);

@@ -267,6 +267,7 @@ Corepolis uses a lightweight stylized water renderer designed for GitHub Pages a
 - water uses a deep-to-mid turquoise gradient rather than a flat material;
 - Fresnel brightens grazing angles toward the sky color;
 - a cheap directional specular term creates occasional warm sunlight glints without a reflection render pass;
+- open water deliberately avoids procedural bright blotches or repeating ripple masks; visible animation comes from the moving surface itself;
 - the main surface remains translucent enough for the submerged cliff rows and seabed to remain visible near shore;
 - shoreline effects reuse the exact procedural coast profiles from terrain generation, so they follow natural cliff edges instead of square tile boundaries;
 - a shallow turquoise band extends outward from every exposed coast;
