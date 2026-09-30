@@ -57,6 +57,7 @@ if(!rendererProto[PATCH_FLAG]){
 
     const position=water.geometry.getAttribute('position');
     if(!position)return null;
+    position.setUsage(THREE.DynamicDrawUsage);
 
     state={
       base:new Float32Array(position.array),
@@ -64,7 +65,6 @@ if(!rendererProto[PATCH_FLAG]){
       lastFrame:-1
     };
     waterStates.set(water,state);
-    water.geometry.computeBoundingSphere();
     return state;
   }
 
@@ -87,9 +87,8 @@ if(!rendererProto[PATCH_FLAG]){
     }
     position.needsUpdate=true;
 
-    // The water shader derives faceted normals from dFdx/dFdy, so the real
-    // displaced triangles themselves drive the low-poly lighting.
-    water.geometry.computeBoundingSphere();
+    // The existing water shader derives its faceted normal from dFdx/dFdy,
+    // so these real displaced triangles directly drive the low-poly lighting.
   }
 
   rendererProto.render=function(scene,camera){
