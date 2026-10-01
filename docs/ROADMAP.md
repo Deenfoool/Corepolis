@@ -106,19 +106,20 @@ Advanced cards must be earned by developing the island rather than appearing imm
 - [x] Replace fixed global draw weights with live run-aware weights
 - [x] Exclude locked cards from random draws
 - [x] Duplicate suppression from Hand + Reserve counts
+- [x] Specialized unsent-card caps for Fishing Shop / Market / Pier / Clear
 - [x] Recent-draw repeat protection
 - [x] Situational usefulness gates for production / housing / maritime cards
 - [x] Resource scarcity assistance for Forest / Rocks
 - [x] Territory assistance when the island becomes large
 - [x] Route biome modifiers through the Card Director instead of mutating deck weights directly
 - [x] Existing infrastructure influences related card families
+- [x] Milestone drafts are restricted to currently unlocked card branches
 
 ### Next evolution
 - [ ] Buildings become explicit card sources: Mill → farming, Market → city/trade, Pier → sea, Lumbermill/Quarry → production
 - [ ] Unknown → Discovered → Unlocked → Mastered card states
 - [ ] Hidden clue chain for undiscovered advanced cards
 - [ ] Mastery bonuses for repeatedly successful combinations
-- [ ] Rework milestone drafts so choices are sourced from unlocked development branches
 - [ ] Add new buildings that extend the production / settlement / maritime discovery graph
 
 ## Later content
