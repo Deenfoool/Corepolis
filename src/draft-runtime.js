@@ -16,6 +16,12 @@ function freshState(){
   return{version:STORAGE_VERSION,completed:[],pending:null};
 }
 
+function eligibleType(type){
+  const progression=window.__corepolisCardProgression;
+  if(progression?.isUnlocked)return!!progression.isUnlocked(type);
+  return['island','field','house','tree','rock','lumbermill','quarry'].includes(type);
+}
+
 function normalizeCard(value){
   if(!value||!Number.isInteger(value.id)||!CARD_DEFS[value.type])return null;
   const card={id:value.id,type:value.type};
@@ -44,7 +50,7 @@ function readState(){
       :[];
     let pending=null;
     if(DRAFT_LEVELS.includes(raw.pending?.level)&&Array.isArray(raw.pending?.options)){
-      const options=raw.pending.options.map(normalizeCard).filter(Boolean);
+      const options=raw.pending.options.map(normalizeCard).filter(card=>card&&eligibleType(card.type));
       if(options.length===3)pending={level:raw.pending.level,options};
     }
     return{version:STORAGE_VERSION,completed:[...new Set(completed)],pending};
@@ -134,7 +140,7 @@ function renderDraft(){
   const copy=root.querySelector('#draft-choice-copy');
   const options=root.querySelector('#draft-options');
   const rank=RANK_NAMES[draft.pending.level]||'Новый статус';
-  if(copy)copy.textContent=`Статус «${rank}» открыт. Выберите одну из трёх карт, которая лучше подходит вашему острову.`;
+  if(copy)copy.textContent=`Статус «${rank}» открыт. Выберите одну из трёх уже открытых карт, которая лучше подходит вашему острову.`;
   if(options)options.innerHTML=draft.pending.options.map(optionMarkup).join('');
   root.classList.add('open');
   root.setAttribute('aria-hidden','false');
@@ -155,14 +161,14 @@ function createOptions(){
   while(options.length<3&&attempts<30){
     attempts++;
     const card=draw();
-    if(types.has(card.type))continue;
+    if(!eligibleType(card.type)||types.has(card.type))continue;
     types.add(card.type);
     options.push(card);
   }
   if(options.length<3){
-    for(const type of ['island','field','house','tree','rock','pier']){
+    for(const type of ['island','field','house','tree','rock','lumbermill','quarry','clear','pier','market','fishingShop']){
       if(options.length>=3)break;
-      if(types.has(type)||!CARD_DEFS[type])continue;
+      if(types.has(type)||!CARD_DEFS[type]||!eligibleType(type))continue;
       types.add(type);
       options.push(draw(type));
     }
@@ -207,7 +213,10 @@ function modalBusy(){
   return!!(
     document.querySelector('#capital-finale.open')||
     document.querySelector('#marine-choice:not(.hidden)')||
-    document.querySelector('#pause-menu.open')
+    document.querySelector('#pause-menu.open')||
+    document.querySelector('#card-discovery.open')||
+    document.querySelector('#combo-encyclopedia.open')||
+    document.querySelector('#tutorial-overlay.open')
   );
 }
 
