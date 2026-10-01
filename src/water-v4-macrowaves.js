@@ -99,10 +99,18 @@ if(!rendererProto[PATCH_FLAG]){
     position.needsUpdate=true;
   }
 
+  function exposeBridge(name,bridge){
+    const previous=window[name];
+    window[name]=bridge;
+    if(previous?.renderer!==bridge.renderer){
+      window.dispatchEvent(new CustomEvent('corepolis:render-bridge-ready',{detail:{name}}));
+    }
+  }
+
   rendererProto.render=function(scene,camera){
     const bridge={renderer:this,scene,camera};
-    if(this.domElement?.id==='game')window.__corepolisRenderBridge=bridge;
-    else if(this.domElement?.id==='menu-scene')window.__corepolisMenuRenderBridge=bridge;
+    if(this.domElement?.id==='game')exposeBridge('__corepolisRenderBridge',bridge);
+    else if(this.domElement?.id==='menu-scene')exposeBridge('__corepolisMenuRenderBridge',bridge);
 
     const settings=window.__corepolisSettings||{};
     const waterMotion=settings.waterMotion!==false;
