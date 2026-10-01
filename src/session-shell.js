@@ -11,7 +11,7 @@ const uiMotionToggle=document.querySelector('#pause-ui-motion');
 const UI_MOTION_KEY='corepolis:ui-motion';
 const AUTO_START_KEY='corepolis:auto-start';
 const DISCARD_SAVE_KEY='corepolis:discard-save';
-const PAUSE_OVERLAY_SELECTOR='#combo-encyclopedia.open, #tutorial-overlay.open';
+const PAUSE_OVERLAY_SELECTOR='#combo-encyclopedia.open, #tutorial-overlay.open, #card-discovery.open';
 let sessionActive=false;
 let paused=false;
 let saveStatusTimer=null;
@@ -119,6 +119,7 @@ window.addEventListener('keydown',event=>{
   }
 
   if(event.key!=='Escape')return;
+  if(document.querySelector(PAUSE_OVERLAY_SELECTOR))return;
   if(document.querySelector('#capital-finale.open'))return;
   if(document.querySelector('#marine-choice:not(.hidden)'))return;
   event.preventDefault();
