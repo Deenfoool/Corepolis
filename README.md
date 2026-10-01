@@ -1,71 +1,58 @@
 # Corepolis
 
-Corepolis is now a browser-based **3D island card-builder / spatial puzzle**.
+Corepolis — браузерный **3D island card-builder / spatial puzzle**. Игрок начинает с небольшого острова и руки из пяти карт, расширяет сушу, выращивает поля, добывает ресурсы, строит поселение и открывает морскую ветку.
 
-The player starts with a small island and a hand of cards. Cards create or transform the world: fields grow in stages, the island expands, nature appears or is cleared, and buildings are upgraded by placing a new card on top of the old one.
+## Текущий игровой цикл
 
-## First playable loop
+- Поля ставятся свободно на суше; любые 4 связанные по сторонам обычные части образуют комбо и схлопываются в самую раннюю клетку.
+- Первое полевое комбо открывает мельницу. Четыре поля вокруг построенной мельницы образуют отдельный цикл большого урожая.
+- Группа из 6 связанных домов открывает рынок.
+- Лес + лесопилка дают древесину, камни + каменоломня дают камень. Ресурс проходит две стадии обработки.
+- Причалы ставятся на воду у берега, открывают морскую экспедицию и позволяют создавать маршруты между отдельными островами.
+- Маяк позволяет основывать фрагменты территории в море вдали от основного острова.
 
-The current vertical slice combines field merging, the windmill combo and the first settlement buildings:
+## Фрагменты территории
 
-1. A windmill starts in the center of the island.
-2. Field cards can be played on any free island cell.
-3. Any four orthogonally connected field pieces collapse as soon as the fourth piece is placed, regardless of shape: line, L, T, S/Z or square.
-4. The collapse target is always the oldest / first field piece in that connected four-piece group; the other three cells become free again and the player receives score plus a bonus card.
-5. Fields directly beside the windmill are the exception: they build from 1/4 to 4/4 and wait instead of auto-collapsing.
-6. When all four windmill-side fields reach 4/4, a `New Windmill` card triggers the large combo and accelerates the blades.
-7. House and Market provide settlement adjacency, while Lumbermill and Quarry run two-step resource extraction loops.
-8. World actions now have placement pops, expanding-land rise, collapse motion, reward bursts, rings and combo pulses.
+Карта **«Расширение территории» бесплатна** и больше не означает одну клетку `1×1`.
 
-Trees and rocks are now productive setup cards rather than dead draws: a first nearby producer yields material and marks the resource 1/2; a second producer contact or the same producer card played on top closes the cycle, removes the depleted resource and grants score. The order is flexible: placing a new Tree/Rock inside an existing producer zone immediately triggers that producer, so the player can build the industry first or the resource first.
+Каждая такая карта заранее получает:
+
+- форму: `1×1`, `1×2`, `1×3`, `L3`, `Z4` или `2×2`;
+- фиксированное содержимое клеток: пусто, лес или камни;
+- собственную ориентацию.
+
+На карточке отображается мини-карта формы и ресурсов. После выбора над водой появляется ghost-preview всего фрагмента. `Q / E` поворачивают выбранный фрагмент на 90°; если хотя бы одна его клетка конфликтует с землёй, причалом или границей карты, preview становится недоступным для установки.
+
+Генерация ресурсов мягко учитывает состояние экономики: при нехватке древесины немного растёт вероятность леса, при нехватке камня — камней. Это не гарантированная выдача; при здоровой экономике чаще приходят пустые стратегические формы.
+
+## Карты и резерв
+
+Активная рука ограничена пятью картами. Лишние награды уходят в резерв справа; после розыгрыша карты резерв пополняет руку раньше случайной колоды.
+
+Базовые источники ресурсов и производители бесплатны. Расширение территории также бесплатно, чтобы нехватка материалов не блокировала развитие карты.
+
+## Визуальная часть
+
+- соседние клетки острова сшиваются в единую процедурную береговую линию;
+- поля используют полноразмерные rounded low-poly борозды и стадии `Wheat_1–4`;
+- вода использует крупные low-poly Perlin-волны, Fresnel, береговую пену и мелководье;
+- причал и рыболовный магазин собраны из TIDELINE Coastal Harbor free sample;
+- основные наземные модели — KayKit, культуры — Quaternius.
 
 ## Deployment
 
-- Static GitHub Pages application.
-- Branch: `main`.
-- Published folder: `/ (root)`.
-- Deployment: **Deploy from a branch**.
-- No GitHub Actions.
-- `.nojekyll` stays at repository root.
+- GitHub Pages
+- branch: `main`
+- folder: `/ (root)`
+- **Deploy from a branch**
+- GitHub Actions не используются
+- `.nojekyll` находится в корне
 
 ## Stack
 
 - HTML / CSS / JavaScript
-- Three.js via jsDelivr ES modules
-- Lucide 1.47.0 for pinned interface/card icons
-- CC0 KayKit game assets loaded from a commit-pinned official GitHub repository
-- CC0 Quaternius crop models stored locally as GLB runtime assets
+- Three.js ES modules
+- Lucide
+- GLTF / GLB assets
 
-See `docs/GAME_DESIGN.md`, `docs/ARCHITECTURE.md`, and `docs/ROADMAP.md`.
-
-
-## Card presentation and costs
-
-Cards use dark rectangular game-card layouts with live 3D previews generated from the same models used in the world. The preview fades and blurs into the lower information area. Installation costs are shown inside the top edge of each card with Lucide Wood/Stone icons.
-
-Costs are real gameplay rules. Resource/producers remain free so a run cannot deadlock, while settlement/expansion upgrades consume produced materials.
-
-
-### Hand and reserve
-
-The active hand is capped at five cards. Combo rewards beyond that limit are kept in a dedicated lower-right reserve deck using the Corepolis card back. Each reserved card remains visible as a layered back, with a compact count badge for large combos. Playing a card promotes the next reserve card before a new random card is drawn, with a short deck-to-hand flight animation.
-
-
-### Building unlocks
-
-Runs begin without constructed buildings. The first four-field combo unlocks the Mill card; the player chooses where to build it. The first connected six-house district unlocks Market. Locked building cards are excluded from random draws until their condition has been completed.
-
-
-### Seamless island terrain
-
-Corepolis now uses neighbour-aware procedural autotiling for island land. Grid seams remain geometrically fixed while exposed coastlines receive layered soil/rock cliffs, irregular silhouettes, deterministic variants and occasional hero details. Adding land rebuilds only the affected 3×3 neighbourhood, leaving buildings, resources and fields untouched.
-
-
-### Spatial field growth
-
-Fields now mature by spreading across the island. Every orthogonally connected normal field shares a stage equal to its connected size, capped at four. Around the Mill, all planted cardinal fields share a stage equal to the number of planted Mill sides. Field cards can no longer be stacked repeatedly on one plot.
-
-
-### Maritime branch
-
-Piers are placed directly on water beside land and spawn a boat. The first Pier opens an expedition choice between seven Island Tile cards or a Lighthouse plus two Island Tiles, and unlocks the Fishing Shop. Lighthouses seed distant islands and extend detached island placement; piers on separate landmasses create rewarded sea routes.
+Подробности: `docs/GAME_DESIGN.md`, `docs/ARCHITECTURE.md`, `docs/ROADMAP.md`.
