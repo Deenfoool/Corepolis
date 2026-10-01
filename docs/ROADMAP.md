@@ -68,21 +68,21 @@ The game should feel like a complete playable session before more content is add
 
 ## Prototype 0.5 — Results and replayability
 
-This is the next gameplay priority.
+The results layer is complete. The next gameplay priority is making new runs meaningfully different.
 
-- final score
-- island size
-- combo count
-- houses / districts
-- sea routes
-- produced Wood / Stone
-- Continue Building option
-- New Run option
-- seeded runs
-- card drafting choices
-- island biomes
-- combo encyclopedia
-- tutorial
+- [x] final score
+- [x] island size
+- [x] combo count
+- [x] houses / districts
+- [x] sea routes
+- [x] produced Wood / Stone
+- [x] Continue Building option
+- [x] New Run option
+- [ ] seeded runs
+- [ ] card drafting choices
+- [ ] island biomes
+- [ ] combo encyclopedia
+- [ ] tutorial
 
 ## Later content
 
