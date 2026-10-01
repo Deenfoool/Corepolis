@@ -26,24 +26,24 @@
 This is the current priority. The game should feel like a complete playable session before more content is added.
 
 ### Save / Continue
-- [ ] Versioned local save format
+- [x] Versioned local save container and compatibility check
 - [ ] Autosave after committed gameplay actions
 - [ ] Persist land, tile content, field stages and field order
 - [ ] Persist hand, reserve and shaped territory-card data
 - [ ] Persist resources, score, combo count and progression unlocks
 - [ ] Persist marine structures / routes and Mill location
 - [ ] Restore the world deterministically from a save
-- [ ] Enable Continue only when a compatible save exists
-- [ ] New Game confirmation when an existing save would be replaced
-- [ ] Graceful invalid / old-save fallback
+- [x] Enable Continue only when a compatible save exists
+- [x] New Game confirmation when an existing save would be replaced
+- [x] Graceful invalid / old-save fallback
 
 ### Pause / navigation
-- [ ] ESC opens an in-game pause menu
-- [ ] Resume
-- [ ] Settings from pause
-- [ ] Return to main menu without losing the current save
-- [ ] Restart run with confirmation
-- [ ] Pause blocks world input while open
+- [x] ESC opens an in-game pause menu
+- [x] Resume
+- [x] Settings from pause
+- [x] Return to main menu without deleting the current save
+- [x] Restart run with confirmation
+- [x] Pause blocks mouse and keyboard gameplay input while open
 
 ## Prototype 0.3 — Complete settings
 
