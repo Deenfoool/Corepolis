@@ -35,8 +35,17 @@
 .pause-toggle::after{content:"";position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#fffdf1;box-shadow:0 2px 5px rgba(0,0,0,.16);transition:transform .16s ease}
 .pause-toggle[aria-checked="true"]{background:#6e966a}
 .pause-toggle[aria-checked="true"]::after{transform:translateX(18px)}
+.save-status{
+  position:fixed;right:18px;bottom:18px;z-index:8100;pointer-events:none;
+  padding:9px 12px;border-radius:12px;color:#f7f4df;background:rgba(55,78,64,.9);
+  border:1px solid rgba(255,255,255,.14);box-shadow:0 8px 24px rgba(27,49,38,.2);
+  font:800 10px/1 system-ui,sans-serif;letter-spacing:.05em;
+  opacity:0;transform:translateY(8px);transition:opacity .18s ease,transform .18s ease
+}
+.save-status.show{opacity:1;transform:translateY(0)}
+body.menu-open .save-status{display:none}
 body.session-paused #game{pointer-events:none}
 body.reduce-motion .pause-menu.open{animation:none}
-body.reduce-motion .pause-action,body.reduce-motion .pause-toggle::after{transition:none}
+body.reduce-motion .pause-action,body.reduce-motion .pause-toggle::after,body.reduce-motion .save-status{transition:none}
 @keyframes pause-in{from{opacity:0}to{opacity:1}}
-@media(max-width:620px){.pause-menu{padding:12px}.pause-card{padding:19px;border-radius:20px}.pause-card h2{font-size:23px}}
+@media(max-width:620px){.pause-menu{padding:12px}.pause-card{padding:19px;border-radius:20px}.pause-card h2{font-size:23px}.save-status{right:12px;bottom:12px}}
