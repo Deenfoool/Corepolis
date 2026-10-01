@@ -59,15 +59,16 @@ The game should feel like a complete playable session before more content is add
 
 ## Prototype 0.4 — Run goal and progression
 
-This is the next gameplay priority.
-
-- Settlement → Village → Town → City → Island Capital progression
-- progression depends on settlement, production, farming and maritime development rather than score alone
-- clear long-run objective
-- visible milestone rewards
-- end-of-run / milestone presentation
+- [x] Settlement → Village → Town → City → Island Capital progression
+- [x] progression depends on settlement, production, farming and maritime development rather than score alone
+- [x] clear long-run objective in the HUD
+- [x] visible milestone rewards with real bonus cards
+- [x] persistent production/progression evidence for the current run
+- [x] Island Capital milestone presentation with Continue Building
 
 ## Prototype 0.5 — Results and replayability
+
+This is the next gameplay priority.
 
 - final score
 - island size
@@ -91,5 +92,5 @@ Only after the session shell and run goal are stable:
 - rare / strategic cards
 - maritime events and expeditions
 - more boats / harbor content
-- soundscape and richer reward presentation
+- richer reward presentation
 - broader visual polish and performance pass
