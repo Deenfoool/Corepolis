@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { GRID } from './config.js';
+import './territory-card-preview.js?v=1';
 
 export const ISLAND_FRAGMENT_SHAPES=[
   {id:'single',label:'1×1',weight:8,cells:[[0,0]]},
@@ -91,68 +92,8 @@ export function fragmentDescription(card){
   return `${label} · ${count} ${count===1?'клетка':count<5?'клетки':'клеток'}${extras.length?` · ${extras.join(' · ')}`:' · пустой'}`;
 }
 
-function svgResource(content,cx,cy){
-  if(content==='tree'){
-    return `<g class="fragment-resource tree" transform="translate(${cx} ${cy-7})">
-      <rect x="-1.4" y="4" width="2.8" height="6" rx="1" class="fragment-tree-trunk"/>
-      <path d="M0 -8 L-7 3 L-3 3 L-8 9 L8 9 L3 3 L7 3 Z" class="fragment-tree-crown"/>
-    </g>`;
-  }
-  if(content==='rock'){
-    return `<g class="fragment-resource rock" transform="translate(${cx} ${cy-3})">
-      <path d="M-8 6 L-6 -1 L-1 -7 L6 -4 L9 4 L4 9 L-4 9 Z" class="fragment-rock-main"/>
-      <path d="M-1 -7 L1 2 L9 4 L6 -4 Z" class="fragment-rock-face"/>
-    </g>`;
-  }
+export function fragmentMiniMapMarkup(){
   return'';
-}
-
-function isoPreviewMarkup(card){
-  const cells=rotatedFragmentCells(card);
-  const tileW=34,tileH=18,depth=8;
-  const projected=cells.map(cell=>({
-    ...cell,
-    cx:(cell.x-cell.z)*tileW*.5,
-    cy:(cell.x+cell.z)*tileH*.5
-  })).sort((a,b)=>(a.x+a.z)-(b.x+b.z)||a.x-b.x);
-
-  const minX=Math.min(...projected.map(cell=>cell.cx-tileW*.5))-12;
-  const maxX=Math.max(...projected.map(cell=>cell.cx+tileW*.5))+12;
-  const minY=Math.min(...projected.map(cell=>cell.cy-tileH*.5))-18;
-  const maxY=Math.max(...projected.map(cell=>cell.cy+tileH*.5+depth))+12;
-  const width=Math.max(64,maxX-minX);
-  const height=Math.max(46,maxY-minY);
-
-  const tiles=projected.map(cell=>{
-    const {cx,cy}=cell;
-    const top=`${cx},${cy-tileH*.5} ${cx+tileW*.5},${cy} ${cx},${cy+tileH*.5} ${cx-tileW*.5},${cy}`;
-    const left=`${cx-tileW*.5},${cy} ${cx},${cy+tileH*.5} ${cx},${cy+tileH*.5+depth} ${cx-tileW*.5},${cy+depth}`;
-    const right=`${cx+tileW*.5},${cy} ${cx},${cy+tileH*.5} ${cx},${cy+tileH*.5+depth} ${cx+tileW*.5},${cy+depth}`;
-    return `<g class="fragment-iso-cell ${cell.content||'empty'}">
-      <polygon points="${left}" class="fragment-iso-side fragment-iso-side-left"/>
-      <polygon points="${right}" class="fragment-iso-side fragment-iso-side-right"/>
-      <polygon points="${top}" class="fragment-iso-top"/>
-      ${svgResource(cell.content,cx,cy)}
-    </g>`;
-  }).join('');
-
-  return `<svg class="fragment-map-svg" viewBox="${minX} ${minY} ${width} ${height}" aria-hidden="true">${tiles}</svg>`;
-}
-
-export function fragmentMiniMapMarkup(card){
-  const resources=fragmentResourceCounts(card);
-  const label=card?.fragment?.label||'1×1';
-  const count=card?.fragment?.cells?.length||1;
-  const resourceBadges=[
-    resources.tree?`<span class="fragment-badge tree"><i></i>ЛЕС ×${resources.tree}</span>`:'',
-    resources.rock?`<span class="fragment-badge rock"><i></i>КАМЕНЬ ×${resources.rock}</span>`:''
-  ].join('');
-  const resourceLabel=[resources.tree?`лес ${resources.tree}`:'',resources.rock?`камень ${resources.rock}`:''].filter(Boolean).join(', ')||'без ресурсов';
-  return `<span class="fragment-map" aria-label="Фрагмент ${label}: ${count} клеток, ${resourceLabel}">
-    <span class="fragment-map-stage">${isoPreviewMarkup(card)}</span>
-    <span class="fragment-map-foot"><b>${label}</b><em>${count} ${count===1?'КЛЕТКА':'КЛЕТКИ'}</em></span>
-    ${resourceBadges?`<span class="fragment-badges">${resourceBadges}</span>`:''}
-  </span>`;
 }
 
 const ghostCliffGeometry=new RoundedBoxGeometry(GRID.tileSize*.94,.70,GRID.tileSize*.94,2,.16);
