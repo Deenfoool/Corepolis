@@ -1,43 +1,36 @@
-.fragment-map{
-  position:absolute;left:13px;right:47px;top:38px;z-index:4;height:98px;
-  display:block;padding:6px 7px 7px;border-radius:13px;
-  background:linear-gradient(180deg,rgba(19,29,24,.68),rgba(19,27,23,.48));
-  border:1px solid rgba(255,255,255,.12);
-  box-shadow:0 8px 20px rgba(11,20,15,.22),inset 0 1px rgba(255,255,255,.05);
-  backdrop-filter:blur(8px);pointer-events:none;overflow:hidden
+.card.territory-real-card .card-preview.territory-real-preview{
+  background-color:#26352f;
+  background-size:cover;
+  background-position:center 48%;
+  transform:none;
+  filter:saturate(1.04) contrast(1.02);
 }
-.fragment-map::before{
-  content:"";position:absolute;inset:0;pointer-events:none;
-  background:radial-gradient(circle at 52% 34%,rgba(141,205,121,.13),transparent 58%)
+.card.territory-real-card:hover .card-preview.territory-real-preview{
+  transform:scale(1.025);
 }
-.fragment-map-stage{position:relative;z-index:1;display:grid;place-items:center;width:100%;height:63px}
-.fragment-map-svg{display:block;width:100%;height:100%;overflow:visible;filter:drop-shadow(0 5px 5px rgba(7,13,9,.26))}
-.fragment-iso-top{fill:#9bcc7c;stroke:rgba(232,255,216,.52);stroke-width:.8;stroke-linejoin:round}
-.fragment-iso-side-left{fill:#6f815d;stroke:rgba(30,48,34,.34);stroke-width:.7}
-.fragment-iso-side-right{fill:#52694f;stroke:rgba(30,48,34,.34);stroke-width:.7}
-.fragment-iso-cell.tree .fragment-iso-top{fill:#87bd70}
-.fragment-iso-cell.rock .fragment-iso-top{fill:#a6b39a}
-.fragment-tree-trunk{fill:#78593d}
-.fragment-tree-crown{fill:#3f8151;stroke:#b8e6a7;stroke-width:.6;stroke-linejoin:round}
-.fragment-rock-main{fill:#b8c1b8;stroke:#e1e7df;stroke-width:.65;stroke-linejoin:round}
-.fragment-rock-face{fill:#87938c;opacity:.9}
-.fragment-map-foot{
-  position:absolute;left:8px;bottom:7px;z-index:2;display:flex;align-items:baseline;gap:6px
+.card.territory-real-card .card-preview.territory-real-preview::before{
+  content:"";position:absolute;inset:0;z-index:1;pointer-events:none;
+  background:radial-gradient(circle at 50% 38%,transparent 26%,rgba(14,24,20,.04) 60%,rgba(12,20,17,.20) 100%);
 }
-.fragment-map-foot b{font-size:10px;line-height:1;color:#f5f1da;letter-spacing:.02em}
-.fragment-map-foot em{font:800 6.3px/1 system-ui,sans-serif;letter-spacing:.11em;color:rgba(232,236,218,.56)}
-.fragment-badges{
-  position:absolute;right:7px;bottom:5px;z-index:2;display:flex;align-items:center;justify-content:flex-end;gap:4px;max-width:72px;flex-wrap:wrap
+.card.territory-real-card .card-preview.territory-real-preview.loading{
+  background-image:none!important;
+  background:
+    radial-gradient(circle at 50% 42%,rgba(120,169,104,.18),transparent 36%),
+    linear-gradient(145deg,#33483b,#213029);
 }
-.fragment-badge{
-  min-height:15px;padding:0 5px;border-radius:99px;display:inline-flex;align-items:center;gap:3px;
-  font:900 5.8px/1 system-ui,sans-serif;letter-spacing:.05em;color:rgba(248,244,226,.88);
-  background:rgba(18,25,21,.5);border:1px solid rgba(255,255,255,.09)
+.card.territory-real-card .card-preview.territory-real-preview.loading::after{
+  content:"";position:absolute;left:50%;top:48%;width:28px;height:28px;margin:-14px;
+  border-radius:50%;border:2px solid rgba(239,241,218,.18);border-top-color:rgba(239,241,218,.72);
+  background:none;filter:none;mask-image:none;-webkit-mask-image:none;opacity:1;
+  animation:territory-preview-spin .8s linear infinite;
 }
-.fragment-badge i{width:5px;height:5px;border-radius:50%;display:block;background:#79ad6d;box-shadow:0 0 0 1px rgba(255,255,255,.16)}
-.fragment-badge.rock i{background:#aab3ad}
-.card.active .fragment-map{
-  border-color:rgba(232,204,121,.6);
-  box-shadow:0 8px 20px rgba(11,20,15,.22),0 0 0 1px rgba(232,204,121,.18),inset 0 1px rgba(255,255,255,.06)
+.card.territory-real-card .card-preview.territory-real-preview.loaded::after{
+  opacity:.72;
 }
-.card.active .fragment-map-svg{filter:drop-shadow(0 5px 5px rgba(7,13,9,.26)) drop-shadow(0 0 7px rgba(219,200,119,.14))}
+.card.territory-real-card.active .card-preview.territory-real-preview{
+  filter:saturate(1.08) brightness(1.04);
+}
+@keyframes territory-preview-spin{to{transform:rotate(360deg)}}
+@media(prefers-reduced-motion:reduce){
+  .card.territory-real-card .card-preview.territory-real-preview.loading::after{animation:none;border-top-color:rgba(239,241,218,.42)}
+}
