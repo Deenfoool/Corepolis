@@ -7,6 +7,7 @@
   <title>Corepolis — Island Card Builder</title>
   <link rel="preload" as="image" href="./assets/cards/corepolis-card-back.webp" type="image/webp" />
   <link rel="stylesheet" href="./styles.css?v=marine-branch-1" />
+  <link rel="stylesheet" href="./island-fragments.css?v=1" />
   <script defer src="https://unpkg.com/lucide@1.47.0"></script>
   <script type="importmap">
   {
@@ -46,14 +47,14 @@
           <button type="button" data-marine-choice="archipelago">
             <span class="marine-choice-icon"><i data-lucide="map"></i></span>
             <strong>Исследовать архипелаг</strong>
-            <small>Сразу получить <b>7 островных тайлов</b> и быстро расшириться в море.</small>
-            <em>+7 ОСТРОВНЫХ КАРТ</em>
+            <small>Сразу получить <b>7 фрагментов территории</b> разных форм и быстро расшириться в море.</small>
+            <em>+7 ФРАГМЕНТОВ ТЕРРИТОРИИ</em>
           </button>
           <button type="button" data-marine-choice="lighthouse">
             <span class="marine-choice-icon"><i data-lucide="scan-line"></i></span>
             <strong>Зажечь огонь вдали</strong>
-            <small>Получить маяк, основать дальнюю точку и строить острова вокруг неё.</small>
-            <em>+1 МАЯК · +2 ОСТРОВА</em>
+            <small>Получить маяк, основать дальнюю точку и строить новые фрагменты острова вокруг неё.</small>
+            <em>+1 МАЯК · +2 ФРАГМЕНТА</em>
           </button>
         </div>
         <div class="marine-choice-note"><i data-lucide="fish"></i> Рыболовный магазин откроется при любом выборе.</div>
@@ -123,6 +124,6 @@
   </div>
 
   <script type="module" src="./src/water-v4-macrowaves.js?v=1"></script>
-  <script type="module" src="./src/main.js?v=water-v4-geometry-1"></script>
+  <script type="module" src="./src/main.js?v=island-fragments-1"></script>
 </body>
 </html>
