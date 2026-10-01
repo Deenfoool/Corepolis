@@ -111,30 +111,21 @@ export const CARD_DEFS = {
   },
 };
 
-export const STARTING_CARDS = Object.freeze([
-  'house',
-  'field',
-  'lumbermill',
-  'quarry',
-]);
-
-export const CARD_DRAW_BASE_WEIGHTS = Object.freeze({
-  field: 28,
-  island: 18,
-  tree: 10,
-  rock: 10,
-  clear: 5,
-  house: 16,
-  market: 4,
-  pier: 4,
-  fishingShop: 2,
-  lumbermill: 8,
-  quarry: 8,
-});
-
-// Runtime channel consumed by main.js. Card Progression installs live weight
-// getters on these entries; fixed global deck weights no longer drive draws.
-export const DECK_WEIGHTS = Object.keys(CARD_DRAW_BASE_WEIGHTS).map(type=>[type,0]);
+// main.js consumes this shared channel. card-progression-runtime.js installs
+// live getters, so no fixed global probability table remains here.
+export const DECK_WEIGHTS = [
+  ['field',0],
+  ['island',0],
+  ['tree',0],
+  ['rock',0],
+  ['clear',0],
+  ['house',0],
+  ['market',0],
+  ['pier',0],
+  ['fishingShop',0],
+  ['lumbermill',0],
+  ['quarry',0],
+];
 
 export const DIRECTIONS = [
   { key: 'north', dx: 0, dz: -1 },
