@@ -68,6 +68,7 @@ function persist(){
 function resetProgress(){
   progress=freshState();
   localStorage.removeItem(STORAGE_KEY);
+  milestoneLocked=false;
   lastRenderSignature='';
   renderProgress();
 }
@@ -106,7 +107,6 @@ function metrics(){
     harvests:Math.max(0,(state.millLevel||1)-1),
     millUnlocked:!!state.unlocks.mill,
     marketUnlocked:!!state.unlocks.market,
-    marineUnlocked:!!state.unlocks.marine,
     woodProduction:progress.production.wood,
     stoneProduction:progress.production.stone
   };
@@ -305,17 +305,16 @@ function evaluate(){
   setTimeout(()=>{milestoneLocked=false;evaluate();},2800);
 }
 
-window.addEventListener('corepolis:start',event=>{
-  if(event.detail?.mode!=='continue'){
-    progress=freshState();
-    persist();
-  }else{
-    progress=readState();
-  }
-  lastRenderSignature='';
+window.addEventListener('corepolis:start',()=>{
+  sessionActive=false;
+  milestoneLocked=false;
 });
-window.addEventListener('corepolis:session-ready',()=>{
+window.addEventListener('corepolis:session-ready',event=>{
+  progress=event.detail?.mode==='continue'?readState():freshState();
+  if(event.detail?.mode!=='continue')persist();
   sessionActive=true;
+  milestoneLocked=false;
+  lastRenderSignature='';
   ensureUi();
   renderProgress();
   evaluate();
