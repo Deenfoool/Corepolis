@@ -27,15 +27,16 @@ This is the current priority. The game should feel like a complete playable sess
 
 ### Save / Continue
 - [x] Versioned local save container and compatibility check
-- [ ] Autosave after committed gameplay actions
-- [ ] Persist land, tile content, field stages and field order
-- [ ] Persist hand, reserve and shaped territory-card data
-- [ ] Persist resources, score, combo count and progression unlocks
-- [ ] Persist marine structures / routes and Mill location
-- [ ] Restore the world deterministically from a save
+- [x] Autosave after committed gameplay actions
+- [x] Persist land, tile content, field stages and field order
+- [x] Persist hand, reserve and shaped territory-card data
+- [x] Persist resources, score, combo count and progression unlocks
+- [x] Persist marine structures / routes and Mill location
+- [x] Restore the world deterministically from a save
 - [x] Enable Continue only when a compatible save exists
 - [x] New Game confirmation when an existing save would be replaced
 - [x] Graceful invalid / old-save fallback
+- [x] Visible lightweight autosave feedback
 
 ### Pause / navigation
 - [x] ESC opens an in-game pause menu
