@@ -1,0 +1,29 @@
+.city-progression{margin-top:12px;padding-top:12px;border-top:1px solid rgba(75,94,67,.1)}
+.city-progression-head{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:8px;font-weight:900;letter-spacing:.12em;color:#7c8878}
+.city-progression-head b{padding:5px 7px;border-radius:8px;color:#40533f;background:rgba(104,137,86,.1);font-size:8px;letter-spacing:.08em}
+.city-progression-track{height:5px;margin-top:8px;border-radius:99px;background:rgba(79,99,68,.09);overflow:hidden}
+.city-progression-track i{display:block;width:0;height:100%;border-radius:inherit;background:linear-gradient(90deg,#71965e,#d1a84d);transition:width .35s ease}
+.city-progression>p{margin:8px 0 6px;font-size:8.5px;line-height:1.4;color:#727e6f}
+.city-requirements{display:grid;gap:4px}
+.city-requirement{min-height:25px;display:grid;grid-template-columns:14px 1fr auto;align-items:center;gap:6px;padding:5px 7px;border-radius:8px;color:#6f7b6d;background:rgba(78,98,69,.045);font-size:8px}
+.city-requirement svg{width:11px;height:11px;stroke-width:2;color:#9aa394}
+.city-requirement b{color:#53624f;font-size:8px;font-variant-numeric:tabular-nums}
+.city-requirement.done{color:#53654d;background:rgba(111,151,88,.09)}
+.city-requirement.done svg{color:#71965e}.city-requirement.done b{color:#66835b}
+.milestone-banner{position:fixed;left:50%;top:112px;z-index:7600;display:flex;align-items:center;gap:12px;min-width:310px;max-width:calc(100vw - 28px);padding:12px 16px;border-radius:18px;color:#354638;background:linear-gradient(145deg,rgba(255,252,231,.98),rgba(230,234,208,.97));border:1px solid rgba(255,255,255,.75);box-shadow:0 20px 55px rgba(36,55,43,.25);opacity:0;pointer-events:none;transform:translate(-50%,-12px) scale(.96)}
+.milestone-banner.show{animation:milestone-show 2.6s ease both}
+.milestone-mark{width:42px;height:42px;border-radius:13px;display:grid;place-items:center;color:#fff4c9;background:linear-gradient(145deg,#c89d43,#8a6c32);box-shadow:0 8px 20px rgba(116,84,35,.22)}
+.milestone-mark svg{width:20px;height:20px;stroke-width:1.8}
+.milestone-banner span{display:block;font-size:7px;letter-spacing:.16em;font-weight:900;color:#899181}
+.milestone-banner strong{display:block;margin-top:2px;font-size:17px;letter-spacing:-.02em}.milestone-banner small{display:block;margin-top:4px;font-size:8px;color:#758071}
+.capital-finale{position:fixed;inset:0;z-index:9000;display:none;place-items:center;padding:20px;background:rgba(27,49,47,.56);backdrop-filter:blur(13px)}
+.capital-finale.open{display:grid;animation:capital-fade .28s ease both}
+.capital-card{width:min(470px,calc(100vw - 28px));padding:28px;border-radius:26px;text-align:center;color:#344638}
+.capital-crown{width:60px;height:60px;margin:0 auto 12px;border-radius:19px;display:grid;place-items:center;color:#fff2bd;background:linear-gradient(145deg,#cda74e,#86682f);box-shadow:0 13px 28px rgba(104,79,34,.24)}
+.capital-crown svg{width:29px;height:29px;stroke-width:1.7}.capital-card h2{margin:5px 0 8px;font-size:28px;letter-spacing:-.04em}.capital-card>p{margin:0 auto;max-width:360px;font-size:10px;line-height:1.55;color:#738071}
+.capital-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin:20px 0 18px}.capital-stats div{padding:10px 5px;border-radius:12px;background:rgba(83,107,75,.065);border:1px solid rgba(82,102,73,.06)}.capital-stats span{display:block;font-size:7px;color:#849080;text-transform:uppercase;letter-spacing:.08em}.capital-stats b{display:block;margin-top:4px;font-size:18px;color:#455a42}
+#capital-continue{appearance:none;min-height:46px;padding:0 18px;border:0;border-radius:13px;display:inline-flex;align-items:center;gap:8px;cursor:pointer;color:#fff8df;background:#58765c;font:850 10px/1 system-ui,sans-serif;letter-spacing:.05em}#capital-continue svg{width:16px;height:16px}
+body.reduce-motion .city-progression-track i{transition:none}body.reduce-motion .milestone-banner.show,body.reduce-motion .capital-finale.open{animation:none;opacity:1;transform:translate(-50%,0)}body.reduce-motion .capital-finale.open{transform:none}
+@keyframes milestone-show{0%{opacity:0;transform:translate(-50%,-14px) scale(.96)}10%,78%{opacity:1;transform:translate(-50%,0) scale(1)}100%{opacity:0;transform:translate(-50%,-5px) scale(.985)}}
+@keyframes capital-fade{from{opacity:0}to{opacity:1}}
+@media(max-width:760px){.city-progression{display:none}.milestone-banner{top:88px;min-width:280px}.capital-card{padding:22px}.capital-stats{grid-template-columns:1fr 1fr}}
