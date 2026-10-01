@@ -9,6 +9,7 @@
   <link rel="stylesheet" href="./styles.css?v=marine-branch-1" />
   <link rel="stylesheet" href="./island-fragments.css?v=1" />
   <link rel="stylesheet" href="./main-menu.css?v=1" />
+  <link rel="stylesheet" href="./session-shell.css?v=1" />
   <script defer src="https://unpkg.com/lucide@1.47.0"></script>
   <script type="importmap">
   {
@@ -104,6 +105,31 @@
       </div>
     </section>
 
+    <section id="pause-menu" class="pause-menu" aria-hidden="true">
+      <div class="pause-card" role="dialog" aria-modal="true" aria-labelledby="pause-title">
+        <div class="pause-brand">
+          <span class="pause-brand-mark">C</span>
+          <div>
+            <div class="pause-kicker">COREPOLIS</div>
+            <h2 id="pause-title">Пауза</h2>
+          </div>
+        </div>
+        <div class="pause-actions">
+          <button id="pause-resume" class="pause-action primary" type="button"><i data-lucide="play"></i><span>Продолжить</span></button>
+          <button id="pause-settings-button" class="pause-action" type="button"><i data-lucide="sliders-horizontal"></i><span>Настройки</span></button>
+          <button id="pause-main-menu" class="pause-action" type="button"><i data-lucide="house"></i><span>Главное меню</span></button>
+          <button id="pause-restart" class="pause-action danger" type="button"><i data-lucide="rotate-ccw"></i><span>Начать заново</span></button>
+        </div>
+        <div id="pause-settings" class="pause-settings">
+          <div class="pause-settings-title"><span>БЫСТРЫЕ НАСТРОЙКИ</span><span>ESC — НАЗАД</span></div>
+          <div class="pause-setting-row">
+            <div><strong>Анимации интерфейса</strong><small>Переходы, карточки и декоративные эффекты UI.</small></div>
+            <button id="pause-ui-motion" class="pause-toggle" type="button" role="switch" aria-checked="true" aria-label="Анимации интерфейса"></button>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <section id="marine-choice" class="marine-choice hidden" aria-modal="true" role="dialog" aria-labelledby="marine-choice-title">
       <div class="marine-choice-card panel">
         <div class="eyebrow">МОРСКАЯ ЭКСПЕДИЦИЯ</div>
@@ -191,6 +217,7 @@
 
   <script type="module" src="./src/water-v4-macrowaves.js?v=1"></script>
   <script type="module" src="./src/main.js?v=island-fragments-1"></script>
-  <script type="module" src="./src/main-menu.js?v=1"></script>
+  <script type="module" src="./src/session-shell.js?v=1"></script>
+  <script type="module" src="./src/main-menu.js?v=session-state-1"></script>
 </body>
 </html>
