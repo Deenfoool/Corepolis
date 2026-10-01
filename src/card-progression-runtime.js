@@ -9,6 +9,7 @@ const BASE_WEIGHTS={
   field:28,island:18,tree:10,rock:10,clear:5,house:16,
   market:4,pier:4,fishingShop:2,lumbermill:8,quarry:8
 };
+const UNSPENT_CAPS={fishingShop:1,market:1,pier:2,clear:2};
 const RECENT_LIMIT=6;
 
 const runtime=window.__corepolisRuntime;
@@ -72,7 +73,11 @@ function productionEvidence(resource){
 
 function duplicateMultiplier(type){
   const count=cardCount(type);
-  return count>=3?0:count===2?.18:count===1?.55:1;
+  const cap=UNSPENT_CAPS[type]??3;
+  if(count>=cap)return 0;
+  if(count===0)return 1;
+  if(count===cap-1)return .18;
+  return .55;
 }
 function recentMultiplier(type){
   if(progress.recent.at(-1)===type)return .18;
@@ -234,7 +239,7 @@ function openDiscovery(){const root=ensureDiscoveryUi();renderDiscovery();root.c
 function closeDiscovery(){const root=document.querySelector('#card-discovery');root?.classList.remove('open');root?.setAttribute('aria-hidden','true');}
 function ensureStyle(){
   if(document.querySelector('link[href*="card-progression.css"]'))return;
-  const link=document.createElement('link');link.rel='stylesheet';link.href='./card-progression.css?v=1';document.head.appendChild(link);
+  const link=document.createElement('link');link.rel='stylesheet';link.href='./card-progression.css?v=2';document.head.appendChild(link);
 }
 function resetProgress(){progress=freshState();seenCardIds=new Set();unlockQueue=[];bannerBusy=false;closeDiscovery();document.querySelector('#card-unlock-banner')?.remove();try{localStorage.removeItem(STORAGE_KEY);}catch{}renderDiscovery();}
 
