@@ -13,14 +13,6 @@ export const CARD_DEFS = {
     tone: 'gold',
     description: 'Добавить часть поля. Вся связная группа растёт от 1 до 4 стадии; четыре части образуют комбо.',
   },
-  expand: {
-    category: 'ЛАНДШАФТ',
-    name: 'Расширить остров',
-    icon: 'expand',
-    cost: { wood: 1, stone: 1 },
-    tone: 'green',
-    description: 'Добавить клетку суши рядом с существующей землёй.',
-  },
   pier: {
     category: 'МОРЕ',
     name: 'Причал',
@@ -30,12 +22,12 @@ export const CARD_DEFS = {
     description: 'Ставится на воду у берега. Первый причал запускает морскую экспедицию; рядом появляется лодка.',
   },
   island: {
-    category: 'ЭКСПЕДИЦИЯ',
-    name: 'Островной тайл',
+    category: 'ЛАНДШАФТ',
+    name: 'Расширение территории',
     icon: 'waves',
     cost: {},
     tone: 'green',
-    description: 'Поднять сушу из воды. Маяк разрешает основывать отдельные острова внутри своего радиуса.',
+    description: 'Бесплатно поднять новую клетку суши из воды. Рядом с берегом расширяет остров, а маяк позволяет основать отдельный остров в своём радиусе.',
   },
   lighthouse: {
     category: 'НАВИГАЦИЯ',
@@ -121,7 +113,7 @@ export const CARD_DEFS = {
 
 export const DECK_WEIGHTS = [
   ['field', 30],
-  ['expand', 14],
+  ['island', 14],
   ['tree', 10],
   ['rock', 8],
   ['clear', 8],
