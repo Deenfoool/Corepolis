@@ -68,7 +68,7 @@ The game should feel like a complete playable session before more content is add
 
 ## Prototype 0.5 — Results and replayability
 
-Results and deterministic seeded runs are complete. The next gameplay priority is adding meaningful card drafting decisions between runs.
+Results, deterministic seeds and milestone drafting are complete. The next gameplay priority is island biomes.
 
 - [x] final score
 - [x] island size
@@ -79,7 +79,7 @@ Results and deterministic seeded runs are complete. The next gameplay priority i
 - [x] Continue Building option
 - [x] New Run option
 - [x] seeded runs
-- [ ] card drafting choices
+- [x] card drafting choices
 - [ ] island biomes
 - [ ] combo encyclopedia
 - [ ] tutorial
