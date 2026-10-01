@@ -30,12 +30,17 @@ const RANKS=[
   }
 ];
 
+function finiteNonNegative(value){
+  return Number.isFinite(value)&&value>=0?value:0;
+}
+
 function freshState(){
   return{
     version:STORAGE_VERSION,
     level:0,
     rewarded:[],
     production:{wood:false,stone:false},
+    produced:{wood:0,stone:0},
     capitalPresented:false
   };
 }
@@ -49,6 +54,10 @@ function readState(){
       level:Math.max(0,Math.min(RANKS.length-1,Number.isInteger(raw.level)?raw.level:0)),
       rewarded:Array.isArray(raw.rewarded)?raw.rewarded.filter(Number.isInteger):[],
       production:{wood:!!raw.production?.wood,stone:!!raw.production?.stone},
+      produced:{
+        wood:finiteNonNegative(raw.produced?.wood),
+        stone:finiteNonNegative(raw.produced?.stone)
+      },
       capitalPresented:!!raw.capitalPresented
     };
   }catch{
@@ -61,16 +70,37 @@ let sessionActive=false;
 let pollTimer=null;
 let milestoneLocked=false;
 let lastRenderSignature='';
+let observedResources={wood:0,stone:0};
 
 function persist(){
   localStorage.setItem(STORAGE_KEY,JSON.stringify(progress));
 }
 function resetProgress(){
   progress=freshState();
+  observedResources={wood:0,stone:0};
   localStorage.removeItem(STORAGE_KEY);
   milestoneLocked=false;
   lastRenderSignature='';
   renderProgress();
+}
+
+function resourceBalance(type){
+  return finiteNonNegative(state.resources?.[type]);
+}
+function setProductionBaseline(seedFromBalance=false){
+  for(const type of ['wood','stone']){
+    const current=resourceBalance(type);
+    if(seedFromBalance&&progress.produced[type]===0&&current>0)progress.produced[type]=current;
+    observedResources[type]=current;
+  }
+}
+function trackProduction(){
+  for(const type of ['wood','stone']){
+    const current=resourceBalance(type);
+    const delta=current-observedResources[type];
+    if(delta>0)progress.produced[type]+=delta;
+    observedResources[type]=current;
+  }
 }
 
 function countTiles(type){
@@ -81,6 +111,32 @@ function countTiles(type){
 function hasTile(type){
   for(const tile of state.land.values())if(tile.type===type)return true;
   return false;
+}
+function countHouseDistricts(){
+  const houses=new Set();
+  for(const tile of state.land.values()){
+    if(tile.type==='house')houses.add(`${tile.x},${tile.z}`);
+  }
+  let districts=0;
+  const visited=new Set();
+  const directions=[[1,0],[-1,0],[0,1],[0,-1]];
+  for(const houseKey of houses){
+    if(visited.has(houseKey))continue;
+    districts++;
+    const queue=[houseKey];
+    visited.add(houseKey);
+    while(queue.length){
+      const current=queue.pop();
+      const [x,z]=current.split(',').map(Number);
+      for(const [dx,dz] of directions){
+        const next=`${x+dx},${z+dz}`;
+        if(!houses.has(next)||visited.has(next))continue;
+        visited.add(next);
+        queue.push(next);
+      }
+    }
+  }
+  return districts;
 }
 function productionEvidence(type){
   if(type==='wood'){
@@ -94,11 +150,16 @@ function productionEvidence(type){
 }
 
 function metrics(){
+  trackProduction();
   if(productionEvidence('wood'))progress.production.wood=true;
   if(productionEvidence('stone'))progress.production.stone=true;
+  const houses=countTiles('house');
   return{
+    score:finiteNonNegative(state.harvestScore),
     land:state.land.size,
-    houses:countTiles('house'),
+    houses,
+    districts:countHouseDistricts(),
+    combos:finiteNonNegative(state.comboCount),
     marketBuilt:hasTile('market'),
     lighthouseBuilt:hasTile('lighthouse'),
     fishingShopBuilt:hasTile('fishingShop'),
@@ -108,7 +169,9 @@ function metrics(){
     millUnlocked:!!state.unlocks.mill,
     marketUnlocked:!!state.unlocks.market,
     woodProduction:progress.production.wood,
-    stoneProduction:progress.production.stone
+    stoneProduction:progress.production.stone,
+    producedWood:progress.produced.wood,
+    producedStone:progress.produced.stone
   };
 }
 
@@ -190,17 +253,23 @@ function ensureUi(){
     finale.innerHTML=`
       <div class="capital-card panel" role="dialog" aria-modal="true" aria-labelledby="capital-title">
         <div class="capital-crown"><i data-lucide="crown"></i></div>
-        <div class="eyebrow">COREPOLIS</div>
+        <div class="eyebrow">РЕЗУЛЬТАТ ЗАБЕГА</div>
         <h2 id="capital-title">Островная столица</h2>
-        <p>Небольшой берег превратился в самостоятельный город с хозяйством, производством и морской связью.</p>
+        <p>Небольшой берег превратился в самостоятельный город. Итоги этой партии сохранены — можно продолжить развитие или начать новый остров.</p>
         <div id="capital-stats" class="capital-stats"></div>
-        <button id="capital-continue" type="button"><i data-lucide="hammer"></i><span>Продолжить строительство</span></button>
+        <div class="capital-actions">
+          <button id="capital-continue" class="primary" type="button"><i data-lucide="hammer"></i><span>Продолжить строительство</span></button>
+          <button id="capital-new-run" type="button"><i data-lucide="rotate-ccw"></i><span>Новый забег</span></button>
+        </div>
       </div>`;
     document.body.appendChild(finale);
     finale.querySelector('#capital-continue')?.addEventListener('click',()=>{
       finale.classList.remove('open');
       finale.setAttribute('aria-hidden','true');
       state.inputLocked=false;
+    });
+    finale.querySelector('#capital-new-run')?.addEventListener('click',()=>{
+      window.dispatchEvent(new CustomEvent('corepolis:new-run-request',{detail:{confirm:false}}));
     });
   }
   refreshLucide?.();
@@ -265,21 +334,33 @@ function showMilestone(level){
   setTimeout(()=>banner.classList.remove('show'),2600);
 }
 
+function formatNumber(value){
+  return Math.round(finiteNonNegative(value)).toLocaleString('ru-RU');
+}
+function resultStat(icon,label,value,detail=''){
+  return`<div class="capital-stat"><i data-lucide="${icon}"></i><span>${label}</span><b>${value}</b>${detail?`<small>${detail}</small>`:''}</div>`;
+}
 function showCapitalFinale(m){
   if(progress.capitalPresented)return;
   progress.capitalPresented=true;
   persist();
   const finale=document.querySelector('#capital-finale');
   const stats=document.querySelector('#capital-stats');
-  if(stats)stats.innerHTML=`
-    <div><span>Земля</span><b>${m.land}</b></div>
-    <div><span>Дома</span><b>${m.houses}</b></div>
-    <div><span>Урожаи</span><b>${m.harvests}</b></div>
-    <div><span>Маршруты</span><b>${m.routes}</b></div>`;
+  if(stats)stats.innerHTML=[
+    resultStat('sparkles','Итоговый счёт',formatNumber(m.score)),
+    resultStat('layers-3','Размер острова',formatNumber(m.land),'клеток земли'),
+    resultStat('badge','Комбо',formatNumber(m.combos)),
+    resultStat('house','Дома / районы',`${formatNumber(m.houses)} / ${formatNumber(m.districts)}`),
+    resultStat('route','Морские маршруты',formatNumber(m.routes)),
+    resultStat('wheat','Большие урожаи',formatNumber(m.harvests)),
+    resultStat('trees','Добыто древесины',formatNumber(m.producedWood)),
+    resultStat('mountain','Добыто камня',formatNumber(m.producedStone))
+  ].join('');
   if(finale){
     state.inputLocked=true;
     finale.classList.add('open');
     finale.setAttribute('aria-hidden','false');
+    refreshLucide?.();
   }
 }
 
@@ -310,15 +391,17 @@ window.addEventListener('corepolis:start',()=>{
   milestoneLocked=false;
 });
 window.addEventListener('corepolis:session-ready',event=>{
-  progress=event.detail?.mode==='continue'?readState():freshState();
-  if(event.detail?.mode!=='continue')persist();
+  const continuing=event.detail?.mode==='continue';
+  progress=continuing?readState():freshState();
+  setProductionBaseline(continuing);
+  if(!continuing)persist();
   sessionActive=true;
   milestoneLocked=false;
   lastRenderSignature='';
   ensureUi();
   renderProgress();
   evaluate();
-  if(!pollTimer)pollTimer=setInterval(evaluate,450);
+  if(!pollTimer)pollTimer=setInterval(evaluate,200);
 });
 window.addEventListener('corepolis:save-changed',event=>{
   if(event.detail?.hasSave===false){
@@ -326,10 +409,11 @@ window.addEventListener('corepolis:save-changed',event=>{
     resetProgress();
   }
 });
-window.addEventListener('pagehide',()=>{if(sessionActive)persist();});
+window.addEventListener('pagehide',()=>{if(sessionActive){trackProduction();persist();}});
 
 window.__corepolisProgressionRuntime={
   get:()=>JSON.parse(JSON.stringify(progress)),
+  metrics:()=>({...metrics()}),
   evaluate,
   reset:resetProgress
 };
