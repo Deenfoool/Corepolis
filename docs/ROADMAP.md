@@ -85,9 +85,45 @@ Complete playable-run layer: results, deterministic seeds, milestone drafting, g
 - [x] combo encyclopedia
 - [x] tutorial
 
+## Prototype 0.6 — Card discovery and deck economy
+
+Advanced cards must be earned by developing the island rather than appearing immediately from one global random pool. Full design: `docs/CARD_PROGRESSION.md`.
+
+### Discovery / unlocks
+- [x] New runs start with House / Field / Lumbermill / Quarry only
+- [x] Territory / Forest / Rocks remain foundational world cards
+- [x] First Wood production unlocks Pier and grants its first copy
+- [x] First resource production unlocks Clear
+- [x] Four connected Fields unlock Mill through the existing milestone
+- [x] Six connected Houses unlock Market through the existing milestone
+- [x] First Pier opens Fishing Shop through the marine branch
+- [x] Lighthouse remains a milestone / expedition card instead of a normal random draw
+- [x] Card unlock state persists through Continue and resets with New Run
+- [x] Visible unlock presentation
+- [x] Pause-menu discovery screen with hidden hints and opened cards
+
+### Card Director
+- [x] Replace fixed global draw weights with live run-aware weights
+- [x] Exclude locked cards from random draws
+- [x] Duplicate suppression from Hand + Reserve counts
+- [x] Recent-draw repeat protection
+- [x] Situational usefulness gates for production / housing / maritime cards
+- [x] Resource scarcity assistance for Forest / Rocks
+- [x] Territory assistance when the island becomes large
+- [x] Route biome modifiers through the Card Director instead of mutating deck weights directly
+- [x] Existing infrastructure influences related card families
+
+### Next evolution
+- [ ] Buildings become explicit card sources: Mill → farming, Market → city/trade, Pier → sea, Lumbermill/Quarry → production
+- [ ] Unknown → Discovered → Unlocked → Mastered card states
+- [ ] Hidden clue chain for undiscovered advanced cards
+- [ ] Mastery bonuses for repeatedly successful combinations
+- [ ] Rework milestone drafts so choices are sourced from unlocked development branches
+- [ ] Add new buildings that extend the production / settlement / maritime discovery graph
+
 ## Later content
 
-Only after the session shell and run goal are stable:
+After Card Discovery is stable:
 
 - new buildings and district synergies
 - rare / strategic cards
