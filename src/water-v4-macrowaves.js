@@ -15,7 +15,7 @@ if(!rendererProto[PATCH_FLAG]){
 
   function gradient(ix,iz){
     const a=fract(Math.sin(ix*127.1+iz*311.7)*43758.5453123)*Math.PI*2;
-    return [Math.cos(a),Math.sin(a)];
+    return[Math.cos(a),Math.sin(a)];
   }
 
   function perlin2(x,z){
@@ -62,22 +62,33 @@ if(!rendererProto[PATCH_FLAG]){
     state={
       base:new Float32Array(position.array),
       position,
-      lastFrame:-1
+      lastFrame:-1,
+      flattened:false
     };
     waterStates.set(water,state);
     return state;
   }
 
-  function updateWaterGeometry(water,time){
+  function flattenWater(water){
+    const state=stateFor(water);
+    if(!state||state.flattened)return;
+    const {position,base}=state;
+    for(let i=0;i<position.count;i++)position.setY(i,base[i*3+1]);
+    position.needsUpdate=true;
+    state.flattened=true;
+    state.lastFrame=-1;
+  }
+
+  function updateWaterGeometry(water,time,fps){
     const state=stateFor(water);
     if(!state)return;
 
-    const frame=Math.floor(time*60);
+    const frame=Math.floor(time*Math.max(12,fps||60));
     if(state.lastFrame===frame)return;
     state.lastFrame=frame;
+    state.flattened=false;
 
-    const position=state.position;
-    const base=state.base;
+    const {position,base}=state;
     for(let i=0;i<position.count;i++){
       const offset=i*3;
       const x=base[offset];
@@ -86,16 +97,26 @@ if(!rendererProto[PATCH_FLAG]){
       position.setY(i,baseY+macroWaveHeight(x,z,time));
     }
     position.needsUpdate=true;
-
-    // The existing water shader derives its faceted normal from dFdx/dFdy,
-    // so these real displaced triangles directly drive the low-poly lighting.
   }
 
   rendererProto.render=function(scene,camera){
+    window.__corepolisRenderBridge={renderer:this,scene,camera};
+
+    const settings=window.__corepolisSettings||{};
+    const waterMotion=settings.waterMotion!==false;
+    const waterFps=settings.quality?.waterFps||60;
     const time=performance.now()*.001;
+
     scene?.traverse?.(object=>{
-      if(isCorepolisWater(object))updateWaterGeometry(object,time);
+      if(!isCorepolisWater(object))return;
+      if(waterMotion){
+        updateWaterGeometry(object,time,waterFps);
+      }else{
+        flattenWater(object);
+        if(object.material?.uniforms?.uTime)object.material.uniforms.uTime.value=0;
+      }
     });
+
     return originalRender.call(this,scene,camera);
   };
 }
