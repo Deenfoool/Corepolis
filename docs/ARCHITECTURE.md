@@ -12,34 +12,50 @@ Corepolis is a fully static GitHub Pages application:
 
 ## Stack
 
-The prototype intentionally stays build-tool free:
+The project stays build-tool free:
 
 - HTML
 - CSS
 - JavaScript ES modules
 - Three.js from jsDelivr
+- Lucide for interface icons
+- GLTF / GLB runtime assets
 
 ## Runtime modules
 
 - `src/config.js` — card definitions, deck weights and grid constants.
-- `src/models.js` — commit-pinned CC0 asset URLs.
-- `src/main.js` — scene, island grid, cards, interactions, combo logic and UI binding.
+- `src/models.js` — local and commit-pinned model locations.
+- `src/terrain.js` — procedural island top, coast, cliffs, terrain variants and shoreline water effects.
+- `src/island-fragments.js` — territory shapes, 90° rotation, embedded Forest/Rock generation, adaptive resource bias, card mini-map and world ghost preview.
+- `src/marine-visuals.js` — isolated procedural boat/lighthouse visuals that can be replaced when final assets exist.
+- `src/water-v4-macrowaves.js` — real vertical macro-wave displacement for the shared ocean mesh.
+- `src/main.js` — scene/state orchestration, card economy, placement, progression, production, maritime logic, animations and UI binding.
 
-## Asset policy
-
-Only assets with clear redistribution/use terms are accepted.
-
-The current authored art is from the official KayKit Game Assets GitHub organization. Runtime URLs are pinned to an exact source commit so the model content cannot silently change.
-
-If assets are later vendored into this repository, obsolete remote paths must be removed rather than kept as fallbacks.
+Superseded runtime modules are deleted instead of retained as fallbacks.
 
 ## State model
 
-Every land cell is stored by integer `x,z` key and has:
+Every land cell is stored by integer `x,z` key and owns a stable visual root plus mutable gameplay content.
 
-- terrain membership;
+Important cell data includes:
+
+- coordinate/key;
+- terrain root and autotile classification;
 - content type;
-- optional growth stage;
-- Three.js visual root.
+- optional field stage/order;
+- resource-processing state;
+- ambient visual objects.
 
-Card instances have a unique runtime id plus a card type. Applying a card mutates exactly one gameplay action and then removes that card from the hand.
+Card instances have a unique runtime id and type. Territory cards additionally keep their generated fragment definition and current rotation. Shape/content are fixed at draw time so the card preview always matches the eventual placement.
+
+A territory placement is one atomic gameplay action even though it may create several land cells. The complete fragment is validated before any card cost or placement is committed.
+
+## Rendering and picking separation
+
+Visual water, shoreline foam and territory ghost previews are not gameplay hit targets. Placement continues to use the dedicated invisible flat `waterPlane`, while land/content picking uses the `world` group. This keeps animated water geometry from changing placement coordinates.
+
+## Asset policy
+
+Only assets with clear redistribution/use terms are accepted. Provenance is documented in `THIRD_PARTY_NOTICES.md` and related docs.
+
+When an asset, module or fallback is replaced, the obsolete path/code is removed in the same change rather than left dormant.
