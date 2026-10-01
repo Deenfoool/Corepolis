@@ -65,6 +65,14 @@ function runWhenGameLoaded(callback){
   observer.observe(loading,{attributes:true,attributeFilter:['class']});
 }
 
+function requestNewRun({confirm=true}={}){
+  if(confirm&&!window.confirm('Начать эту партию заново? Текущее сохранение будет удалено.'))return false;
+  sessionStorage.setItem(DISCARD_SAVE_KEY,'1');
+  sessionStorage.setItem(AUTO_START_KEY,'new');
+  location.reload();
+  return true;
+}
+
 function consumeReloadIntent(){
   if(sessionStorage.getItem(DISCARD_SAVE_KEY)==='1'){
     sessionStorage.removeItem(DISCARD_SAVE_KEY);
@@ -96,6 +104,9 @@ window.addEventListener('corepolis:save-changed',event=>{
   clearTimeout(saveStatusTimer);
   saveStatusTimer=setTimeout(()=>saveStatus.classList.remove('show'),1200);
 });
+window.addEventListener('corepolis:new-run-request',event=>{
+  requestNewRun({confirm:event.detail?.confirm!==false});
+});
 
 window.addEventListener('keydown',event=>{
   if(!sessionActive)return;
@@ -107,6 +118,7 @@ window.addEventListener('keydown',event=>{
   }
 
   if(event.key!=='Escape')return;
+  if(document.querySelector('#capital-finale.open'))return;
   if(document.querySelector('#marine-choice:not(.hidden)'))return;
   event.preventDefault();
   event.stopImmediatePropagation();
@@ -135,12 +147,12 @@ mainMenuButton?.addEventListener('click',()=>{
   window.__corepolisSaveRuntime?.writeCurrentSave?.(true);
   location.reload();
 });
-restartButton?.addEventListener('click',()=>{
-  if(!window.confirm('Начать эту партию заново? Текущее сохранение будет удалено.'))return;
-  sessionStorage.setItem(DISCARD_SAVE_KEY,'1');
-  sessionStorage.setItem(AUTO_START_KEY,'new');
-  location.reload();
-});
+restartButton?.addEventListener('click',()=>requestNewRun());
+
+window.__corepolisSessionShell={
+  requestNewRun,
+  isPaused:()=>paused
+};
 
 syncMotion();
 setPaused(false);
