@@ -1,11 +1,13 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { ASSETS } from './models.js?v=tideline-sample-1';
+import { clearSave, hasCompatibleSave, readSave } from './session-state.js?v=1';
 
 const root=document.querySelector('#main-menu');
 const canvas=document.querySelector('#menu-scene');
 const startButton=document.querySelector('#menu-start');
 const continueButton=document.querySelector('#menu-continue');
+const continueNote=continueButton?.querySelector('.menu-action-note');
 const settingsButton=document.querySelector('#menu-settings-button');
 const settingsPanel=document.querySelector('#menu-settings');
 const settingsClose=document.querySelector('#menu-settings-close');
@@ -45,8 +47,22 @@ function setToggle(button,value,key){
   localStorage.setItem(key,value?'1':'0');
   syncSettings();
 }
+function syncContinueButton(){
+  const save=readSave();
+  const available=!!save;
+  if(continueButton){
+    continueButton.disabled=!available;
+    continueButton.setAttribute('aria-disabled',String(!available));
+  }
+  if(continueNote){
+    continueNote.textContent=available
+      ?`СОХРАНЕНО ${new Date(save.savedAt).toLocaleDateString('ru-RU')}`
+      :'НЕТ СОХРАНЕНИЯ';
+  }
+}
 
 syncSettings();
+syncContinueButton();
 setSettingsOpen(false);
 cameraToggle?.addEventListener('click',()=>setToggle(cameraToggle,!cameraMotion,storage.camera));
 uiMotionToggle?.addEventListener('click',()=>setToggle(uiMotionToggle,!uiMotion,storage.uiMotion));
@@ -55,6 +71,7 @@ settingsClose?.addEventListener('click',()=>setSettingsOpen(false));
 settingsPanel?.addEventListener('click',event=>{
   if(event.target===settingsPanel)setSettingsOpen(false);
 });
+window.addEventListener('corepolis:save-changed',syncContinueButton);
 window.addEventListener('keydown',event=>{
   if(event.key==='Escape'&&settingsPanel?.classList.contains('open')){
     event.stopPropagation();
@@ -62,14 +79,22 @@ window.addEventListener('keydown',event=>{
   }
 },{capture:true});
 
-continueButton?.setAttribute('aria-disabled','true');
-
-function leaveMenu(){
+function leaveMenu(mode='new'){
   if(!root||root.classList.contains('leaving'))return;
+  if(mode==='new'&&hasCompatibleSave()){
+    const replace=window.confirm('Начать новую игру? Текущее сохранение будет удалено.');
+    if(!replace)return;
+    clearSave();
+  }
+  if(mode==='continue'&&!hasCompatibleSave()){
+    syncContinueButton();
+    return;
+  }
+
   setSettingsOpen(false);
   root.classList.add('leaving');
   document.body.classList.remove('menu-open');
-  window.dispatchEvent(new CustomEvent('corepolis:start'));
+  window.dispatchEvent(new CustomEvent('corepolis:start',{detail:{mode}}));
   setTimeout(()=>{
     running=false;
     if(frame)cancelAnimationFrame(frame);
@@ -79,7 +104,14 @@ function leaveMenu(){
     root.remove();
   },700);
 }
-startButton?.addEventListener('click',leaveMenu);
+startButton?.addEventListener('click',()=>leaveMenu('new'));
+continueButton?.addEventListener('click',()=>leaveMenu('continue'));
+
+const autoStart=sessionStorage.getItem('corepolis:auto-start');
+if(autoStart==='new'||autoStart==='continue'){
+  sessionStorage.removeItem('corepolis:auto-start');
+  queueMicrotask(()=>leaveMenu(autoStart));
+}
 
 function startSceneWhenGameIsLoaded(){
   if(!root||!canvas){
