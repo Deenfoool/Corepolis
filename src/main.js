@@ -6,6 +6,15 @@ import { CARD_DEFS, DECK_WEIGHTS, DIRECTIONS, GRID } from './config.js';
 import { ASSETS } from './models.js?v=tideline-sample-1';
 import { buildTerrainTile, buildShoreWater, disposeTerrainTile } from './terrain.js?v=water-v2-1';
 import { createBoatVisual, createLighthouseVisual } from './marine-visuals.js?v=tideline-sample-1';
+import {
+  createIslandFragment,
+  fragmentDescription,
+  fragmentMiniMapMarkup,
+  fragmentResourceCounts,
+  rotateIslandCard,
+  rotatedFragmentCells,
+  syncIslandGhost
+} from './island-fragments.js?v=1';
 
 const $=s=>document.querySelector(s);
 const canvas=$('#game');
@@ -185,6 +194,11 @@ const hoverMarker=new THREE.Mesh(
 hoverMarker.visible=false;
 hoverMarker.position.y=.17;
 scene.add(hoverMarker);
+const islandGhostRoot=new THREE.Group();
+islandGhostRoot.name='island-fragment-ghost';
+islandGhostRoot.visible=false;
+scene.add(islandGhostRoot);
+let islandGhostAnchor=null;
 waterPlane.rotation.x=-Math.PI/2;
 waterPlane.position.y=-.54;
 scene.add(waterPlane);
@@ -253,6 +267,10 @@ function refreshLucide(){
   if(window.lucide?.createIcons){
     window.lucide.createIcons();
   }
+}
+function clearIslandGhost(){
+  islandGhostAnchor=null;
+  syncIslandGhost(islandGhostRoot,null,null,false);
 }
 
 const LOADING_PHRASES=[
@@ -692,7 +710,7 @@ const CARD_PREVIEW_ASSET={
 };
 async function previewObjectFor(type){
   if(type==='field')return fieldVisual(2,false);
-  if(type==='expand'||type==='island'){
+  if(type==='island'){
     const preview=new THREE.Group();
     preview.add(buildTerrainTile({
       x:0,z:0,tileSize:GRID.tileSize,cellKey:'preview',
@@ -718,7 +736,7 @@ async function renderCardPreview(type){
   try{
     const object=await previewObjectFor(type);
     if(!object)return null;
-    fit(object,(type==='expand'||type==='island')?3.8:3.25,4.2);
+    fit(object,type==='island'?3.8:3.25,4.2);
     object.rotation.y=type==='clear'?-.28:.42;
 
     const previewScene=new THREE.Scene();
@@ -745,7 +763,7 @@ async function renderCardPreview(type){
     const size=box.getSize(new THREE.Vector3());
     const targetY=Math.max(.28,Math.min(1.25,size.y*.42));
     const cam=new THREE.PerspectiveCamera(32,512/320,.1,30);
-    const distance=(type==='expand'||type==='island')?6.2:5.6;
+    const distance=type==='island'?6.2:5.6;
     cam.position.set(distance*.68,Math.max(3.2,size.y*.74+1.7),distance);
     cam.lookAt(0,targetY,0);
 
@@ -852,6 +870,13 @@ function terrainNeighborhood(x,z){
 function refreshTerrainNeighborhood(x,z){
   for(const tile of terrainNeighborhood(x,z))rebuildTerrainTile(tile);
 }
+function refreshTerrainForCells(cells){
+  const affected=new Map();
+  for(const cell of cells){
+    for(const tile of terrainNeighborhood(cell.x,cell.z))affected.set(tile.key,tile);
+  }
+  for(const tile of affected.values())rebuildTerrainTile(tile);
+}
 function refreshAllTerrain(){
   for(const tile of state.land.values())rebuildTerrainTile(tile);
 }
@@ -916,9 +941,25 @@ function lighthouseRangeAllows(x,z){
   }
   return false;
 }
-function canPlaceIsland(x,z){
-  if(!withinMap(x,z)||state.land.has(key(x,z))||state.waterStructures.has(waterKey(x,z)))return false;
-  return adjacent(x,z)||lighthouseRangeAllows(x,z);
+function islandCellsAt(card,x,z){
+  return rotatedFragmentCells(card).map(cell=>({
+    x:x+cell.x,
+    z:z+cell.z,
+    content:cell.content
+  }));
+}
+function canPlaceIsland(card,x,z){
+  const cells=islandCellsAt(card,x,z);
+  if(cells.some(cell=>!withinMap(cell.x,cell.z)||state.land.has(key(cell.x,cell.z))||state.waterStructures.has(waterKey(cell.x,cell.z))))return false;
+  const touchesLand=cells.some(cell=>DIRECTIONS.some(d=>state.land.has(key(cell.x+d.dx,cell.z+d.dz))));
+  if(touchesLand)return true;
+  return cells.every(cell=>lighthouseRangeAllows(cell.x,cell.z));
+}
+function showIslandGhost(card,cell){
+  islandGhostAnchor=cell;
+  const valid=canPlaceIsland(card,cell.x,cell.z);
+  syncIslandGhost(islandGhostRoot,card,cell,valid);
+  return valid;
 }
 function nearestLandDistance(x,z){
   let best=Infinity;
@@ -1014,8 +1055,8 @@ function resolveMarineChoice(choice){
   state.inputLocked=false;
   status();
   toast(choice==='lighthouse'
-    ?'Экспедиция выбрала маяк: +1 маяк, +2 острова. Рыболовный магазин тоже открыт.'
-    :'Экспедиция нашла архипелаг: +7 островных тайлов. Рыболовный магазин тоже открыт.');
+    ?'Экспедиция выбрала маяк: +1 маяк, +2 фрагмента территории. Рыболовный магазин тоже открыт.'
+    :'Экспедиция нашла архипелаг: +7 фрагментов территории. Рыболовный магазин тоже открыт.');
 }
 function animateSeaRoute(from,to){
   if(!from?.visual||!to?.visual)return;
@@ -1098,22 +1139,39 @@ async function placePier(card,x,z){
   }
 }
 async function placeIsland(card,x,z){
-  if(!canPlaceIsland(x,z)){
-    return toast(lighthouseRangeAllows(x,z)
-      ?'Эта водная клетка уже занята.'
-      :'Островной тайл должен касаться суши или находиться в радиусе маяка.');
+  if(!canPlaceIsland(card,x,z)){
+    return toast('Весь фрагмент должен помещаться на свободной воде и касаться суши либо целиком находиться в радиусе маяка.');
   }
-  const tile=addLand(x,z,{refresh:false});
-  spend(card.id);
+
+  const cells=islandCellsAt(card,x,z);
+  const touchesLand=cells.some(cell=>DIRECTIONS.some(d=>state.land.has(key(cell.x+d.dx,cell.z+d.dz))));
+  const counts=fragmentResourceCounts(card);
+  const tiles=cells.map(cell=>addLand(cell.x,cell.z,{refresh:false}));
   state.inputLocked=true;
-  await animateLandRise(tile);
-  refreshTerrainNeighborhood(x,z);
-  spawnRing(tile.visual.position.clone(),0x83d0ad);
-  spawnBurst(tile.visual.position.clone(),0x9fd56f,12);
+  clearIslandGhost();
+  spend(card.id);
+
+  await Promise.all(tiles.map(tile=>animateLandRise(tile)));
+  refreshTerrainForCells(cells);
+
+  for(let i=0;i<cells.length;i++){
+    const cell=cells[i];
+    const tile=tiles[i];
+    if(cell.content==='tree'){
+      await setTree(tile,true);
+      await activateProducersForResource(tile);
+    }else if(cell.content==='rock'){
+      await setRock(tile,true);
+      await activateProducersForResource(tile);
+    }
+    spawnBurst(tile.visual.position.clone(),cell.content==='tree'?0x77b46c:cell.content==='rock'?0xaab1aa:0x9bc86d,7);
+  }
+
   state.inputLocked=false;
   status();
-  tileInfo(tile);
-  toast(adjacent(x,z)?'Берег расширен островным тайлом.':'Новый остров поднялся в свете маяка.');
+  tileInfo(tiles[0]);
+  const resourceText=[counts.tree?`лес ×${counts.tree}`:'',counts.rock?`камни ×${counts.rock}`:''].filter(Boolean).join(', ');
+  toast(`${touchesLand?'Территория расширена':'Новый остров основан'}: ${card.fragment?.label||'фрагмент'}, +${tiles.length} ${tiles.length===1?'клетка':'клетки'}${resourceText?`, ${resourceText}`:''}.`);
 }
 async function placeRemoteLighthouse(card,x,z){
   if(!canPlaceRemoteLighthouse(x,z))return toast('Удалённый маяк можно основать не дальше четырёх клеток от известной суши.');
@@ -1126,7 +1184,7 @@ async function placeRemoteLighthouse(card,x,z){
   state.inputLocked=false;
   status();
   tileInfo(tile);
-  toast('Маяк основан вдали. Островные тайлы можно ставить в радиусе 3 клеток вокруг него.');
+  toast('Маяк основан вдали. Фрагменты территории можно ставить в радиусе 3 клеток вокруг него.');
 }
 function waterStructureInfo(structure){
   if(!structure){
@@ -1360,8 +1418,6 @@ function fieldVisual(stage,synergy=false,tile=null){
   const adjacency=fieldAdjacency(tile);
   g.userData.adjacencySignature=tile?fieldAdjacencySignature(tile):'0000';
 
-  // Borderless farmland fills the complete tile.
-  // Tiny overlap hides seams while the rounded top still reads as low-poly soil.
   const seamOverlap=.03;
   const tileSize=GRID.tileSize+seamOverlap*2;
   const soilColors=[0x5f3f20,0x644421,0x6a4925,0x714f29];
@@ -1398,9 +1454,6 @@ function fieldVisual(stage,synergy=false,tile=null){
   }
 
   addFieldClods(g,safeStage,GRID.tileSize,synergy);
-
-  // Seat the cultivated soil slightly into the island surface so the field
-  // reads as plowed ground instead of a separate slab placed on top.
   g.position.y=-.12;
   return g;
 }
@@ -1931,7 +1984,14 @@ function randomType(){
   }
   return'field';
 }
-const draw=(type=randomType())=>({id:state.nextCardId++,type});
+const draw=(type=randomType())=>{
+  const card={id:state.nextCardId++,type};
+  if(type==='island'){
+    card.fragment=createIslandFragment(state.resources);
+    card.rotation=0;
+  }
+  return card;
+};
 function refillHand(){
   const promoted=[];
   while(state.hand.length<HAND_LIMIT){
@@ -1985,6 +2045,7 @@ function spend(id){
   payCardCost(card.type);
   state.hand.splice(i,1);
   state.selectedCardId=null;
+  clearIslandGhost();
   const promoted=refillHand();
   for(const promotedCard of promoted)state.knownHandCardIds.add(promotedCard.id);
   renderHand();
@@ -2075,6 +2136,7 @@ function renderHand(){
     const b=document.createElement('button');
     const affordable=canAfford(c.type);
     const isNew=!state.knownHandCardIds.has(c.id);
+    const description=c.type==='island'?fragmentDescription(c):d.description;
     b.className=`card ${d.tone}${state.selectedCardId===c.id?' active':''}${affordable?'':' unaffordable'}${isNew?' deal-in':''}`;
     b.dataset.cardId=String(c.id);
     b.disabled=!affordable;
@@ -2090,10 +2152,11 @@ function renderHand(){
         <span class="card-cost">${costMarkup(c.type)}</span>
       </div>
       <span class="card-symbol"><i data-lucide="${d.icon||'box'}"></i></span>
+      ${c.type==='island'?fragmentMiniMapMarkup(c):''}
       <div class="card-body">
         <b>${d.name}</b>
-        <p>${d.description}</p>
-        <span class="card-action"><i data-lucide="mouse-pointer-2"></i>${affordable?'ВЫБРАТЬ':'НУЖНЫ РЕСУРСЫ'}</span>
+        <p>${description}</p>
+        <span class="card-action"><i data-lucide="${c.type==='island'?'rotate-cw':'mouse-pointer-2'}"></i>${affordable?(c.type==='island'?'ВЫБРАТЬ · Q/E ПОВОРОТ':'ВЫБРАТЬ'):'НУЖНЫ РЕСУРСЫ'}</span>
       </div>`;
 
     const previewEl=b.querySelector('.card-preview');
@@ -2110,7 +2173,10 @@ function renderHand(){
         return;
       }
       state.selectedCardId=state.selectedCardId===c.id?null:c.id;
-      ui.selectionHint.textContent=state.selectedCardId?`Карта: ${d.name}`:'Выберите карту';
+      clearIslandGhost();
+      ui.selectionHint.textContent=state.selectedCardId
+        ?c.type==='island'?`Фрагмент ${c.fragment?.label||''} · Q/E — повернуть`:`Карта: ${d.name}`
+        :'Выберите карту';
       renderHand();
     };
     ui.hand.appendChild(b);
@@ -2187,7 +2253,6 @@ function toast(s){
   toastTimer=setTimeout(()=>ui.toast.classList.add('hidden'),2400);
 }
 const adjacent=(x,z)=>DIRECTIONS.some(d=>state.land.has(key(x+d.dx,z+d.dz)));
-const canExpand=(x,z)=>!state.land.has(key(x,z))&&!state.waterStructures.has(waterKey(x,z))&&Math.abs(x)<=GRID.maxRadius&&Math.abs(z)<=GRID.maxRadius&&adjacent(x,z);
 
 function tileInfo(t){
   if(!t){
@@ -2209,7 +2274,7 @@ function tileInfo(t){
       ui.tileCopy.textContent=`Связное поле: ${group.length} ${group.length===1?'часть':'части'}. Стадия ${t.stage}/4 растёт при добавлении соседнего поля по стороне.`;
     }
   }else if(t.type==='lighthouse'){
-    ui.tileCopy.textContent='Маяк освещает море в радиусе 3 клеток. В этом радиусе островные тайлы можно ставить без соприкосновения с существующей сушей.';
+    ui.tileCopy.textContent='Маяк освещает море в радиусе 3 клеток. В этом радиусе фрагменты территории можно ставить без соприкосновения с существующей сушей.';
   }else if(t.type==='fishingShop'){
     const houses=nearby(t,'house');
     const piers=nearbyPiers(t);
@@ -2498,24 +2563,6 @@ renderer.domElement.onpointerup=async e=>{
     return structureHit?waterStructureInfo(waterStructureOf(structureHit.object)):tileInfo(null);
   }
 
-  if(card.type==='expand'){
-    const wh=hits.find(h=>h.object===waterPlane);
-    if(!wh)return toast('Расширять остров можно только в сторону воды.');
-    const x=Math.round(wh.point.x/GRID.tileSize);
-    const z=Math.round(wh.point.z/GRID.tileSize);
-    if(!canExpand(x,z))return toast('Новая земля должна касаться существующего острова.');
-    const nt=addLand(x,z,{refresh:false});
-    spend(card.id);
-    state.inputLocked=true;
-    await animateLandRise(nt);
-    refreshTerrainNeighborhood(x,z);
-    spawnBurst(nt.visual.position.clone(),0x9bc86d,10);
-    state.inputLocked=false;
-    status();
-    tileInfo(nt);
-    return toast('Новый кусок острова поднялся из воды.');
-  }
-
   if(card.type==='pier'||card.type==='island'){
     const cell=snappedWaterCell(hits);
     if(!cell)return toast('Эту карту нужно поставить на воду.');
@@ -2533,20 +2580,29 @@ renderer.domElement.onpointerup=async e=>{
   await apply(card,t);
 };
 renderer.domElement.onpointermove=e=>{
-  if(state.inputLocked){hoverMarker.visible=false;return;}
+  if(state.inputLocked){
+    hoverMarker.visible=false;
+    clearIslandGhost();
+    return;
+  }
   const hits=hitsAt(e.clientX,e.clientY);
   const card=state.hand.find(c=>c.id===state.selectedCardId);
   const tileHit=hits.find(h=>tileOf(h.object));
   const t=tileHit?tileOf(tileHit.object):null;
 
-  if((card&&['expand','pier','island'].includes(card.type))||(card?.type==='lighthouse'&&!t)){
+  if(card?.type==='island'){
+    const cell=snappedWaterCell(hits);
+    hoverMarker.visible=false;
+    if(!cell){clearIslandGhost();return;}
+    showIslandGhost(card,cell);
+    return;
+  }
+  clearIslandGhost();
+
+  if(card?.type==='pier'||(card?.type==='lighthouse'&&!t)){
     const cell=snappedWaterCell(hits);
     if(!cell){hoverMarker.visible=false;return;}
-    const valid=
-      card.type==='expand'?canExpand(cell.x,cell.z):
-      card.type==='pier'?canPlacePier(cell.x,cell.z):
-      card.type==='island'?canPlaceIsland(cell.x,cell.z):
-      canPlaceRemoteLighthouse(cell.x,cell.z);
+    const valid=card.type==='pier'?canPlacePier(cell.x,cell.z):canPlaceRemoteLighthouse(cell.x,cell.z);
     hoverMarker.visible=true;
     hoverMarker.position.set(cell.x*GRID.tileSize,-.45,cell.z*GRID.tileSize);
     hoverMarker.material.color.setHex(valid?0x86dec3:0xd97b6f);
@@ -2569,7 +2625,10 @@ renderer.domElement.onpointermove=e=>{
     hoverMarker.visible=false;
   }
 };
-renderer.domElement.onpointerleave=()=>{hoverMarker.visible=false;};
+renderer.domElement.onpointerleave=()=>{
+  hoverMarker.visible=false;
+  clearIslandGhost();
+};
 renderer.domElement.oncontextmenu=e=>e.preventDefault();
 
 function rotate(a){
@@ -2587,11 +2646,24 @@ ui.marineChoice.addEventListener('click',e=>{
 window.onkeydown=e=>{
   if(e.key==='Escape'){
     state.selectedCardId=null;
+    clearIslandGhost();
     ui.selectionHint.textContent='Выберите карту';
     renderHand();
+    return;
   }
-  if(e.key.toLowerCase()==='q')rotate(.13);
-  if(e.key.toLowerCase()==='e')rotate(-.13);
+
+  const keyName=e.key.toLowerCase();
+  const selected=state.hand.find(card=>card.id===state.selectedCardId);
+  if((keyName==='q'||keyName==='e')&&selected?.type==='island'){
+    e.preventDefault();
+    rotateIslandCard(selected,keyName==='e'?1:-1);
+    renderHand();
+    ui.selectionHint.textContent=`Фрагмент ${selected.fragment?.label||''} · Q/E — повернуть`;
+    if(islandGhostAnchor)showIslandGhost(selected,islandGhostAnchor);
+    return;
+  }
+  if(keyName==='q')rotate(.13);
+  if(keyName==='e')rotate(-.13);
 };
 
 let previousFrame=performance.now();
