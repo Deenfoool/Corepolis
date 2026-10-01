@@ -9,8 +9,17 @@ const restartButton=document.querySelector('#pause-restart');
 const uiMotionToggle=document.querySelector('#pause-ui-motion');
 
 const UI_MOTION_KEY='corepolis:ui-motion';
+const AUTO_START_KEY='corepolis:auto-start';
+const DISCARD_SAVE_KEY='corepolis:discard-save';
 let sessionActive=false;
 let paused=false;
+let saveStatusTimer=null;
+
+const saveStatus=document.createElement('div');
+saveStatus.className='save-status';
+saveStatus.textContent='Сохранено';
+saveStatus.setAttribute('aria-live','polite');
+document.body.appendChild(saveStatus);
 
 function storedMotion(){
   const value=localStorage.getItem(UI_MOTION_KEY);
@@ -42,9 +51,50 @@ function togglePause(){
   setPaused(!paused);
 }
 
+function runWhenGameLoaded(callback){
+  const loading=document.querySelector('#loading-screen');
+  if(!loading||loading.classList.contains('done')){
+    callback();
+    return;
+  }
+  const observer=new MutationObserver(()=>{
+    if(!loading.classList.contains('done'))return;
+    observer.disconnect();
+    callback();
+  });
+  observer.observe(loading,{attributes:true,attributeFilter:['class']});
+}
+
+function consumeReloadIntent(){
+  if(sessionStorage.getItem(DISCARD_SAVE_KEY)==='1'){
+    sessionStorage.removeItem(DISCARD_SAVE_KEY);
+    clearSave();
+  }
+
+  const autoStart=sessionStorage.getItem(AUTO_START_KEY);
+  if(autoStart!=='new'&&autoStart!=='continue')return;
+  sessionStorage.removeItem(AUTO_START_KEY);
+  runWhenGameLoaded(()=>{
+    requestAnimationFrame(()=>{
+      const target=autoStart==='continue'
+        ?document.querySelector('#menu-continue')
+        :document.querySelector('#menu-start');
+      if(target&&!target.disabled)target.click();
+    });
+  });
+}
+
 window.addEventListener('corepolis:start',()=>{
   sessionActive=true;
   setPaused(false);
+});
+window.addEventListener('corepolis:save-changed',event=>{
+  if(!sessionActive||!event.detail?.hasSave)return;
+  saveStatus.classList.remove('show');
+  void saveStatus.offsetWidth;
+  saveStatus.classList.add('show');
+  clearTimeout(saveStatusTimer);
+  saveStatusTimer=setTimeout(()=>saveStatus.classList.remove('show'),1200);
 });
 
 window.addEventListener('keydown',event=>{
@@ -67,6 +117,13 @@ window.addEventListener('keydown',event=>{
   togglePause();
 },{capture:true});
 
+window.addEventListener('pointerdown',event=>{
+  if(!paused)return;
+  if(event.target.closest('#pause-menu'))return;
+  event.preventDefault();
+  event.stopImmediatePropagation();
+},{capture:true});
+
 resumeButton?.addEventListener('click',()=>setPaused(false));
 settingsButton?.addEventListener('click',()=>setSettingsOpen(!settingsPanel?.classList.contains('open')));
 uiMotionToggle?.addEventListener('click',()=>{
@@ -75,14 +132,16 @@ uiMotionToggle?.addEventListener('click',()=>{
   syncMotion();
 });
 mainMenuButton?.addEventListener('click',()=>{
+  window.__corepolisSaveRuntime?.writeCurrentSave?.(true);
   location.reload();
 });
 restartButton?.addEventListener('click',()=>{
   if(!window.confirm('Начать эту партию заново? Текущее сохранение будет удалено.'))return;
-  clearSave();
-  sessionStorage.setItem('corepolis:auto-start','new');
+  sessionStorage.setItem(DISCARD_SAVE_KEY,'1');
+  sessionStorage.setItem(AUTO_START_KEY,'new');
   location.reload();
 });
 
 syncMotion();
 setPaused(false);
+consumeReloadIntent();
