@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { GRID } from './config.js';
 
 export const ISLAND_FRAGMENT_SHAPES=[
@@ -38,8 +39,8 @@ export function createIslandFragment(resources={},rng=Math.random){
   const stoneNeed=clamp01((3-(resources.stone||0))/3);
   const scarcity=(woodNeed+stoneNeed)*.5;
 
-  // Resources are helpful, never guaranteed. Larger awkward fragments are a
-  // little richer, while a healthy economy naturally produces more empty land.
+  // Helpful rather than deterministic: scarcity only nudges probabilities.
+  // A healthy economy therefore naturally produces more empty strategic land.
   const firstChance=Math.min(.68,.18+(cells.length-1)*.075+scarcity*.22);
   const secondChance=cells.length>=4?Math.min(.34,.08+scarcity*.18):0;
   let slots=(rng()<firstChance?1:0)+(rng()<secondChance?1:0);
