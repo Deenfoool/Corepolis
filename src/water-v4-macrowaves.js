@@ -100,7 +100,9 @@ if(!rendererProto[PATCH_FLAG]){
   }
 
   rendererProto.render=function(scene,camera){
-    window.__corepolisRenderBridge={renderer:this,scene,camera};
+    const bridge={renderer:this,scene,camera};
+    if(this.domElement?.id==='game')window.__corepolisRenderBridge=bridge;
+    else if(this.domElement?.id==='menu-scene')window.__corepolisMenuRenderBridge=bridge;
 
     const settings=window.__corepolisSettings||{};
     const waterMotion=settings.waterMotion!==false;
