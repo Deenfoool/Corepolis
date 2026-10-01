@@ -2688,6 +2688,17 @@ function tick(time){
   requestAnimationFrame(tick);
 }
 
+window.__corepolisRuntime={
+  state,world,shoreWaterByCell,ui,camera,controls,GRID,CARD_DEFS,
+  addLand,refreshAllTerrain,disposeTerrainTile,disposeShoreWaterTile,
+  setTree,setRock,setField,setBuilding,setMill,setLighthouse,setFishingShop,
+  updateResourceMarker,createTidelinePierVisual,renderHand,status,
+  clearIslandGhost,refreshLucide,toast,openMarineChoice,
+  seed,decorate,draw,addCard,syncAllNormalFieldStages,syncMillFieldStages,
+  waterKey
+};
+window.dispatchEvent(new CustomEvent('corepolis:runtime-ready'));
+
 async function boot(){
   startLoadingPhrases();
   seed();
