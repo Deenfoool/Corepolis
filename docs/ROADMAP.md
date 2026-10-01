@@ -19,7 +19,8 @@
 - [x] Soft anti-bad-luck resource bias for territory fragments
 - [x] Main menu with animated 3D island background
 - [x] Main-menu settings for camera / interface motion
-- [ ] Browser play-test and economy balance pass
+- [x] Economy balance baseline and biome probability pass
+- [ ] Browser play-test and empirical economy timing pass
 
 ## Prototype 0.2 — Session shell
 
