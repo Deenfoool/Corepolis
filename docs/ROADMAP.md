@@ -68,7 +68,7 @@ The game should feel like a complete playable session before more content is add
 
 ## Prototype 0.5 — Results and replayability
 
-Results, deterministic seeds, milestone drafting, gameplay biomes and the persistent combo encyclopedia are complete. The final 0.5 feature is the tutorial.
+Complete playable-run layer: results, deterministic seeds, milestone drafting, gameplay biomes, persistent combo knowledge and first-run onboarding are all live.
 
 - [x] final score
 - [x] island size
@@ -82,7 +82,7 @@ Results, deterministic seeds, milestone drafting, gameplay biomes and the persis
 - [x] card drafting choices
 - [x] island biomes
 - [x] combo encyclopedia
-- [ ] tutorial
+- [x] tutorial
 
 ## Later content
 
