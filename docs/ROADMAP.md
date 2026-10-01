@@ -68,7 +68,7 @@ The game should feel like a complete playable session before more content is add
 
 ## Prototype 0.5 — Results and replayability
 
-Results, deterministic seeds, milestone drafting and gameplay biomes are complete. The next gameplay priority is the combo encyclopedia.
+Results, deterministic seeds, milestone drafting, gameplay biomes and the persistent combo encyclopedia are complete. The final 0.5 feature is the tutorial.
 
 - [x] final score
 - [x] island size
@@ -81,7 +81,7 @@ Results, deterministic seeds, milestone drafting and gameplay biomes are complet
 - [x] seeded runs
 - [x] card drafting choices
 - [x] island biomes
-- [ ] combo encyclopedia
+- [x] combo encyclopedia
 - [ ] tutorial
 
 ## Later content
