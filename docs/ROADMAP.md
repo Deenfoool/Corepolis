@@ -1,175 +1,113 @@
 # Corepolis — Roadmap
 
-## Prototype 0.1 — Card island loop
+## Prototype 0.1 — Core island loop
 
-- [x] Static GitHub Pages-safe runtime
-- [x] Strategy camera
-- [x] Small expandable island
-- [x] Five-card starting hand
-- [x] Card selection and world targeting
-- [x] Windmill using CC0 KayKit art
-- [x] Start with no constructed buildings
-- [x] Unlock Mill after the first four-field combo
-- [x] Place the unlocked Mill on a player-chosen tile
-- [x] Unlock Market after the first connected six-house combo
-- [x] Trees and rocks using CC0 KayKit art
-- [x] Free field placement across the island
-- [x] Any-shape four-piece field collapse using edge connectivity
-- [x] Collapse into the oldest / first field piece
-- [x] Free the other three cells after collapse
-- [x] Bonus card and score from normal field collapse
-- [x] Four-cell windmill synergy zone
-- [x] Normal-field small harvest loop
-- [x] Field growth stages I–IV
-- [x] Mature-field waiting state
-- [x] Reusable Mill card for initial construction and mature-field harvest
-- [x] Four-field windmill harvest combo and reset
-- [x] Continuously rotating windmill blades
-- [x] Blade speed boost on large harvest
-- [x] Bonus-card reward
-- [x] Expand Island card
-- [x] Add/remove nature cards
-- [x] House card
-- [x] Market adjacency engine
-- [x] Lumbermill adjacency engine
-- [x] Quarry production card
-- [x] Placement pop animations
-- [x] Island expansion rise animation
-- [x] Field collapse animation
-- [x] Reward card burst animation
-- [x] Building / nature particle and ring feedback
-- [x] Windmill combo pulse animation
-- [x] Rounded island tile visual pass
-- [x] Hovered-cell world highlight
-- [x] Per-building construction animations
-- [x] House smoke, market halo, lumbermill saw and quarry lamp idle effects
-- [x] High-quality HUD and card-hand visual pass
-- [x] Wood and Stone resource counters
-- [x] Two-step Tree/Lumbermill resource cycle
-- [x] Two-step Rock/Quarry resource cycle
-- [x] Per-resource 1/2 processing marker
-- [x] Shared-resource depletion by overlapping producers
-- [x] Producer self-replacement to close a full local cycle
-- [x] Producer teardown frees its own tile
-- [x] Large extraction cycles reward bonus cards
-- [x] Existing producers auto-process newly placed Tree/Rock cards
-- [x] Resource cards can instantly resolve inside overlapping producer zones
-- [x] Pinned Lucide icon system
-- [x] Real Wood/Stone card installation costs
-- [x] Disabled/dimmed unaffordable cards
-- [x] Runtime 3D object previews for cards
-- [x] Dark rectangular card redesign with preview fade/blur
-- [x] Rebuilt farmland visuals with furrows and staged crop density
-- [x] Quaternius Wheat GLB stages replace procedural crop stalks
-- [x] Crop assets moved from repository root to `assets/crops/`
-- [x] Mature wheat heads and wind-sway animation
-- [x] Premium mill-adjacent field treatment
-- [x] Enhanced four-field collapse animation
-- [x] Objective progress meter and richer field status chips
+### Runtime and deployment
+- [x] Static GitHub Pages runtime
+- [x] Deploy from `main` / root without GitHub Actions
+- [x] Strategy camera and world targeting
+- [x] Five-card active hand
+- [x] Visible reserve deck with refill animation
+- [x] Lucide icon system
 - [ ] Browser play-test and balance pass
 
-## Prototype 0.2 — More spatial engines
+### Fields and progression
+- [x] Free field placement
+- [x] Connected field growth stages I–IV
+- [x] Any-shape four-field collapse by edge connectivity
+- [x] Collapse into the oldest field cell
+- [x] Bonus score/card from field collapse
+- [x] First field combo unlocks Mill
+- [x] Player-chosen Mill placement
+- [x] Four-cell Mill growth zone and large harvest
+- [x] First connected six-house district unlocks Market
+- [x] Rounded faceted low-poly farmland with aligned furrows
+- [x] Quaternius Wheat GLB stages and crop sway
 
-- roads / adjacency chains
-- card rarity and discard choices
-- preview ghost before committing a card
-- better island coast geometry
-- sound effects and richer harvest presentation
-- save/load
+### Resources and buildings
+- [x] Tree / Rock resource cards
+- [x] Lumbermill / Quarry two-step extraction
+- [x] Shared-resource processing by overlapping producers
+- [x] Existing producers auto-process newly placed resources
+- [x] Producer self-replacement closes its local cycle
+- [x] House / Market adjacency scoring
+- [x] Real Wood / Stone installation costs
+- [x] Unaffordable cards remain visible but disabled
+- [x] Resource sources and basic producers remain free
+
+### Territory fragments
+- [x] One canonical free `Расширение территории` card
+- [x] Remove obsolete paid `Expand Island` card
+- [x] Fragment shapes: `1×1`, `1×2`, `1×3`, `L3`, `Z4`, `2×2`
+- [x] Shape and contents fixed when the card is drawn
+- [x] Optional embedded Forest / Rock cells
+- [x] Mini-map of fragment shape on the card
+- [x] Whole-fragment ghost preview before placement
+- [x] Valid / invalid preview for collisions and map bounds
+- [x] `Q / E` rotation in 90° steps before placement
+- [x] Whole fragment rises from the sea as one action
+- [x] Embedded resources immediately participate in production adjacency
+- [x] Soft anti-bad-RNG bias toward Forest when Wood is scarce
+- [x] Soft anti-bad-RNG bias toward Rock when Stone is scarce
+- [x] Healthy economy shifts fragments back toward empty strategic land
+
+### Terrain
+- [x] Seamless 8-neighbour terrain autotiling
+- [x] Center / edge / corner / channel / peninsula / isolated-island classes
+- [x] Five deterministic variants
+- [x] Organic sampled coastlines
+- [x] Shared coastline profile between grass and cliffs
+- [x] Stitched cliff corners and turf/soil overlap
+- [x] Local terrain rebuild after expansion without deleting tile content
+
+### Maritime branch
+- [x] Water-grid Pier placement with shoreline orientation
+- [x] Boat attached to every Pier
+- [x] First-Pier expedition choice
+- [x] Archipelago reward: 7 territory fragments
+- [x] Lighthouse reward: 1 Lighthouse + 2 territory fragments
+- [x] Remote Lighthouse island founding
+- [x] Lighthouse radius enables detached fragment placement
+- [x] Fishing Shop and house/pier synergies
+- [x] Sea-route reward between Piers on separate landmasses
+- [x] Real TIDELINE free-sample Pier / Fishing Shop visuals
+- [ ] Replace temporary procedural boat and lighthouse when matching assets are available
+
+### Water
+- [x] Stylized translucent turquoise ocean
+- [x] Gradient Perlin deformation instead of repeating wave masks
+- [x] Real vertical macro-wave vertex displacement
+- [x] Large faceted low-poly wave faces
+- [x] Fresnel and restrained sunlight glints
+- [x] Shallow-water caustics and shoreline foam
+- [x] Water effects excluded from gameplay raycasting
+- [x] No realtime reflection render pass
+
+### Presentation
+- [x] Runtime 3D card previews
+- [x] Dark game-card visual system
+- [x] Placement / collapse / reward animations
+- [x] Building and nature feedback effects
+- [x] Atmospheric loading screen with rotating phrases
+- [x] Reduced-motion-safe loading flow
+
+## Prototype 0.2 — Deeper spatial decisions
+
+- [ ] Full balance pass for Wood / Stone income versus building costs
+- [ ] Combo preview before committing ordinary building cards
+- [ ] Named mixed-use districts and placement bonuses
+- [ ] Real boat expedition loop
+- [ ] Reward choices after major combos
+- [ ] Roads / adjacency chains
+- [ ] Sound effects and richer combo presentation
+- [ ] Save / load
 
 ## Prototype 0.3 — Run structure
 
-- progression / unlocks
-- card drafting choices
-- island biomes
-- goals and fail states
-- combo encyclopedia
-- seeded runs
-- tutorial
-
-- [x] Five-card hand limit with visible card-back reserve stack
-- [x] Bonus cards overflow into reserve and refill the hand before random draws
-- [x] Removed obsolete camera-help HUD
-
-- [x] Lower-right reserve deck with enlarged Corepolis card back
-- [x] Reserve-to-hand flight animation and reserve gain pulse
-- [x] Reserve count badge while keeping individual backs visible
-- [x] Hand cards no longer replay deal animation on every selection
-
-- [x] Seamless 8-neighbour terrain autotiling
-- [x] Center / edge / outer-corner / inner-corner / channel / peninsula / island terrain classes
-- [x] Five deterministic visual variants per terrain tile
-- [x] Layered grass, soil, submerged stone and irregular cliff walls
-- [x] Coastline micro-detail and rare hero-edge decoration
-- [x] Rebuild neighbouring terrain after island expansion without touching tile content
-- [x] GPU cleanup for superseded terrain geometry/materials
-
-- [x] Removed rectangular grass/soil core from coastline terrain
-- [x] Removed artificial straight green coast-lip geometry
-- [x] Organic sampled coastline is now the actual top-surface boundary
-- [x] Cliff top row reuses the exact same irregular coastline points
-- [x] Organic cut outer corners instead of square land corners
-
-- [x] Stitch outer cliff corners through all depth rows
-- [x] Remove triangular coastline holes at exposed corners
-- [x] Turf/soil contact uses shared coastline profile with overlap
-- [x] Increase coastline sampling from 9 to 13 segments
-- [x] Reduce oversized embedded cliff rocks
-
-- [x] Atmospheric rotating loading phrases instead of a fixed loading headline
-- [x] Hide internal asset names behind friendly loading statuses
-- [x] Loading progress now includes card-preview generation
-- [x] Final «Остров готов.» transition before entering the game
-- [x] Reduced-motion-safe loading experience
-
-- [x] Field stage is determined by connected-field size instead of repeated placement
-- [x] All cells in a connected normal field visually grow together
-- [x] Mill-field stage is determined by occupied cardinal Mill slots
-- [x] Remove numeric 1/2/3/4 sprites above field plots
-- [x] Large harvest clears Mill fields for a new spatial planting cycle
-
-- [x] Water-grid Pier placement with shoreline orientation
-- [x] Boat attached to every Pier with ambient bobbing
-- [x] First-Pier expedition choice UI
-- [x] Archipelago reward path: 7 Island Tile cards
-- [x] Lighthouse reward path: 1 Lighthouse + 2 Island Tile cards
-- [x] Remote Lighthouse island founding
-- [x] Lighthouse radius enables detached Island Tile placement
-- [x] Fishing Shop unlock and house/pier card synergies
-- [x] Sea-route reward between piers on separate landmasses
-- [x] Replace Pier and Fishing Shop visuals with real TIDELINE free-sample GLBs
-- [ ] Replace the temporary boat and lighthouse visuals when matching TIDELINE models are available
-
-- [x] Remove the raised border/rim from farmland tiles completely
-- [x] Replace rectangular furrow bars with rounded low-poly sculpted ridges
-- [x] Merge adjacent field soil visually across shared tile boundaries
-- [x] Rebuild field edges when neighbouring field connectivity changes
-- [x] Replace Mill-field perimeter glow with warmer borderless soil styling
-
-- [x] Make farmland cover the complete tile footprint
-- [x] Replace rounded soil base with flat-shaded voxel geometry
-- [x] Replace sculpted curved furrows with three-step voxel furrows
-- [x] Add darker voxel troughs between planting ridges
-- [x] Replace rounded soil clods with box-shaped voxel chunks
-- [x] Align furrow rows across neighbouring field tiles
-
-- [x] Replace voxel farmland with rounded faceted low-poly farmland
-- [x] Keep the plowed surface full-tile and borderless
-- [x] Restore custom rounded furrows with corrected outward face winding
-- [x] Keep aligned furrows seamless across neighbouring field cells
-
-- [x] Water V2 shader with three lightweight animated wave layers
-- [x] Deep/mid turquoise water gradient and Fresnel edge light
-- [x] Cheap moving sunlight glints and micro-ripple highlights
-- [x] Keep submerged island cliffs visible through translucent water
-- [x] Generate shallow-water bands from the exact procedural coastline
-- [x] Add animated shallow-water caustics
-- [x] Add animated shoreline foam following natural coast profiles
-- [x] Keep water visuals out of gameplay raycasting
-- [x] Avoid expensive realtime reflection render passes
-
-- [x] Water V3: replace periodic sine-wave surface with animated gradient Perlin noise
-- [x] Increase open-water wave scale and amplitude
-- [x] Reduce ocean mesh density to expose larger low-poly triangles
-- [x] Shade water from per-triangle derivative normals for faceted lighting
-- [x] Keep open-water color clean with no procedural blotch masks
+- [ ] Long-run progression and goals
+- [ ] Card drafting choices
+- [ ] Island biomes
+- [ ] Win / fail states
+- [ ] Combo encyclopedia
+- [ ] Seeded runs
+- [ ] Tutorial
