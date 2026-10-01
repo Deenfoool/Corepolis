@@ -11,6 +11,7 @@ const uiMotionToggle=document.querySelector('#pause-ui-motion');
 const UI_MOTION_KEY='corepolis:ui-motion';
 const AUTO_START_KEY='corepolis:auto-start';
 const DISCARD_SAVE_KEY='corepolis:discard-save';
+const PAUSE_OVERLAY_SELECTOR='#combo-encyclopedia.open, #tutorial-overlay.open';
 let sessionActive=false;
 let paused=false;
 let saveStatusTimer=null;
@@ -132,6 +133,7 @@ window.addEventListener('keydown',event=>{
 window.addEventListener('pointerdown',event=>{
   if(!paused)return;
   if(event.target.closest('#pause-menu'))return;
+  if(event.target.closest(PAUSE_OVERLAY_SELECTOR))return;
   event.preventDefault();
   event.stopImmediatePropagation();
 },{capture:true});
