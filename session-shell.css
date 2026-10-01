@@ -4,10 +4,12 @@
 }
 .pause-menu.open{display:grid;animation:pause-in .18s ease both}
 .pause-card{
-  width:min(420px,calc(100vw - 28px));padding:24px;border-radius:24px;
+  width:min(420px,calc(100vw - 28px));max-height:calc(100vh - 32px);overflow:auto;padding:24px;border-radius:24px;
   color:#33463b;background:linear-gradient(155deg,rgba(255,253,239,.985),rgba(233,235,212,.97));
-  border:1px solid rgba(255,255,255,.8);box-shadow:0 30px 80px rgba(29,55,53,.34),inset 0 1px rgba(255,255,255,.9)
+  border:1px solid rgba(255,255,255,.8);box-shadow:0 30px 80px rgba(29,55,53,.34),inset 0 1px rgba(255,255,255,.9);
+  scrollbar-width:thin;scrollbar-color:rgba(75,98,72,.18) transparent
 }
+.pause-card::-webkit-scrollbar{width:7px}.pause-card::-webkit-scrollbar-thumb{border-radius:99px;background:rgba(75,98,72,.18)}
 .pause-brand{display:flex;align-items:center;gap:12px;margin-bottom:20px}
 .pause-brand-mark{display:grid;place-items:center;width:42px;height:42px;border-radius:13px;background:#557360;color:#fff7df;font-weight:900;box-shadow:0 8px 18px rgba(45,71,56,.22)}
 .pause-kicker{font-size:8px;letter-spacing:.18em;font-weight:900;color:#839082}
@@ -48,4 +50,4 @@ body.session-paused #game{pointer-events:none}
 body.reduce-motion .pause-menu.open{animation:none}
 body.reduce-motion .pause-action,body.reduce-motion .pause-toggle::after,body.reduce-motion .save-status{transition:none}
 @keyframes pause-in{from{opacity:0}to{opacity:1}}
-@media(max-width:620px){.pause-menu{padding:12px}.pause-card{padding:19px;border-radius:20px}.pause-card h2{font-size:23px}.save-status{right:12px;bottom:12px}}
+@media(max-width:620px){.pause-menu{padding:12px}.pause-card{max-height:calc(100vh - 24px);padding:19px;border-radius:20px}.pause-card h2{font-size:23px}.save-status{right:12px;bottom:12px}}
