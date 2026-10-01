@@ -48,7 +48,15 @@ window.addEventListener('corepolis:start',()=>{
 });
 
 window.addEventListener('keydown',event=>{
-  if(event.key!=='Escape'||!sessionActive)return;
+  if(!sessionActive)return;
+
+  if(paused&&event.key!=='Escape'){
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    return;
+  }
+
+  if(event.key!=='Escape')return;
   if(document.querySelector('#marine-choice:not(.hidden)'))return;
   event.preventDefault();
   event.stopImmediatePropagation();
