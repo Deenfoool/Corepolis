@@ -5,7 +5,6 @@ const DEFAULTS={
   graphics:'high',
   shadows:true,
   waterMotion:true,
-  uiMotion:true,
   cameraSensitivity:1,
   musicVolume:.18,
   sfxVolume:.55
@@ -20,6 +19,9 @@ const QUALITY={
 function clamp(value,min,max){
   return Math.max(min,Math.min(max,value));
 }
+function defaultUiMotion(){
+  return !matchMedia('(prefers-reduced-motion: reduce)').matches;
+}
 function readSettings(){
   let parsed={};
   try{parsed=JSON.parse(localStorage.getItem(SETTINGS_KEY)||'{}')||{};}catch{}
@@ -29,7 +31,7 @@ function readSettings(){
     graphics,
     shadows:typeof parsed.shadows==='boolean'?parsed.shadows:DEFAULTS.shadows,
     waterMotion:typeof parsed.waterMotion==='boolean'?parsed.waterMotion:DEFAULTS.waterMotion,
-    uiMotion:typeof parsed.uiMotion==='boolean'?parsed.uiMotion:legacyMotion===null?DEFAULTS.uiMotion:legacyMotion==='1',
+    uiMotion:typeof parsed.uiMotion==='boolean'?parsed.uiMotion:legacyMotion===null?defaultUiMotion():legacyMotion==='1',
     cameraSensitivity:clamp(Number(parsed.cameraSensitivity)||DEFAULTS.cameraSensitivity,.5,1.6),
     musicVolume:clamp(Number.isFinite(Number(parsed.musicVolume))?Number(parsed.musicVolume):DEFAULTS.musicVolume,0,1),
     sfxVolume:clamp(Number.isFinite(Number(parsed.sfxVolume))?Number(parsed.sfxVolume):DEFAULTS.sfxVolume,0,1)
@@ -40,7 +42,6 @@ let settings=readSettings();
 let audioContext=null;
 let musicGain=null;
 let sfxGain=null;
-let musicNodes=[];
 let bridgeApplyFrame=0;
 
 function saveSettings(){
@@ -146,17 +147,8 @@ function syncControls(){
   }
 }
 
-function applyToRenderer(){
-  const bridge=window.__corepolisRenderBridge;
-  const runtime=window.__corepolisRuntime;
-  if(runtime?.controls){
-    const sensitivity=settings.cameraSensitivity;
-    runtime.controls.rotateSpeed=sensitivity;
-    runtime.controls.panSpeed=sensitivity;
-    runtime.controls.zoomSpeed=.8+sensitivity*.4;
-  }
+function applyBridge(bridge){
   if(!bridge?.renderer||!bridge.scene)return false;
-
   const quality=QUALITY[settings.graphics];
   const renderer=bridge.renderer;
   renderer.setPixelRatio(Math.min(devicePixelRatio||1,quality.pixelRatio));
@@ -177,12 +169,28 @@ function applyToRenderer(){
   return true;
 }
 
+function applyToRenderer(){
+  const runtime=window.__corepolisRuntime;
+  if(runtime?.controls){
+    const sensitivity=settings.cameraSensitivity;
+    runtime.controls.rotateSpeed=sensitivity;
+    runtime.controls.panSpeed=sensitivity;
+    runtime.controls.zoomSpeed=.8+sensitivity*.4;
+  }
+  const gameApplied=applyBridge(window.__corepolisRenderBridge);
+  const menuApplied=applyBridge(window.__corepolisMenuRenderBridge);
+  return gameApplied||menuApplied;
+}
+
 function applyToRendererSoon(){
   cancelAnimationFrame(bridgeApplyFrame);
   let attempts=0;
   const tryApply=()=>{
     attempts++;
-    if(applyToRenderer()||attempts>120)return;
+    const gameReady=applyToRenderer();
+    const menuExpected=!!document.querySelector('#menu-scene');
+    const menuReady=!menuExpected||!!window.__corepolisMenuRenderBridge;
+    if((gameReady&&menuReady)||attempts>180)return;
     bridgeApplyFrame=requestAnimationFrame(tryApply);
   };
   bridgeApplyFrame=requestAnimationFrame(tryApply);
@@ -198,6 +206,8 @@ function ensureAudio(){
   audioContext=new Ctx();
   musicGain=audioContext.createGain();
   sfxGain=audioContext.createGain();
+  musicGain.gain.value=0;
+  sfxGain.gain.value=0;
   musicGain.connect(audioContext.destination);
   sfxGain.connect(audioContext.destination);
 
@@ -220,7 +230,6 @@ function ensureAudio(){
     gain.gain.value=gainValue;
     osc.connect(gain).connect(filter);
     osc.start();
-    musicNodes.push(osc,gain);
   }
   applyAudioVolumes();
 }
@@ -242,7 +251,7 @@ function playUiClick(strong=false){
   osc.type='sine';
   osc.frequency.setValueAtTime(strong?420:520,now);
   osc.frequency.exponentialRampToValueAtTime(strong?260:360,now+.055);
-  gain.gain.setValueAtTime(0.0001,now);
+  gain.gain.setValueAtTime(.0001,now);
   gain.gain.exponentialRampToValueAtTime(strong?.12:.075,now+.008);
   gain.gain.exponentialRampToValueAtTime(.0001,now+.075);
   osc.connect(gain).connect(sfxGain);
@@ -250,16 +259,7 @@ function playUiClick(strong=false){
   osc.stop(now+.085);
 }
 
-function handleSettingInteraction(event){
-  const uiMotion=event.target.closest?.('#setting-ui-motion,#pause-ui-motion');
-  if(uiMotion){
-    event.preventDefault();
-    event.stopImmediatePropagation();
-    setSetting('uiMotion',!settings.uiMotion);
-    playUiClick();
-    return true;
-  }
-
+function handleCoreSettingClick(event){
   const target=event.target.closest?.('[data-setting]');
   if(!target)return false;
   const name=target.dataset.setting;
@@ -277,9 +277,17 @@ function handleSettingInteraction(event){
 }
 
 document.addEventListener('click',event=>{
-  if(handleSettingInteraction(event))return;
+  const uiMotion=event.target.closest?.('#setting-ui-motion,#pause-ui-motion');
+  if(uiMotion){
+    settings={...settings,uiMotion:localStorage.getItem(LEGACY_UI_MOTION_KEY)!=='0'};
+    saveSettings();
+    publishSettings();
+    playUiClick();
+    return;
+  }
+  if(handleCoreSettingClick(event))return;
   if(event.target.closest?.('button,.card,a'))playUiClick(event.target.closest?.('.primary')!=null);
-},true);
+});
 document.addEventListener('input',event=>{
   const target=event.target;
   if(!(target instanceof HTMLInputElement)||!target.matches('input[data-setting]'))return;
@@ -289,6 +297,7 @@ document.addEventListener('pointerdown',ensureAudio,{capture:true});
 window.addEventListener('resize',applyToRendererSoon);
 window.addEventListener('corepolis:runtime-ready',applyToRendererSoon);
 window.addEventListener('corepolis:start',applyToRendererSoon);
+window.addEventListener('corepolis:session-ready',applyToRendererSoon);
 
 window.__corepolisSettingsRuntime={
   get:()=>({...settings}),
