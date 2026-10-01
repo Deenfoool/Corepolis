@@ -2,281 +2,246 @@
 
 ## High concept
 
-Corepolis is a **3D island card-builder and spatial combo game**.
+Corepolis is a **3D island card-builder and spatial combo game**. The map is built during the run: cards create land, nature, fields and buildings, while adjacency turns individual placements into larger production and scoring loops.
 
-The map is not given to the player up front. Cards both build the settlement and reshape the island itself. The central challenge is deciding where to spend limited cards so that local combinations grow into larger reward loops.
+The central rule is simple: **space is the puzzle**. Resources matter, but they must not prevent the player from getting enough land to keep playing.
 
 ## Core rules
 
-- The player keeps a hand of cards.
-- Cards are played onto cells or existing objects.
-- Some cards create things: fields, trees, rocks and later buildings.
-- Some cards transform things: clear nature, upgrade buildings, expand land.
+- The active hand contains up to five cards; excess rewards go to Reserve.
+- Cards are played onto land cells, existing objects or water targets.
 - Spatial relationships matter more than raw resource totals.
-- Mature structures can wait for a specific trigger card instead of resolving automatically.
+- Territory expansion is free; the challenge is fitting useful shapes into the island.
+- Wood and Stone are produced through spatial resource chains and are spent on selected buildings.
+- Major combinations grant score and additional cards.
 
-## Field collapsing
+## Fields and Mill
+
+### Normal fields
 
 - A Field card creates one field piece on any free land cell.
-- Normal fields do not need a square. **Any four orthogonally connected field pieces** qualify, regardless of shape.
-- As soon as the fourth connected piece is placed, those four pieces collapse into the oldest / first piece from that group.
-- The other three cells become free again immediately after the collapse animation.
-- A collapse awards score and a bonus card.
-- This makes placement order meaningful: the first field piece determines where the compacted field remains.
-- Diagonal-only contact does not connect a group; pieces must touch by an edge.
+- Orthogonally connected normal fields share a visual growth stage equal to the connected group size, capped at stage IV.
+- Any four orthogonally connected normal field pieces form a combo regardless of shape.
+- On the fourth placement, those four pieces collapse into the oldest field cell.
+- The other three cells become free again.
+- The combo grants score and a bonus card.
+- The first such combo unlocks the Mill card.
 
-## Windmill loop
+### Mill loop
 
-The prototype proves the key rule using one building:
+- The player chooses where to build the unlocked Mill.
+- Its north/east/south/west neighbours form the Mill growth zone.
+- Mill-side fields do not use the normal four-field collapse.
+- Their shared stage is based on how many of the four Mill slots are planted.
+- When all four reach IV, a later Mill card can be played on the existing Mill to trigger the large harvest.
+- The large harvest grants score/cards and clears the four Mill fields for a new cycle.
+- Mill blades rotate continuously and accelerate during the large harvest.
 
-- A windmill occupies the center cell and creates a four-cell synergy zone at north/east/south/west.
-- Fields may be placed on **any free land cell**; the windmill never hard-locks field placement.
-- Normal fields advance I → II → III → IV one stage per Field card.
-- A mature normal field can be harvested with another Field card for a small reward and then resets to stage I.
-- Fields directly beside the windmill are the exception to normal collapsing: each position accumulates from 1/4 to 4/4 one card at a time.
-- A 4/4 windmill-side field waits instead of resolving individually.
-- When all four synergy cells are mature, the system waits for a `New Windmill` card.
-- Playing that card on the current windmill triggers the large combo, returns the four synergy fields to stage I and grants bonus cards and score.
-- Windmill blades rotate continuously and briefly accelerate when the large harvest combo fires.
+## Settlement progression
 
-This keeps placement free while preserving a strong optimization puzzle: ordinary four-piece groups compact automatically, while the four mill-side positions deliberately wait for the building upgrade trigger.
+- **House** is the basic settlement building.
+- The first connected group of six Houses unlocks **Market**.
+- **Market** scores from nearby Houses.
+- **Fishing Shop** rewards combinations of housing and port infrastructure.
 
-## Settlement and production buildings
+Locked progression buildings are excluded from random draws until their unlock condition is met.
 
-- **House** — a basic settlement building and a target for market adjacency.
-- **Market** — scores more for every neighboring House; two or more nearby houses also grant a card.
-- **Lumbermill** — processes adjacent Trees.
-- **Quarry** — processes adjacent Rocks.
+## Resource economy
 
-### Two-step resource extraction
+Trees and Rocks are productive setup pieces rather than dead obstacles.
 
-Trees and Rocks are setup resources, not filler cards.
+### Wood
 
-1. Placing the matching producer next to a resource performs its first processing step.
-2. The player immediately gains one unit of Wood or Stone.
-3. The resource stays on the map and is visibly marked `1/2`.
-4. If a different matching producer later touches the same resource, that is its second processing step: the resource disappears, the cell is freed, and the player gains score plus another material unit.
-5. Alternatively, playing a second Lumbermill/Quarry card directly on top of an existing matching producer closes that producer's whole local cycle: every adjacent matching resource is processed to completion, the producer itself disappears, and its tile becomes free.
-6. Closing a large cycle grants bonus cards: 3+ depleted cells gives one card; 5+ gives two.
-7. The timing is symmetric: if a Tree or Rock card is placed later inside an existing producer's range, that producer immediately applies its processing step. A resource placed into the overlap of two matching producers can therefore be created and fully depleted in the same turn.
+1. Forest exists on a land cell.
+2. A nearby Lumbermill performs the first processing step and grants Wood.
+3. The Forest remains marked as processed `1/2`.
+4. A second matching processing step removes the Forest and grants the next reward.
 
-This creates deliberate overlap puzzles: two producers can share one resource without deleting every resource around either building. Only cells that reach their second matching processing step are exhausted.
+### Stone
 
-## World manipulation
+Rock and Quarry use the same two-step structure.
 
-The initial deck also contains:
+A resource can be shared by overlapping producers. Playing a matching producer card on top of an existing producer can also close its local production cycle. New Forest/Rock cells placed inside an existing producer range are processed immediately.
 
-- Expand Island — create a new land cell adjacent to the current island.
-- Plant Forest — place a tree on empty land.
-- Rocks — add stone obstacles/resources.
-- Clear — remove a tree or rock.
+### Anti-deadlock rule
 
-Future systems should reuse the same readable verbs rather than introducing unrelated UI-heavy subsystems.
+Corepolis must not require resources to obtain the space needed to create more resources.
 
-## Visual direction
-
-- Cozy stylized 3D.
-- Strategy camera from above at an angle.
-- Strong silhouettes and readable stages.
-- A small diorama-like island in open water.
-- Free assets only, with license provenance documented.
-
-
-## Animation language
-
-Gameplay actions should communicate cause and reward without relying only on UI text:
-
-- placed fields, buildings, trees and rocks pop into the scene with a soft ring;
-- new island cells rise out of the water;
-- four normal field pieces visibly fly into the oldest field before the three source cells clear;
-- card rewards burst upward as small card-shaped particles;
-- score / reward events use radial particle bursts;
-- clearing nature shrinks the removed object before the tile is freed;
-- the windmill combo pulses the mill and nearby fields while the blades accelerate.
-
-
-## Card economy and presentation
-
-Cards are designed as object-first game cards rather than generic HTML buttons:
-
-- the upper section is a rendered preview of the actual 3D object;
-- the preview softens and blurs into the lower text area;
-- the installation cost is always visible inside the top edge;
-- Wood and Stone cost chips use Lucide icons;
-- unaffordable cards stay visible in the hand but are dimmed and cannot be selected;
-- resource cards and the two basic producers are free, preventing opening-hand deadlocks.
-
-Current installation costs:
+Therefore:
 
 - Field — free
-- Tree — free
+- Forest — free
 - Rock — free
 - Lumbermill — free
 - Quarry — free
+- **Territory Expansion — free**
 - Clear — 1 Wood
-- Expand Island — 1 Wood + 1 Stone
 - House — 2 Wood
 - Market — 2 Wood + 2 Stone
-- New Windmill — 4 Wood + 3 Stone
+- Mill — 4 Wood + 3 Stone
 
-The cost is paid only after a legal action is committed.
+Costs are paid only after a legal placement is committed.
 
+## Territory fragments
+
+`Расширение территории` is the only normal land-expansion card. The obsolete paid single-cell `Expand Island` card no longer exists.
+
+A territory card is generated when it is drawn and keeps the same shape/resources until played.
+
+### Shapes
+
+Current pool:
+
+- `1×1`
+- `1×2`
+- `1×3`
+- `L3`
+- `Z4`
+- `2×2`
+
+The pool is weighted toward useful small/medium shapes; larger or awkward shapes appear less often.
+
+### Embedded contents
+
+Every fragment cell is predetermined as one of:
+
+- empty;
+- Forest;
+- Rock.
+
+Embedded resources are part of the territory card itself and do not consume additional cards. After placement they become normal Forest/Rock cells and immediately interact with existing Lumbermills/Quarries.
+
+### Soft anti-bad-RNG
+
+Resource placement is adaptive but deliberately non-deterministic:
+
+- low Wood slightly increases the chance that a new territory fragment contains Forest;
+- low Stone slightly increases the chance that it contains Rock;
+- larger shapes can occasionally contain two resource cells;
+- when the economy is healthy, empty strategic fragments become more common again.
+
+The system never guarantees the missing resource. It only shifts probabilities enough to reduce long resource droughts without making the deck feel scripted.
+
+### Preview and rotation
+
+- The card shows a compact mini-map of its exact shape.
+- Forest and Rock cells are visible on that mini-map before selection.
+- Hovering over water shows a ghost of the **entire fragment**, including its resource locations.
+- Valid placement is shown in green; collisions/out-of-bounds placement is shown in red.
+- `Q / E` rotate a selected territory fragment in 90° steps.
+- While a territory card is selected, `Q / E` rotate the fragment instead of the camera.
+- Placement is atomic: either the entire shape fits or nothing is committed.
+
+### Placement rules
+
+A normal fragment may be placed when:
+
+- every cell is within the map;
+- every cell is currently water;
+- no cell overlaps a Pier or other water structure;
+- at least one cell touches existing land by an edge.
+
+A Lighthouse allows detached founding: if the fragment does not touch existing land, every cell of the fragment must be inside Lighthouse range.
+
+All cells rise from the sea together, then the surrounding terrain is rebuilt so the new land joins the existing organic coastline seamlessly.
+
+## Terrain system
+
+Land is rendered by neighbour-aware procedural autotiling rather than repeated boxes.
+
+- Internal cardinal seams stay on the exact grid so connected land is seamless.
+- Exposed coastlines use deterministic irregular sampled profiles.
+- Grass top, turf transition and cliff rows reuse the same coast profile.
+- Exposed corners are stitched through all cliff depths.
+- Each coordinate selects a deterministic visual variant.
+- Terrain is rebuilt only around changed cells; fields/buildings/resources are kept separately and survive terrain refreshes.
+
+Terrain classes include center, edge, outer corner, inner corner, channel, peninsula and isolated island.
 
 ## Farmland visual language
 
-Farmland uses a full-tile rounded low-poly language:
+Fields use full-tile rounded low-poly farmland:
 
-- plowed soil fills the complete logical tile from edge to edge with only a tiny seam overlap;
-- there is no perimeter rim, fence, lip or inset garden-bed frame;
-- the soil base is softly rounded in silhouette but rendered with flat-shaded low-poly faces;
-- each furrow is a custom faceted mesh with a rounded cross-section rather than a voxel staircase or smooth high-poly tube;
-- furrow faces use outward +Y winding and recomputed normals so lighting reads the ridges as convex;
-- all five rows align to the same world grid on every field cell, making neighbouring fields read as one continuous cultivated surface;
-- horizontal neighbours keep the furrow ends open so ridges continue cleanly across their shared seam;
-- small low-poly soil clods break up the surface without introducing a raised border;
-- stages I–IV use `Wheat_1.glb` through `Wheat_4.glb` with increasing density and height;
-- mill-adjacent fields keep identical geometry and differ only through warmer soil tones;
-- crop rows retain wind sway and staggered growth animation.
-- the field soil base is seated about halfway into the island surface; its lower half is buried while the furrows and crops remain clearly above the grass plane.
-
-The Field card preview is generated from this same runtime renderer.
-
-The crop meshes come from Quaternius Ultimate Crops Pack (CC0). Corepolis owns the borderless rounded low-poly soil, faceted furrows, field merging, wind motion and collapse effects around those meshes.
-
-
-## Building unlock progression
-
-Corepolis now starts with no constructed buildings on the island.
-
-- The first orthogonally connected four-field collapse unlocks **Mill**.
-- Unlocking Mill immediately places one Mill card into the active hand (displacing a normal card into reserve if the hand is full).
-- Until that first field combo, Mill is excluded from random draws.
-- The Mill is placed by the player on any empty land tile; its four cardinal neighbours become its growth zone.
-- After the Mill is built, a later Mill card can be played on the existing Mill when all four adjacent fields reach 4/4 to trigger the large harvest.
-- The first orthogonally connected group of six Houses unlocks **Market**.
-- Until that six-house combo exists, Market is excluded from random draws.
-- Unlocking Market immediately gives the player one Market card while preserving the five-card hand limit.
-
-Unlocks are one-time progression events and do not consume the triggering houses.
-
-
-## Seamless island terrain system
-
-The island is no longer rendered as repeated rounded boxes. Every land cell has a stable terrain root rebuilt from its eight neighbours.
-
-The top surface uses the exact grid size and a shared elevation, so cardinal neighbours meet without gaps, bevel seams or height steps. Visual irregularity is kept away from shared seams and moved to exposed coastlines, cliff walls and interior overlays.
-
-Autotile classes:
-- `center` — four cardinal neighbours;
-- `edge` — one exposed cardinal side;
-- `outer-corner` — two adjacent exposed sides;
-- `inner-corner` — all cardinal neighbours exist but a diagonal corner is open;
-- `channel` — opposite sides are exposed;
-- `peninsula` — only one cardinal neighbour remains;
-- `island` — fully isolated cell.
-
-Each coordinate deterministically selects one of five visual variants. The variation affects cliff faceting, embedded rocks, grass tufts and subtle interior tone without moving the shared tile boundary.
-
-Rare coastline cells receive a restrained hero treatment with an extra stone/flower cluster. Expansion rises with the previous coastline still visible; after the animation the new cell and its eight-neighbour area are rebuilt so obsolete cliff faces disappear and the joined surface becomes seamless.
-
-
-### Organic coastline correction
-
-The first procedural terrain pass preserved a square top plate and added a separate green coast lip. That produced an artificial slab/concrete-formwork silhouette and has been removed.
-
-The coastline is now the actual boundary of the grass surface. Every exposed cardinal edge is sampled as an irregular deterministic curve. Exterior corners where two sides are open are cut inward independently, so isolated cells and outer corners do not keep a square silhouette. The cliff mesh starts from those exact same top-edge points, which removes the visual split between a rectangular grass cap and a separate cliff.
-
-Only seams that touch another land cell remain exact grid boundaries. Those seams are internal and share the same flat material/elevation, while exposed land-water boundaries are organic.
-
-
-### Coast seam stitching
-
-Outer coastline corners now share explicit cliff row geometry. Adjacent cliff sides are no longer allowed to terminate independently: every exposed outer corner receives a bridge mesh spanning all cliff depths, eliminating triangular holes.
-
-The grass/soil contact was also rebuilt. The cliff's first row now reaches the actual grass elevation and tucks slightly beneath the top surface. A thin irregular turf skirt shares the same coastline profile and blends green grass into brown soil without a floating strip or straight trim geometry.
-
-Coastline sampling was increased from 9 to 13 segments per side. This gives smoother bays and protrusions while keeping interior tile seams exact.
-
-
-## Spatial field growth
-
-Field growth is now driven by placement, not by stacking Field cards on the same cell.
-
-Normal fields:
-- a single isolated field is stage 1;
-- adding an orthogonally adjacent second field makes the whole connected group stage 2;
-- a third connected field makes all three stage 3;
-- the fourth makes all four stage 4, then the existing four-field combo resolves;
-- placing another Field card on an occupied Field cell is no longer allowed.
-
-Mill fields use the same spatial idea, with the Mill acting as the shared centre. One occupied cardinal Mill slot means stage 1 for all planted Mill fields, two slots mean stage 2, three mean stage 3, and all four slots mean stage 4 / harvest-ready.
-
-A large Mill harvest clears the four planted field cells after collecting them. This is required by the spatial model: the next crop cycle must be grown by placing neighbouring fields again rather than repeatedly stacking cards on existing plots.
-
-The large numeric stage sprites above fields were removed. Wheat_1 through Wheat_4 are now the primary stage indicator; exact stage remains available in the objective panel and tile information.
-
+- borderless soil fills the logical tile;
+- five faceted rounded furrows run across the tile;
+- neighbouring field furrows align across shared edges;
+- flat-shaded faces keep the low-poly look;
+- Wheat stages use local Quaternius `Wheat_1.glb` through `Wheat_4.glb`;
+- crop rows sway in wind;
+- Mill-adjacent fields use warmer soil rather than a glowing perimeter;
+- the soil body is partly sunk into the island surface.
 
 ## Maritime progression
 
-The maritime branch begins with a **Pier** card.
-
 ### Pier
-- Pier placement targets a water grid cell and requires cardinal contact with land.
-- The Pier automatically faces away from its shore attachment.
-- A small boat lives beside every Pier and receives a restrained water bob animation.
-- The first Pier opens a one-time expedition choice and unlocks the Fishing Shop.
-- A Pier built on a landmass different from an existing Pier creates a sea route: +125 score and +2 cards.
 
-### First expedition choice
+- Pier targets a water grid cell touching land by an edge.
+- It automatically faces away from the connected shore.
+- A boat appears beside it.
+- The first Pier unlocks the Fishing Shop and opens a one-time expedition choice.
+
+### First expedition
+
 **Explore the archipelago**
-- gain 7 Island Tile cards.
+- receive 7 generated Territory Fragment cards.
 
 **Light a fire in the distance**
-- gain 1 Lighthouse card;
-- gain 2 Island Tile cards.
+- receive 1 Lighthouse;
+- receive 2 generated Territory Fragment cards.
 
-Both paths also grant the first Fishing Shop card.
-
-### Island Tile
-Island Tile raises a new terrain cell from the sea. Normally it must touch existing land. A Lighthouse extends this rule: Island Tiles can also be founded within 3 grid cells of any Lighthouse even with open water between them.
+Both choices also grant the first Fishing Shop card.
 
 ### Lighthouse
-A Lighthouse can be placed on normal empty land, or directly into water up to about 4 grid cells from known land. Water placement raises a one-cell lighthouse island first. This gives the player a deliberate way to seed distant archipelagos.
+
+A Lighthouse can be built on empty land or founded in nearby water. A water placement raises a one-cell Lighthouse island. Its range enables detached territory-fragment placement.
 
 ### Fishing Shop
-Fishing Shop is a land building unlocked by the first Pier.
-- adjacent Pier: +1 card;
+
+- nearby Pier: +1 card;
 - at least 2 nearby Houses: +1 card;
-- satisfying both at once creates a **Port Quarter** combo for one additional card (3 total).
-The building also awards placement score scaled by nearby houses and piers.
+- both conditions together add another card and create the Port Quarter combo.
 
-### TIDELINE visual source
-Corepolis now vendors the usable models from the **TIDELINE — Coastal Harbor** free sample by Candle Light under `assets/tideline/`.
+### Sea routes
 
-The Pier is assembled from the real TIDELINE `Boarding_Plank`, `Railing_A`, `Bollard_A`, `Anchor_A`, `Buoy_Garland`, `Bell_Stand_A` and `Dock_Chair_A` models. The Fishing Shop uses `Boat_House_A`, `Bait_Box_A` and `Cargo_Barrel_A`.
+A Pier built on a different connected landmass from another Pier creates a sea route, grants score/cards and plays a boat travel animation.
 
-The free sample does not contain a standalone boat or lighthouse model, so only those two visuals remain procedural in `src/marine-visuals.js`. They are isolated so they can be deleted in the same change that adds matching TIDELINE assets later.
+## Water
 
+Corepolis uses stylized low-poly animated water designed for static GitHub Pages/WebGL:
 
-## Water V3
+- a broad shared water mesh covers the scene;
+- Perlin-based deformation creates irregular non-periodic waves;
+- Water V4 also performs real vertical macro displacement of water vertices;
+- individual triangular faces remain visible through derivative-based faceted lighting;
+- Fresnel and restrained sunlight glints provide shape without bright blotchy masks;
+- submerged cliffs remain visible through translucent water;
+- shallow-water caustics and foam follow the actual procedural coastline;
+- visual water is excluded from gameplay raycasting; an invisible flat plane remains the placement target;
+- realtime planar reflections are intentionally avoided.
 
-Corepolis uses a lightweight stylized water renderer designed for GitHub Pages and mobile-friendly WebGL.
+## Hand, Reserve and card presentation
 
-- one coarse subdivided water plane covers the world instead of per-cell water meshes;
-- the open-water mesh uses 44×44 segments so individual triangular faces remain readable;
-- large moving forms are driven by animated 2D gradient Perlin noise instead of repeating sine-wave patterns;
-- a weaker second Perlin octave and a very subtle directional swell keep motion coherent without making the sea look periodic;
-- water uses a deep-to-mid turquoise gradient rather than a flat material;
-- face normals are reconstructed from fragment derivatives, so each deformed triangle shades as a true low-poly facet;
-- Fresnel brightens grazing angles toward the sky color;
-- a cheap directional specular term creates occasional warm sunlight glints without a reflection render pass;
-- open water deliberately avoids procedural bright blotches or color ripple masks; visible animation comes from the Perlin-deformed geometry itself;
-- the main surface remains translucent enough for the submerged cliff rows and seabed to remain visible near shore;
-- shoreline effects reuse the exact procedural coast profiles from terrain generation, so they follow natural cliff edges instead of square tile boundaries;
-- a shallow turquoise band extends outward from every exposed coast;
-- animated procedural caustic highlights move through the shallow band;
-- a narrower animated foam ribbon sits directly against the coast;
-- all water and shoreline animation shares one time uniform, avoiding per-tile animation timers;
-- invisible `waterPlane` remains the only water placement hit target, so visual water effects do not interfere with Pier, Island Tile or Lighthouse placement.
+- Hand limit: 5.
+- Overflow rewards go to the visible Reserve stack.
+- Playing a card promotes Reserve before drawing randomly.
+- Cards use runtime 3D previews, name/description and visible Wood/Stone costs.
+- Territory cards additionally show their shape/resource mini-map.
+- Unaffordable cards remain visible but are disabled.
 
-Water deliberately avoids realtime planar reflections / Water.js-style second scene renders because those would roughly double scene rendering cost for a relatively small visual gain in the current stylized art direction.
+## Visual direction
+
+- cozy stylized 3D;
+- strategy/isometric-readable camera;
+- strong silhouettes and low-poly faceting;
+- a small diorama-like island in open water;
+- gameplay state should be readable primarily from the world, not from large floating labels.
+
+## Asset sources
+
+- KayKit — primary land/building environment assets;
+- Quaternius — Wheat stages;
+- TIDELINE Coastal Harbor free sample — Pier/Fishing Shop pieces;
+- Three.js — rendering;
+- Lucide — UI icons.
+
+Licensing/provenance is maintained in `THIRD_PARTY_NOTICES.md` and the related docs.
