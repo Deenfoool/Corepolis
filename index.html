@@ -50,78 +50,34 @@
 
     <section id="main-menu" class="main-menu" aria-label="Главное меню Corepolis">
       <canvas id="menu-scene" aria-hidden="true"></canvas>
-
       <div class="menu-shell">
         <div class="menu-brand-mark">C</div>
         <div class="menu-kicker">ISLAND CARD BUILDER</div>
         <h1 class="menu-title">COREPOLIS</h1>
         <p class="menu-tagline">Собирайте остров по кусочкам, связывайте районы и превращайте маленький берег в живой архипелаг.</p>
-
         <nav class="menu-actions" aria-label="Главные действия">
-          <button id="menu-start" class="menu-action primary" type="button">
-            <i data-lucide="play"></i>
-            <span>Начать игру</span>
-          </button>
-          <button id="menu-continue" class="menu-action" type="button" disabled>
-            <i data-lucide="history"></i>
-            <span>Продолжить</span>
-            <small class="menu-action-note">НЕТ СОХРАНЕНИЯ</small>
-          </button>
-          <button id="menu-settings-button" class="menu-action" type="button">
-            <i data-lucide="sliders-horizontal"></i>
-            <span>Настройки</span>
-          </button>
+          <button id="menu-start" class="menu-action primary" type="button"><i data-lucide="play"></i><span>Начать игру</span></button>
+          <button id="menu-continue" class="menu-action" type="button" disabled><i data-lucide="history"></i><span>Продолжить</span><small class="menu-action-note">НЕТ СОХРАНЕНИЯ</small></button>
+          <button id="menu-settings-button" class="menu-action" type="button"><i data-lucide="sliders-horizontal"></i><span>Настройки</span></button>
         </nav>
       </div>
-
       <footer class="menu-footer">
-        <a href="https://github.com/Deenfoool/Corepolis" target="_blank" rel="noopener noreferrer">
-          <i data-lucide="github"></i><span>GitHub</span>
-        </a>
-        <a href="https://deenfoool.github.io/portfolio/" target="_blank" rel="noopener noreferrer">
-          <i data-lucide="briefcase-business"></i><span>Portfolio</span>
-        </a>
-        <a href="https://tips.tips/000482810" target="_blank" rel="noopener noreferrer">
-          <i data-lucide="heart-handshake"></i><span>Поддержать</span>
-        </a>
+        <a href="https://github.com/Deenfoool/Corepolis" target="_blank" rel="noopener noreferrer"><i data-lucide="github"></i><span>GitHub</span></a>
+        <a href="https://deenfoool.github.io/portfolio/" target="_blank" rel="noopener noreferrer"><i data-lucide="briefcase-business"></i><span>Portfolio</span></a>
+        <a href="https://tips.tips/000482810" target="_blank" rel="noopener noreferrer"><i data-lucide="heart-handshake"></i><span>Поддержать</span></a>
       </footer>
-
       <div id="menu-settings" class="menu-settings" aria-hidden="false">
         <section class="menu-settings-card" role="dialog" aria-modal="true" aria-labelledby="menu-settings-title">
-          <div class="menu-settings-head">
-            <div>
-              <div class="menu-kicker" style="color:#82907f">COREPOLIS</div>
-              <h2 id="menu-settings-title">Настройки</h2>
-            </div>
-            <button id="menu-settings-close" class="menu-settings-close" type="button" aria-label="Закрыть настройки"><i data-lucide="x"></i></button>
-          </div>
-          <div class="setting-row">
-            <div class="setting-copy">
-              <strong>Движение камеры</strong>
-              <small>Медленный кинематографичный облёт острова в главном меню.</small>
-            </div>
-            <button id="setting-menu-camera" class="setting-toggle" type="button" role="switch" aria-checked="true" aria-label="Движение камеры"></button>
-          </div>
-          <div class="setting-row">
-            <div class="setting-copy">
-              <strong>Анимации интерфейса</strong>
-              <small>Переходы, появления карточек и декоративные UI-анимации.</small>
-            </div>
-            <button id="setting-ui-motion" class="setting-toggle" type="button" role="switch" aria-checked="true" aria-label="Анимации интерфейса"></button>
-          </div>
+          <div class="menu-settings-head"><div><div class="menu-kicker" style="color:#82907f">COREPOLIS</div><h2 id="menu-settings-title">Настройки</h2></div><button id="menu-settings-close" class="menu-settings-close" type="button" aria-label="Закрыть настройки"><i data-lucide="x"></i></button></div>
+          <div class="setting-row"><div class="setting-copy"><strong>Движение камеры</strong><small>Медленный кинематографичный облёт острова в главном меню.</small></div><button id="setting-menu-camera" class="setting-toggle" type="button" role="switch" aria-checked="true" aria-label="Движение камеры"></button></div>
+          <div class="setting-row"><div class="setting-copy"><strong>Анимации интерфейса</strong><small>Переходы, появления карточек и декоративные UI-анимации.</small></div><button id="setting-ui-motion" class="setting-toggle" type="button" role="switch" aria-checked="true" aria-label="Анимации интерфейса"></button></div>
         </section>
       </div>
     </section>
 
     <section id="pause-menu" class="pause-menu" aria-hidden="true">
       <div class="pause-card" role="dialog" aria-modal="true" aria-labelledby="pause-title">
-        <div class="pause-brand">
-          <span class="pause-brand-mark">C</span>
-          <div>
-            <div class="pause-kicker">COREPOLIS</div>
-            <h2 id="pause-title">Пауза</h2>
-          </div>
-        </div>
+        <div class="pause-brand"><span class="pause-brand-mark">C</span><div><div class="pause-kicker">COREPOLIS</div><h2 id="pause-title">Пауза</h2></div></div>
         <div class="pause-actions">
           <button id="pause-resume" class="pause-action primary" type="button"><i data-lucide="play"></i><span>Продолжить</span></button>
           <button id="pause-settings-button" class="pause-action" type="button"><i data-lucide="sliders-horizontal"></i><span>Настройки</span></button>
@@ -130,47 +86,25 @@
         </div>
         <div id="pause-settings" class="pause-settings">
           <div class="pause-settings-title"><span>БЫСТРЫЕ НАСТРОЙКИ</span><span>ESC — НАЗАД</span></div>
-          <div class="pause-setting-row">
-            <div><strong>Анимации интерфейса</strong><small>Переходы, карточки и декоративные эффекты UI.</small></div>
-            <button id="pause-ui-motion" class="pause-toggle" type="button" role="switch" aria-checked="true" aria-label="Анимации интерфейса"></button>
-          </div>
+          <div class="pause-setting-row"><div><strong>Анимации интерфейса</strong><small>Переходы, карточки и декоративные эффекты UI.</small></div><button id="pause-ui-motion" class="pause-toggle" type="button" role="switch" aria-checked="true" aria-label="Анимации интерфейса"></button></div>
         </div>
       </div>
     </section>
 
     <section id="marine-choice" class="marine-choice hidden" aria-modal="true" role="dialog" aria-labelledby="marine-choice-title">
       <div class="marine-choice-card panel">
-        <div class="eyebrow">МОРСКАЯ ЭКСПЕДИЦИЯ</div>
-        <h2 id="marine-choice-title">Куда отправить лодку?</h2>
-        <p>Первый причал открывает морскую ветку. Выберите, чем станет первая экспедиция.</p>
+        <div class="eyebrow">МОРСКАЯ ЭКСПЕДИЦИЯ</div><h2 id="marine-choice-title">Куда отправить лодку?</h2><p>Первый причал открывает морскую ветку. Выберите, чем станет первая экспедиция.</p>
         <div class="marine-choice-grid">
-          <button type="button" data-marine-choice="archipelago">
-            <span class="marine-choice-icon"><i data-lucide="map"></i></span>
-            <strong>Исследовать архипелаг</strong>
-            <small>Сразу получить <b>7 фрагментов территории</b> разных форм и быстро расшириться в море.</small>
-            <em>+7 ФРАГМЕНТОВ ТЕРРИТОРИИ</em>
-          </button>
-          <button type="button" data-marine-choice="lighthouse">
-            <span class="marine-choice-icon"><i data-lucide="scan-line"></i></span>
-            <strong>Зажечь огонь вдали</strong>
-            <small>Получить маяк, основать дальнюю точку и строить новые фрагменты острова вокруг неё.</small>
-            <em>+1 МАЯК · +2 ФРАГМЕНТА</em>
-          </button>
+          <button type="button" data-marine-choice="archipelago"><span class="marine-choice-icon"><i data-lucide="map"></i></span><strong>Исследовать архипелаг</strong><small>Сразу получить <b>7 фрагментов территории</b> разных форм и быстро расшириться в море.</small><em>+7 ФРАГМЕНТОВ ТЕРРИТОРИИ</em></button>
+          <button type="button" data-marine-choice="lighthouse"><span class="marine-choice-icon"><i data-lucide="scan-line"></i></span><strong>Зажечь огонь вдали</strong><small>Получить маяк, основать дальнюю точку и строить новые фрагменты острова вокруг неё.</small><em>+1 МАЯК · +2 ФРАГМЕНТА</em></button>
         </div>
         <div class="marine-choice-note"><i data-lucide="fish"></i> Рыболовный магазин откроется при любом выборе.</div>
       </div>
     </section>
 
     <canvas id="game"></canvas>
-
     <header class="topbar panel">
-      <div class="brand-lockup">
-        <span class="brand-gem">C</span>
-        <div>
-          <div class="eyebrow">ISLAND CARD BUILDER</div>
-          <h1>COREPOLIS</h1>
-        </div>
-      </div>
+      <div class="brand-lockup"><span class="brand-gem">C</span><div><div class="eyebrow">ISLAND CARD BUILDER</div><h1>COREPOLIS</h1></div></div>
       <div class="resource-row">
         <div class="resource-chip"><span class="resource-icon"><i data-lucide="sparkles"></i></span><span><small>ОЧКИ</small><strong id="harvest-score">0</strong></span></div>
         <div class="resource-chip material wood"><span class="resource-icon"><i data-lucide="trees"></i></span><span><small>ДРЕВЕСИНА</small><strong id="wood-count">0</strong></span></div>
@@ -181,57 +115,27 @@
     </header>
 
     <aside class="objective panel">
-      <div class="panel-heading">
-        <span class="section-icon"><i data-lucide="target"></i></span>
-        <div>
-          <div class="eyebrow">ЦЕЛЬ</div>
-          <h2 id="objective-title">Соединяйте любые 4 части поля</h2>
-        </div>
-      </div>
+      <div class="panel-heading"><span class="section-icon"><i data-lucide="target"></i></span><div><div class="eyebrow">ЦЕЛЬ</div><h2 id="objective-title">Соединяйте любые 4 части поля</h2></div></div>
       <p id="objective-copy">Форма не важна: линия, угол, зигзаг — без мельницы 4 связанные части схлопываются в самую первую.</p>
-      <div class="objective-meter">
-        <div class="objective-meter-head"><span id="objective-progress-name">ПЕРВОЕ КОМБО</span><b id="objective-progress-label">0 / 4</b></div>
-        <div class="objective-track"><i id="objective-progress"></i></div>
-      </div>
+      <div class="objective-meter"><div class="objective-meter-head"><span id="objective-progress-name">ПЕРВОЕ КОМБО</span><b id="objective-progress-label">0 / 4</b></div><div class="objective-track"><i id="objective-progress"></i></div></div>
       <div class="field-status" id="field-status"></div>
     </aside>
 
     <div id="toast" class="toast panel hidden"></div>
-
-    <section class="hand-wrap">
-      <div class="hand-meta panel">
-        <div class="hand-label"><span class="section-icon"><i data-lucide="hand"></i></span><b>РУКА</b><span class="hand-count"><b id="hand-count">0</b> карт</span></div>
-        <span id="selection-hint">Выберите карту</span>
-      </div>
-      <div id="hand" class="hand" aria-label="Рука карт"></div>
-    </section>
-
-    <aside id="reserve-zone" class="reserve-zone hidden" aria-label="Запас карт">
-      <div class="reserve-meta"><span>ЗАПАС</span><b id="reserve-count">0</b></div>
-      <div id="reserve-stack" class="reserve-stack"></div>
-    </aside>
-
-    <aside id="tile-info" class="tile-info panel hidden">
-      <div class="panel-heading">
-        <span class="section-icon"><i data-lucide="map-pin"></i></span>
-        <div>
-          <div class="eyebrow">ОБЪЕКТ</div>
-          <h2 id="tile-title"></h2>
-        </div>
-      </div>
-      <p id="tile-copy"></p>
-    </aside>
+    <section class="hand-wrap"><div class="hand-meta panel"><div class="hand-label"><span class="section-icon"><i data-lucide="hand"></i></span><b>РУКА</b><span class="hand-count"><b id="hand-count">0</b> карт</span></div><span id="selection-hint">Выберите карту</span></div><div id="hand" class="hand" aria-label="Рука карт"></div></section>
+    <aside id="reserve-zone" class="reserve-zone hidden" aria-label="Запас карт"><div class="reserve-meta"><span>ЗАПАС</span><b id="reserve-count">0</b></div><div id="reserve-stack" class="reserve-stack"></div></aside>
+    <aside id="tile-info" class="tile-info panel hidden"><div class="panel-heading"><span class="section-icon"><i data-lucide="map-pin"></i></span><div><div class="eyebrow">ОБЪЕКТ</div><h2 id="tile-title"></h2></div></div><p id="tile-copy"></p></aside>
   </div>
 
   <script type="module" src="./src/seed-runtime.js?v=1"></script>
   <script type="module" src="./src/water-v4-macrowaves.js?v=2"></script>
   <script type="module" src="./src/main.js?v=session-save-1"></script>
   <script type="module" src="./src/biome-runtime.js?v=2"></script>
-  <script type="module" src="./src/card-progression-runtime.js?v=2"></script>
+  <script type="module" src="./src/card-progression-runtime.js?v=3"></script>
   <script type="module" src="./src/save-runtime.js?v=1"></script>
   <script type="module" src="./src/settings-runtime.js?v=1"></script>
   <script type="module" src="./src/progression-runtime.js?v=1"></script>
-  <script type="module" src="./src/draft-runtime.js?v=1"></script>
+  <script type="module" src="./src/draft-runtime.js?v=2"></script>
   <script type="module" src="./src/combo-encyclopedia.js?v=1"></script>
   <script type="module" src="./src/tutorial-runtime.js?v=2"></script>
   <script type="module" src="./src/session-shell.js?v=3"></script>
