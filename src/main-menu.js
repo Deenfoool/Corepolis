@@ -28,14 +28,17 @@ let running=true;
 let renderer=null;
 let frame=0;
 let resizeHandler=null;
+let loadingObserver=null;
 
 function syncSettings(){
   cameraToggle?.setAttribute('aria-checked',String(cameraMotion));
   uiMotionToggle?.setAttribute('aria-checked',String(uiMotion));
   document.body.classList.toggle('reduce-motion',!uiMotion);
 }
-syncSettings();
-
+function setSettingsOpen(open){
+  settingsPanel?.classList.toggle('open',open);
+  settingsPanel?.setAttribute('aria-hidden',String(!open));
+}
 function setToggle(button,value,key){
   if(button===cameraToggle)cameraMotion=value;
   if(button===uiMotionToggle)uiMotion=value;
@@ -43,42 +46,68 @@ function setToggle(button,value,key){
   syncSettings();
 }
 
+syncSettings();
+setSettingsOpen(false);
 cameraToggle?.addEventListener('click',()=>setToggle(cameraToggle,!cameraMotion,storage.camera));
 uiMotionToggle?.addEventListener('click',()=>setToggle(uiMotionToggle,!uiMotion,storage.uiMotion));
-settingsButton?.addEventListener('click',()=>settingsPanel?.classList.add('open'));
-settingsClose?.addEventListener('click',()=>settingsPanel?.classList.remove('open'));
+settingsButton?.addEventListener('click',()=>setSettingsOpen(true));
+settingsClose?.addEventListener('click',()=>setSettingsOpen(false));
 settingsPanel?.addEventListener('click',event=>{
-  if(event.target===settingsPanel)settingsPanel.classList.remove('open');
+  if(event.target===settingsPanel)setSettingsOpen(false);
 });
+window.addEventListener('keydown',event=>{
+  if(event.key==='Escape'&&settingsPanel?.classList.contains('open')){
+    event.stopPropagation();
+    setSettingsOpen(false);
+  }
+},{capture:true});
 
 continueButton?.setAttribute('aria-disabled','true');
 
 function leaveMenu(){
   if(!root||root.classList.contains('leaving'))return;
+  setSettingsOpen(false);
   root.classList.add('leaving');
   document.body.classList.remove('menu-open');
   window.dispatchEvent(new CustomEvent('corepolis:start'));
   setTimeout(()=>{
     running=false;
     if(frame)cancelAnimationFrame(frame);
-    window.removeEventListener('resize',resizeHandler);
+    loadingObserver?.disconnect?.();
+    if(resizeHandler)window.removeEventListener('resize',resizeHandler);
     renderer?.dispose?.();
     root.remove();
   },700);
 }
 startButton?.addEventListener('click',leaveMenu);
 
-if(!root||!canvas){
-  running=false;
-}else{
-  initScene().catch(error=>{
-    console.warn('[Corepolis] Main menu 3D background disabled:',error);
+function startSceneWhenGameIsLoaded(){
+  if(!root||!canvas){
+    running=false;
+    return;
+  }
+  const loading=document.querySelector('#loading-screen');
+  if(!loading||loading.classList.contains('done')){
+    initScene().catch(disableScene);
+    return;
+  }
+  loadingObserver=new MutationObserver(()=>{
+    if(!loading.classList.contains('done'))return;
+    loadingObserver.disconnect();
+    loadingObserver=null;
+    initScene().catch(disableScene);
   });
+  loadingObserver.observe(loading,{attributes:true,attributeFilter:['class']});
 }
+function disableScene(error){
+  console.warn('[Corepolis] Main menu 3D background disabled:',error);
+}
+startSceneWhenGameIsLoaded();
 
 async function initScene(){
+  if(!running||!root?.isConnected)return;
   renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:false,powerPreference:'high-performance'});
-  renderer.setPixelRatio(Math.min(devicePixelRatio,1.65));
+  renderer.setPixelRatio(Math.min(devicePixelRatio,innerWidth<720?1.25:1.65));
   renderer.setSize(innerWidth,innerHeight,false);
   renderer.outputColorSpace=THREE.SRGBColorSpace;
   renderer.toneMapping=THREE.ACESFilmicToneMapping;
@@ -156,22 +185,25 @@ async function initScene(){
 
   const modelKeys=['house','market','windmill','lumbermill','quarry','treeA','treeB','rockA','rockC','wheat4'];
   await Promise.all(modelKeys.map(key=>load(key).catch(()=>null)));
+  if(!running||!root?.isConnected)return;
 
   const windmillFans=[];
   const addModel=async(key,position,size,yaw=0)=>{
     const source=await load(key).catch(()=>null);
     if(!source)return null;
-    const model=source.clone(true);
-    prepareModel(model);
-    fitModel(model,size);
-    model.position.set(position[0],1.72,position[1]);
-    model.rotation.y=yaw;
-    island.add(model);
+    const visual=source.clone(true);
+    prepareModel(visual);
+    fitModel(visual,size);
+    const holder=new THREE.Group();
+    holder.position.set(position[0],1.72,position[1]);
+    holder.rotation.y=yaw;
+    holder.add(visual);
+    island.add(holder);
     if(key==='windmill'){
-      const fan=model.getObjectByName('building_windmill_top_fan_green');
+      const fan=visual.getObjectByName('building_windmill_top_fan_green');
       if(fan)windmillFans.push(fan);
     }
-    return model;
+    return holder;
   };
 
   const homes=[
@@ -204,9 +236,11 @@ async function initScene(){
       const crop=wheat.clone(true);
       prepareModel(crop);
       fitModel(crop,2.55,1.4);
-      crop.position.set(x,1.82,z);
-      crop.rotation.y=(i%2)*Math.PI*.5;
-      island.add(crop);
+      const holder=new THREE.Group();
+      holder.position.set(x,1.82,z);
+      holder.rotation.y=(i%2)*Math.PI*.5;
+      holder.add(crop);
+      island.add(holder);
     }
   }
 
@@ -252,6 +286,7 @@ function prepareModel(root){
 }
 
 function fitModel(root,maxXZ,maxY=maxXZ*1.7){
+  root.position.set(0,0,0);
   root.updateMatrixWorld(true);
   let box=new THREE.Box3().setFromObject(root);
   const size=box.getSize(new THREE.Vector3());
@@ -260,9 +295,7 @@ function fitModel(root,maxXZ,maxY=maxXZ*1.7){
   root.updateMatrixWorld(true);
   box=new THREE.Box3().setFromObject(root);
   const center=box.getCenter(new THREE.Vector3());
-  root.position.x-=center.x;
-  root.position.y-=box.min.y;
-  root.position.z-=center.z;
+  root.position.set(-center.x,-box.min.y,-center.z);
 }
 
 function addMountains(island){
