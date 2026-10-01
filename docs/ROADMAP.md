@@ -23,7 +23,7 @@
 
 ## Prototype 0.2 — Session shell
 
-This is the current priority. The game should feel like a complete playable session before more content is added.
+The game should feel like a complete playable session before more content is added.
 
 ### Save / Continue
 - [x] Versioned local save container and compatibility check
@@ -48,15 +48,18 @@ This is the current priority. The game should feel like a complete playable sess
 
 ## Prototype 0.3 — Complete settings
 
-- music volume
-- sound-effects volume
-- graphics quality: Low / Medium / High
-- shadows toggle
-- water-motion toggle
-- interface-motion toggle
-- camera sensitivity
+- [x] music / atmosphere volume
+- [x] sound-effects volume
+- [x] graphics quality: Low / Medium / High
+- [x] shadows toggle
+- [x] water-motion toggle
+- [x] interface-motion toggle
+- [x] camera sensitivity
+- [x] settings persist independently from the current run
 
 ## Prototype 0.4 — Run goal and progression
+
+This is the next gameplay priority.
 
 - Settlement → Village → Town → City → Island Capital progression
 - progression depends on settlement, production, farming and maritime development rather than score alone
