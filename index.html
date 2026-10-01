@@ -8,6 +8,7 @@
   <link rel="preload" as="image" href="./assets/cards/corepolis-card-back.webp" type="image/webp" />
   <link rel="stylesheet" href="./styles.css?v=marine-branch-1" />
   <link rel="stylesheet" href="./island-fragments.css?v=1" />
+  <link rel="stylesheet" href="./main-menu.css?v=1" />
   <script defer src="https://unpkg.com/lucide@1.47.0"></script>
   <script type="importmap">
   {
@@ -18,7 +19,7 @@
   }
   </script>
 </head>
-<body>
+<body class="menu-open">
   <div id="app">
     <div id="loading-screen" class="loading-screen">
       <div class="loading-card" role="status" aria-live="polite" aria-atomic="true">
@@ -37,6 +38,71 @@
         <div class="loading-foot"><span id="loading-stage">СТРОИМ МИР</span><b id="loading-progress">0%</b></div>
       </div>
     </div>
+
+    <section id="main-menu" class="main-menu" aria-label="Главное меню Corepolis">
+      <canvas id="menu-scene" aria-hidden="true"></canvas>
+
+      <div class="menu-shell">
+        <div class="menu-brand-mark">C</div>
+        <div class="menu-kicker">ISLAND CARD BUILDER</div>
+        <h1 class="menu-title">COREPOLIS</h1>
+        <p class="menu-tagline">Собирайте остров по кусочкам, связывайте районы и превращайте маленький берег в живой архипелаг.</p>
+
+        <nav class="menu-actions" aria-label="Главные действия">
+          <button id="menu-start" class="menu-action primary" type="button">
+            <i data-lucide="play"></i>
+            <span>Начать игру</span>
+          </button>
+          <button id="menu-continue" class="menu-action" type="button" disabled>
+            <i data-lucide="history"></i>
+            <span>Продолжить</span>
+            <small class="menu-action-note">НЕТ СОХРАНЕНИЯ</small>
+          </button>
+          <button id="menu-settings-button" class="menu-action" type="button">
+            <i data-lucide="sliders-horizontal"></i>
+            <span>Настройки</span>
+          </button>
+        </nav>
+      </div>
+
+      <footer class="menu-footer">
+        <a href="https://github.com/Deenfoool/Corepolis" target="_blank" rel="noopener noreferrer">
+          <i data-lucide="github"></i><span>GitHub</span>
+        </a>
+        <a href="https://deenfoool.github.io/portfolio/" target="_blank" rel="noopener noreferrer">
+          <i data-lucide="briefcase-business"></i><span>Portfolio</span>
+        </a>
+        <a href="https://tips.tips/000482810" target="_blank" rel="noopener noreferrer">
+          <i data-lucide="heart-handshake"></i><span>Поддержать</span>
+        </a>
+      </footer>
+
+      <div id="menu-settings" class="menu-settings" aria-hidden="false">
+        <section class="menu-settings-card" role="dialog" aria-modal="true" aria-labelledby="menu-settings-title">
+          <div class="menu-settings-head">
+            <div>
+              <div class="menu-kicker" style="color:#82907f">COREPOLIS</div>
+              <h2 id="menu-settings-title">Настройки</h2>
+            </div>
+            <button id="menu-settings-close" class="menu-settings-close" type="button" aria-label="Закрыть настройки"><i data-lucide="x"></i></button>
+          </div>
+          <div class="setting-row">
+            <div class="setting-copy">
+              <strong>Движение камеры</strong>
+              <small>Медленный кинематографичный облёт острова в главном меню.</small>
+            </div>
+            <button id="setting-menu-camera" class="setting-toggle" type="button" role="switch" aria-checked="true" aria-label="Движение камеры"></button>
+          </div>
+          <div class="setting-row">
+            <div class="setting-copy">
+              <strong>Анимации интерфейса</strong>
+              <small>Переходы, появления карточек и декоративные UI-анимации.</small>
+            </div>
+            <button id="setting-ui-motion" class="setting-toggle" type="button" role="switch" aria-checked="true" aria-label="Анимации интерфейса"></button>
+          </div>
+        </section>
+      </div>
+    </section>
 
     <section id="marine-choice" class="marine-choice hidden" aria-modal="true" role="dialog" aria-labelledby="marine-choice-title">
       <div class="marine-choice-card panel">
@@ -125,5 +191,6 @@
 
   <script type="module" src="./src/water-v4-macrowaves.js?v=1"></script>
   <script type="module" src="./src/main.js?v=island-fragments-1"></script>
+  <script type="module" src="./src/main-menu.js?v=1"></script>
 </body>
 </html>
