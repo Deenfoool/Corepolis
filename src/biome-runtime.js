@@ -1,11 +1,9 @@
 import * as THREE from 'three';
-import { DECK_WEIGHTS } from './config.js';
 
 const runtime=window.__corepolisRuntime;
 if(!runtime)throw new Error('Corepolis runtime is not available for biomes.');
 
 const {state,refreshLucide}=runtime;
-const BASE_WEIGHTS=new Map(DECK_WEIGHTS.map(([type,weight])=>[type,weight]));
 const colorScratch=new THREE.Color();
 const hsl={h:0,s:0,l:0};
 let activeBiome=null;
@@ -35,7 +33,7 @@ const BIOMES=[
   },
   {
     id:'archipelago',name:'Ветреный архипелаг',icon:'waves',
-    description:'Чаще приходят расширения территории и морские карты. Более холодный островной тон.',
+    description:'Чаще приходят расширения территории и уже открытые морские карты. Более холодный островной тон.',
     short:'+ территории · + море',
     weights:{island:1.48,pier:1.38,fishingShop:1.28,field:.90},
     grass:{h:.045,s:.90,l:1.00},cliff:{h:.030,s:.82,l:1.00}
@@ -121,14 +119,8 @@ function paintWorld(){
   for(const tile of state.land.values())recolorTerrain(tile.terrain);
 }
 
-function applyDeckWeights(){
-  if(!activeBiome)return;
-  for(const entry of DECK_WEIGHTS){
-    const type=entry[0];
-    const base=BASE_WEIGHTS.get(type)??entry[1];
-    const multiplier=activeBiome.weights[type]??1;
-    entry[1]=Math.max(1,Math.round(base*multiplier));
-  }
+function weightMultiplier(type){
+  return activeBiome?.weights?.[type]??1;
 }
 
 function installPauseUi(){
@@ -172,25 +164,33 @@ function updateUi(){
   refreshLucide?.();
 }
 
+function publicBiome(){
+  if(!activeBiome)return null;
+  return{
+    id:activeBiome.id,
+    name:activeBiome.name,
+    description:activeBiome.description,
+    short:activeBiome.short
+  };
+}
+
 function selectForCurrentSeed(){
+  const previous=activeBiome?.id||null;
   const seed=window.__corepolisSeedRuntime?.getSeed?.()||'COREPOLIS';
   activeBiome=biomeForSeed(seed);
-  applyDeckWeights();
   installPauseUi();
   installCapitalUi();
   updateUi();
   paintWorld();
+  if(previous!==activeBiome.id){
+    window.dispatchEvent(new CustomEvent('corepolis:biome-changed',{detail:{biome:publicBiome()}}));
+  }
 }
 
 window.addEventListener('corepolis:start',selectForCurrentSeed);
 window.addEventListener('corepolis:session-ready',()=>{
   selectForCurrentSeed();
   if(!paintTimer)paintTimer=setInterval(paintWorld,300);
-});
-window.addEventListener('corepolis:save-changed',event=>{
-  if(event.detail?.hasSave===false){
-    for(const entry of DECK_WEIGHTS)entry[1]=BASE_WEIGHTS.get(entry[0])??entry[1];
-  }
 });
 
 installPauseUi();
@@ -203,7 +203,8 @@ if(!installCapitalUi()){
 selectForCurrentSeed();
 
 window.__corepolisBiomeRuntime={
-  get:()=>activeBiome?{id:activeBiome.id,name:activeBiome.name,description:activeBiome.description,short:activeBiome.short}:null,
+  get:publicBiome,
   all:()=>BIOMES.map(({id,name,description,short})=>({id,name,description,short})),
+  weightMultiplier,
   repaint:paintWorld
 };
