@@ -19,7 +19,7 @@ export const CARD_DEFS = {
     icon: 'anchor',
     cost: { wood: 3 },
     tone: 'blue',
-    description: 'Ставится на воду у берега. Первый причал запускает морскую экспедицию; рядом появляется лодка.',
+    description: 'Ставится на воду у берега. Открывается через развитие деревообработки и запускает морскую ветку.',
   },
   island: {
     category: 'ЛАНДШАФТ',
@@ -35,7 +35,7 @@ export const CARD_DEFS = {
     icon: 'scan-line',
     cost: {},
     tone: 'gold',
-    description: 'Ставится на сушу или создаёт собственный остров вдали. Открывает удалённое строительство островов.',
+    description: 'Особая карта морской экспедиции. Ставится на сушу или создаёт собственный остров вдали.',
   },
   fishingShop: {
     category: 'ПОРТ',
@@ -43,7 +43,7 @@ export const CARD_DEFS = {
     icon: 'fish',
     cost: { wood: 2 },
     tone: 'blue',
-    description: 'Получает карты за соседние причалы и жилые дома. Лучший бонус — между портом и поселением.',
+    description: 'Открывается после выхода к морю. Получает карты за соседние причалы и жилые дома.',
   },
   tree: {
     category: 'ПРИРОДА',
@@ -51,7 +51,7 @@ export const CARD_DEFS = {
     icon: 'tree-pine',
     cost: {},
     tone: 'green',
-    description: 'Посадить лес. Лесопилка даёт древесину за 1-ю обработку и вырубает дерево за 2-ю.',
+    description: 'Базовая карта мира. Лесопилка даёт древесину за 1-ю обработку и вырубает дерево за 2-ю.',
   },
   rock: {
     category: 'ПРИРОДА',
@@ -59,7 +59,7 @@ export const CARD_DEFS = {
     icon: 'mountain',
     cost: {},
     tone: 'stone',
-    description: 'Добавить камни. Каменоломня даёт камень за 1-ю обработку и истощает залежь за 2-ю.',
+    description: 'Базовая карта мира. Каменоломня даёт камень за 1-ю обработку и истощает залежь за 2-ю.',
   },
   clear: {
     category: 'ИНСТРУМЕНТ',
@@ -67,7 +67,7 @@ export const CARD_DEFS = {
     icon: 'axe',
     cost: { wood: 1 },
     tone: 'red',
-    description: 'Убрать дерево или камень и освободить клетку.',
+    description: 'Открывается после запуска первого производства. Убирает дерево или камень и освобождает клетку.',
   },
   mill: {
     category: 'ПОСТРОЙКА',
@@ -83,7 +83,7 @@ export const CARD_DEFS = {
     icon: 'house',
     cost: { wood: 2 },
     tone: 'blue',
-    description: 'Жилой дом. Усиливает рынок, построенный рядом.',
+    description: 'Базовая карта развития. Жилой дом усиливает рынок, построенный рядом.',
   },
   market: {
     category: 'ТОРГОВЛЯ',
@@ -99,7 +99,7 @@ export const CARD_DEFS = {
     icon: 'trees',
     cost: {},
     tone: 'green',
-    description: 'Обрабатывает соседний лес. Вторая лесопилка или карта поверх старой завершает вырубку.',
+    description: 'Базовая карта развития. Обрабатывает соседний лес; повторная обработка завершает вырубку.',
   },
   quarry: {
     category: 'ПРОИЗВОДСТВО',
@@ -107,23 +107,34 @@ export const CARD_DEFS = {
     icon: 'pickaxe',
     cost: {},
     tone: 'stone',
-    description: 'Обрабатывает соседние камни. Вторая каменоломня или карта поверх старой завершает добычу.',
+    description: 'Базовая карта развития. Обрабатывает соседние камни; повторная обработка завершает добычу.',
   },
 };
 
-export const DECK_WEIGHTS = [
-  ['field', 30],
-  ['island', 14],
-  ['tree', 10],
-  ['rock', 8],
-  ['clear', 8],
-  ['house', 10],
-  ['market', 6],
-  ['pier', 6],
-  ['fishingShop', 4],
-  ['lumbermill', 7],
-  ['quarry', 7],
-];
+export const STARTING_CARDS = Object.freeze([
+  'house',
+  'field',
+  'lumbermill',
+  'quarry',
+]);
+
+export const CARD_DRAW_BASE_WEIGHTS = Object.freeze({
+  field: 28,
+  island: 18,
+  tree: 10,
+  rock: 10,
+  clear: 5,
+  house: 16,
+  market: 4,
+  pier: 4,
+  fishingShop: 2,
+  lumbermill: 8,
+  quarry: 8,
+});
+
+// Runtime channel consumed by main.js. Card Progression installs live weight
+// getters on these entries; fixed global deck weights no longer drive draws.
+export const DECK_WEIGHTS = Object.keys(CARD_DRAW_BASE_WEIGHTS).map(type=>[type,0]);
 
 export const DIRECTIONS = [
   { key: 'north', dx: 0, dz: -1 },
