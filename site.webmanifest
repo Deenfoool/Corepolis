@@ -1,0 +1,21 @@
+{
+  "name": "Corepolis — Island Card Builder",
+  "short_name": "Corepolis",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#8dc9d7",
+  "theme_color": "#8dc9d7",
+  "icons": [
+    {
+      "src": "./assets/images/android-chrome-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "./assets/images/android-chrome-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
