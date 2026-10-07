@@ -32,26 +32,12 @@ export function createBoatVisual(){
   return boat;
 }
 
-export function createLighthouseVisual(){
-  const root=new THREE.Group();
-  const base=new THREE.Mesh(new THREE.CylinderGeometry(.78,.96,.34,14),material(0x817565,.98));
-  base.position.y=.17;base.castShadow=base.receiveShadow=true;root.add(base);
-  const tower=new THREE.Mesh(new THREE.CylinderGeometry(.46,.70,2.65,18),material(0xf1e4c6,.84));
-  tower.position.y=1.62;tower.castShadow=tower.receiveShadow=true;root.add(tower);
-  const band=new THREE.Mesh(new THREE.CylinderGeometry(.55,.57,.30,18),material(0xb55442,.82));
-  band.position.y=2.27;band.castShadow=true;root.add(band);
-  const balcony=new THREE.Mesh(new THREE.CylinderGeometry(.76,.76,.10,18),material(0x4d5552,.72));
-  balcony.position.y=3.02;root.add(balcony);
-  const lantern=new THREE.Mesh(
-    new THREE.CylinderGeometry(.39,.39,.48,12),
-    material(0xffe7a0,.35,{emissive:0xf4b94f,emissiveIntensity:1.2})
-  );
-  lantern.position.y=3.31;root.add(lantern);
-  const roof=new THREE.Mesh(new THREE.ConeGeometry(.58,.52,12),material(0x43504c,.84));
-  roof.position.y=3.81;root.add(roof);
-
+export function attachLighthouseBeam(root){
+  const origin=root.getObjectByName('lighthouse_light_origin');
+  if(!origin)throw new Error('Lighthouse light origin is missing.');
+  root.updateMatrixWorld(true);
   const beamPivot=new THREE.Group();
-  beamPivot.position.y=3.34;
+  beamPivot.position.copy(root.worldToLocal(origin.getWorldPosition(new THREE.Vector3())));
   const beam=new THREE.Mesh(
     new THREE.ConeGeometry(.72,5.2,18,1,true),
     new THREE.MeshBasicMaterial({

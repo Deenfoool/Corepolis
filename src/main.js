@@ -2,11 +2,11 @@ import * as THREE from 'three';
 import { MapControls } from 'three/addons/controls/MapControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { CARD_DEFS, DECK_WEIGHTS, DIRECTIONS, GRID } from './config.js?v=island-ghost-1';
-import { createWorldModel, fitModelToBounds } from './model-layout.js?v=island-ghost-1';
-import { ASSETS, assetVariant } from './models.js?v=island-ghost-1';
+import { CARD_DEFS, DECK_WEIGHTS, DIRECTIONS, GRID } from './config.js?v=lighthouse-1';
+import { createWorldModel, fitModelToBounds } from './model-layout.js?v=lighthouse-1';
+import { ASSETS, assetVariant } from './models.js?v=lighthouse-1';
 import { buildTerrainTile, buildShoreWater, disposeTerrainTile } from './terrain.js?v=water-v2-1';
-import { createBoatVisual, createLighthouseVisual } from './marine-visuals.js?v=island-ghost-1';
+import { createBoatVisual, attachLighthouseBeam } from './marine-visuals.js?v=lighthouse-1';
 import {
   createIslandFragment,
   fragmentDescription,
@@ -15,7 +15,7 @@ import {
   rotateIslandCard,
   rotatedFragmentCells,
   syncIslandGhost
-} from './island-fragments.js?v=island-ghost-1';
+} from './island-fragments.js?v=lighthouse-1';
 
 const $=s=>document.querySelector(s);
 const canvas=$('#game');
@@ -293,6 +293,7 @@ const LOADING_PHRASES=[
 ];
 const LOADING_ASSET_STATUS={
   windmill:'Подготавливаем мельницу',
+  lighthouse:'Поднимаем башню маяка',
   treeA:'Высаживаем первые деревья',
   treeB:'Добавляем лесу разнообразия',
   rockA:'Раскладываем камни у воды',
@@ -650,6 +651,9 @@ function cloneLoadedAsset(assetKey){
   const model=source.clone(true);
   shadows(model);
   return createWorldModel(model,assetKey);
+}
+function createLighthouseVisual(){
+  return attachLighthouseBeam(cloneLoadedAsset('lighthouse'));
 }
 function createPierVisual(yaw=0,x=0,z=0){
   const root=new THREE.Group();

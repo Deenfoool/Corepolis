@@ -65,3 +65,5 @@ When an asset, module or fallback is replaced, the obsolete path/code is removed
 Fields keep the full tile footprint with eight 0.4-unit-wide ridges. Soil thickness is 0.08 units and ridge height is 0.045–0.06 units; crops and clods follow the lower surface.
 
 Island placement ghosts use the runtime coastline generator and the same coordinate-based resource models as placed land. The preview accounts for both fragment cells and existing neighbours, caches unchanged cells, and disposes only its own terrain geometry and cloned resource materials. Q/E rotation uses KeyboardEvent.code (KeyQ/KeyE) independently of keyboard layout.
+
+The lighthouse uses an original local GLB in `assets/models/`, authored in world units and merged into eight material meshes. The runtime attaches a rotating beam to the named light origin; save restoration and card previews consume the same model.

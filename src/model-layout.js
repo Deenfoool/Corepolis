@@ -25,6 +25,7 @@ export function fitModelToBounds(model, maxXZ, maxY = maxXZ * 1.5) {
 }
 
 export function createWorldModel(model, assetKey) {
+  if (assetKey === 'lighthouse') return anchorModel(model, 1);
   const forest = FOREST_LAYOUT[assetKey];
   if (forest) {
     model.updateMatrixWorld(true);
