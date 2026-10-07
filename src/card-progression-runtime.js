@@ -1,4 +1,4 @@
-import { CARD_DEFS, DECK_WEIGHTS } from './config.js?v=mill-groups-1';
+import { CARD_DEFS, DECK_WEIGHTS } from './config.js?v=finite-cards-1';
 
 const STORAGE_KEY='corepolis:card-progression:v1';
 const STORAGE_VERSION=1;
@@ -14,7 +14,7 @@ const RECENT_LIMIT=6;
 
 const runtime=window.__corepolisRuntime;
 if(!runtime)throw new Error('Corepolis runtime is not available for card progression.');
-const {state,draw,addCard,renderHand,status,refreshLucide}=runtime;
+const {state,draw,addCard,renderHand,status,refreshLucide,resetStartingDeck}=runtime;
 
 const RULES={
   clear:{icon:'axe',label:'Расчистка',hint:'Освойте первое производство ресурсов.',reason:'Первое производство запущено. Теперь можно расчищать занятые клетки.',test:()=>productionEvidence('wood')||productionEvidence('stone')},
@@ -197,9 +197,7 @@ function evaluateUnlocks({silent=false}={}){
 }
 
 function normalizeStartingHand(){
-  state.hand=[];state.reserve=[];state.selectedCardId=null;state.knownHandCardIds?.clear?.();
-  for(const type of STARTING_CARDS)addCard(draw(type));
-  state.knownHandCardIds?.clear?.();
+  resetStartingDeck();
   for(const card of state.hand)state.knownHandCardIds?.add?.(card.id);
   renderHand();status();
 }

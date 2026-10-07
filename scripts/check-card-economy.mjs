@@ -1,0 +1,20 @@
+import assert from 'node:assert/strict';
+import{STARTING_DECK,promoteReserve,replacementType,hasPlayableCard}from '../src/card-economy.js';
+assert.equal(STARTING_DECK.length,24);
+const reserve=STARTING_DECK.map((type,id)=>({type,id})),hand=[];let spent=0;
+promoteReserve(hand,reserve);assert.equal(hand.length,5);assert.equal(reserve.length,19);
+while(hand.length){hand.shift();spent++;promoteReserve(hand,reserve);}
+assert.equal(spent,24);assert.equal(reserve.length,0);assert.deepEqual(promoteReserve(hand,reserve),[]);
+const weights=[['field',3],['tree',2],['house',0]];
+assert.equal(replacementType('field',weights,()=>0),'tree');assert.equal(replacementType('tree',weights,()=>.99),'field');
+const remaining=[{type:'field'},{type:'tree'}];const changed=remaining.map(c=>({type:replacementType(c.type,weights,()=>0)}));assert.equal(changed.length,remaining.length);assert.ok(changed.every((c,i)=>c.type!==remaining[i].type));
+let land=new Map([['0,0',{type:'empty'}]]),ready=false,affordable=true,water=false;
+const ctx={get land(){return land;},millBuilt:true,millUnlocked:true,marketUnlocked:false,ready:()=>ready,canAfford:()=>affordable,hasWaterMove:()=>water};
+const play=type=>hasPlayableCard([{type}],ctx);
+assert.ok(play('field'));assert.ok(!play('market'));assert.ok(!play('mill'));ready=true;assert.ok(play('mill'));
+affordable=false;assert.ok(!play('field'));affordable=true;
+land=new Map([['0,0',{type:'lumbermill'}]]);assert.ok(play('lumbermill'));assert.ok(!play('field'));assert.ok(!play('clear'));
+land=new Map([['0,0',{type:'rock'}]]);assert.ok(play('clear'));assert.ok(!play('house'));
+assert.ok(!play('island'));water=true;assert.ok(play('island'));assert.ok(play('pier'));assert.ok(play('lighthouse'));
+assert.ok(!hasPlayableCard([],ctx));
+console.log('Finite economy: 24-card exhaustion, reserve promotion, warehouse count/type replacement, affordability and land/water move checks passed.');

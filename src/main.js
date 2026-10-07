@@ -1,13 +1,14 @@
-import { collectMillFieldGroups } from './mill-fields.js?v=mill-groups-1';
+import { STARTING_DECK, promoteReserve, replacementType, hasPlayableCard } from './card-economy.js?v=finite-cards-1';
+import { collectMillFieldGroups } from './mill-fields.js?v=finite-cards-1';
 import * as THREE from 'three';
 import { MapControls } from 'three/addons/controls/MapControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { CARD_DEFS, DECK_WEIGHTS, DIRECTIONS, GRID } from './config.js?v=mill-groups-1';
-import { createWorldModel, fitModelToBounds } from './model-layout.js?v=mill-groups-1';
-import { ASSETS, assetVariant } from './models.js?v=mill-groups-1';
+import { CARD_DEFS, DECK_WEIGHTS, DIRECTIONS, GRID } from './config.js?v=finite-cards-1';
+import { createWorldModel, fitModelToBounds } from './model-layout.js?v=finite-cards-1';
+import { ASSETS, assetVariant } from './models.js?v=finite-cards-1';
 import { buildTerrainTile, buildShoreWater, disposeTerrainTile } from './terrain.js?v=water-v2-1';
-import { createBoatVisual, attachLighthouseBeam } from './marine-visuals.js?v=mill-groups-1';
+import { createBoatVisual, attachLighthouseBeam } from './marine-visuals.js?v=finite-cards-1';
 import {
   createIslandFragment,
   fragmentDescription,
@@ -16,7 +17,7 @@ import {
   rotateIslandCard,
   rotatedFragmentCells,
   syncIslandGhost
-} from './island-fragments.js?v=mill-groups-1';
+} from './island-fragments.js?v=finite-cards-1';
 
 const $=s=>document.querySelector(s);
 const canvas=$('#game');
@@ -238,6 +239,8 @@ const state={
   reserve:[],
   selectedCardId:null,
   nextCardId:1,
+  actionPending:false,
+  gameOver:false,
   nextFieldOrder:1,
   harvestScore:0,
   resources:{wood:0,stone:0},
@@ -1994,17 +1997,35 @@ const draw=(type=randomType())=>{
   return card;
 };
 function refillHand(){
-  const promoted=[];
-  while(state.hand.length<HAND_LIMIT){
-    if(state.reserve.length){
-      const card=state.reserve.shift();
-      state.hand.push(card);
-      promoted.push(card);
-    }else{
-      state.hand.push(draw());
+  return promoteReserve(state.hand,state.reserve,HAND_LIMIT);
+}
+function resetStartingDeck(){
+  state.hand=[];state.reserve=[];state.selectedCardId=null;
+  state.gameOver=false;state.actionPending=false;
+  state.knownHandCardIds.clear();
+  for(const type of STARTING_DECK)addCard(draw(type));
+}
+function rerollWarehouseHand(){
+  state.hand=state.hand.map(card=>draw(replacementType(card.type,DECK_WEIGHTS)));
+  state.selectedCardId=null;
+  clearIslandGhost();
+  renderHand();
+}
+function hasAvailableMove(){
+  return hasPlayableCard(state.hand,{
+    land:state.land,millBuilt:!!millTile(),millUnlocked:state.unlocks.mill,
+    marketUnlocked:state.unlocks.market,ready,canAfford,
+    hasWaterMove:card=>{
+      for(let x=-GRID.maxRadius;x<=GRID.maxRadius;x++)for(let z=-GRID.maxRadius;z<=GRID.maxRadius;z++){
+        if(card.type==='pier'&&canPlacePier(x,z))return true;
+        if(card.type==='lighthouse'&&canPlaceRemoteLighthouse(x,z))return true;
+        if(card.type==='island')for(let rotation=0;rotation<4;rotation++){
+          if(canPlaceIsland({...card,rotation},x,z))return true;
+        }
+      }
+      return false;
     }
-  }
-  return promoted;
+  });
 }
 function cardCost(type){
   return CARD_DEFS[type]?.cost||{};
@@ -2278,7 +2299,7 @@ function tileInfo(t){
   }else if(t.type==='fishingShop'){
     const houses=nearby(t,'house');
     const piers=nearbyPiers(t);
-    ui.tileCopy.textContent=`Портовый склад · домов рядом: ${houses}, причалов рядом: ${piers}. Сочетание порта и поселения даёт максимальную карточную награду.`;
+    ui.tileCopy.textContent=`Портовый склад · домов рядом: ${houses}, причалов рядом: ${piers}. При постройке склад меняет оставшиеся карты в руке; их количество не увеличивается.`;
   }else if(t.type==='tree'||t.type==='rock'){
     const progress=t.resourceSources?.size||0;
     ui.tileCopy.textContent=`${t.type==='tree'?'Лес':'Камни'}: обработка ${progress}/2. Первая обработка даёт ресурс, вторая освобождает клетку.`;
@@ -2446,22 +2467,14 @@ async function apply(card,t){
     const piers=nearbyPiers(t);
     const nearPier=piers>0;
     const nearHomes=houses>=2;
-    let bonusCards=(nearPier?1:0)+(nearHomes?1:0)+(nearPier&&nearHomes?1:0);
     const score=45+Math.min(3,houses)*20+Math.min(2,piers)*35;
     state.harvestScore+=score;
-    if(bonusCards){
-      grantCards(bonusCards);
-      spawnCardBurst(t.visual.position.clone(),bonusCards);
-    }
-    if(nearPier&&nearHomes)state.comboCount++;
+    rerollWarehouseHand();
     spawnBurst(t.visual.position.clone(),0x71b7a0,14);
+    if(nearPier&&nearHomes)state.comboCount++;
     state.inputLocked=false;
     status();
-
-    if(nearPier&&nearHomes)return toast(`Портовый квартал! +${score} очков и +3 карты за причал и жилой район.`);
-    if(nearPier)return toast(`Магазин у причала: +${score} очков и +1 карта.`);
-    if(nearHomes)return toast(`Магазин у жилого квартала: +${score} очков и +1 карта.`);
-    return toast(`Портовый склад открыт, но без причала и жилого района пока не даёт карты. +${score} очков.`);
+    return toast(`Склад обновил ${state.hand.length} карт в руке. Запас не увеличен. +${score} очков.`);
   }
 
   if(['house','market','lumbermill','quarry'].includes(card.type)){
@@ -2540,7 +2553,7 @@ function tileOf(o){
 
 let down=null;
 renderer.domElement.onpointerdown=e=>down={x:e.clientX,y:e.clientY,button:e.button};
-renderer.domElement.onpointerup=async e=>{
+async function handleBoardClick(e){
   if(state.inputLocked){
     down=null;
     return;
@@ -2579,6 +2592,11 @@ renderer.domElement.onpointerup=async e=>{
 
   if(!t)return toast('Эту карту нужно применить к клетке острова.');
   await apply(card,t);
+}
+renderer.domElement.onpointerup=async e=>{
+  if(state.actionPending||state.gameOver){down=null;return;}
+  state.actionPending=true;
+  try{await handleBoardClick(e);}finally{state.actionPending=false;}
 };
 renderer.domElement.onpointermove=e=>{
   if(state.inputLocked){
@@ -2697,15 +2715,14 @@ window.__corepolisRuntime={
   updateResourceMarker,createPierVisual,renderHand,status,
   clearIslandGhost,refreshLucide,toast,openMarineChoice,
   seed,decorate,draw,addCard,syncAllNormalFieldStages,syncMillFieldStages,
-  waterKey
+  waterKey,resetStartingDeck,hasAvailableMove,refillHand
 };
 window.dispatchEvent(new CustomEvent('corepolis:runtime-ready'));
 
 async function boot(){
   startLoadingPhrases();
   seed();
-  ['tree','lumbermill','rock','quarry','field'].forEach(t=>addCard(draw(t)));
-  addCard(draw('pier'));
+  resetStartingDeck();
   renderHand();
   status();
   const loading=preload();
@@ -2715,7 +2732,7 @@ async function boot(){
   refreshLucide();
   status();
   await finishLoadingScreen();
-  toast('В запасе уже лежит причал: потратьте карту из руки, чтобы открыть морскую ветку.');
+  toast('В партии 24 стартовые карты. Новые карты дают комбо и открытия — берегите запас.');
 }
 boot().catch(e=>{
   console.error(e);

@@ -10,7 +10,7 @@ const {
   updateResourceMarker,createPierVisual,renderHand,status,
   clearIslandGhost,refreshLucide,toast,openMarineChoice,
   seed,decorate,draw,addCard,syncAllNormalFieldStages,syncMillFieldStages,
-  waterKey
+  resetStartingDeck,waterKey
 }=runtime;
 
 const TILE_TYPES=new Set([
@@ -205,6 +205,7 @@ function resetRuntimeState(){
   world.clear();
 
   state.land.clear();
+  state.gameOver=false;state.actionPending=false;
   state.hand=[];
   state.reserve=[];
   state.selectedCardId=null;
@@ -328,8 +329,7 @@ async function restoreSnapshot(raw){
 async function resetToNewGame(){
   resetRuntimeState();
   seed();
-  ['tree','lumbermill','rock','quarry','field'].forEach(type=>addCard(draw(type)));
-  addCard(draw('pier'));
+  resetStartingDeck();
   await decorate();
   renderHand();
   status();
@@ -339,7 +339,7 @@ async function resetToNewGame(){
 }
 
 function writeCurrentSave(force=false){
-  if(!sessionActive||restoring)return null;
+  if(!sessionActive||restoring||(!force&&(state.inputLocked||state.actionPending)))return null;
   const snapshot=serializeState();
   const signature=JSON.stringify(snapshot);
   if(!force&&signature===lastSavedSignature)return null;
@@ -353,7 +353,7 @@ function writeCurrentSave(force=false){
 }
 
 function pollForChanges(){
-  if(!sessionActive||restoring)return;
+  if(!sessionActive||restoring||state.inputLocked||state.actionPending)return;
   let snapshot;
   let signature;
   try{
