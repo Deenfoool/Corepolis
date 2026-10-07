@@ -60,4 +60,6 @@ Only assets with clear redistribution/use terms are accepted. Provenance is docu
 
 When an asset, module or fallback is replaced, the obsolete path/code is removed in the same change rather than left dormant.
 
-`src/model-layout.js` anchors geometry inside a separate placement pivot. All local RTS models share a 1.5 world scale; the external Pirate Kit sawmill is fitted to 2.6 × 2.4 world limits. Tile translations and rotations apply only to the pivot, preserving the centred footprint and ground contact. Card framing has a separate size limit.
+`src/model-layout.js` anchors geometry inside a separate placement pivot. RTS buildings share a 1.5 world scale. Forest groups use a 3.25-unit footprint with 2.25/2.1-unit heights; rocks use a shared 3.3 multiplier to retain relative variant sizes; the external Pirate Kit sawmill is fitted to 2.6 × 2.4 world limits. Tile translations and rotations apply only to the pivot, preserving the centred footprint and ground contact. Card framing has a separate size limit.
+
+Fields keep the full tile footprint with eight 0.4-unit-wide ridges. Soil thickness is 0.08 units and ridge height is 0.045–0.06 units; crops and clods follow the lower surface.

@@ -2,11 +2,11 @@ import * as THREE from 'three';
 import { MapControls } from 'three/addons/controls/MapControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { CARD_DEFS, DECK_WEIGHTS, DIRECTIONS, GRID } from './config.js?v=model-layout-1';
-import { createWorldModel, fitModelToBounds } from './model-layout.js?v=model-layout-1';
-import { ASSETS, assetVariant } from './models.js?v=model-layout-1';
+import { CARD_DEFS, DECK_WEIGHTS, DIRECTIONS, GRID } from './config.js?v=resource-proportions-1';
+import { createWorldModel, fitModelToBounds } from './model-layout.js?v=resource-proportions-1';
+import { ASSETS, assetVariant } from './models.js?v=resource-proportions-1';
 import { buildTerrainTile, buildShoreWater, disposeTerrainTile } from './terrain.js?v=water-v2-1';
-import { createBoatVisual, createLighthouseVisual } from './marine-visuals.js?v=model-layout-1';
+import { createBoatVisual, createLighthouseVisual } from './marine-visuals.js?v=resource-proportions-1';
 import {
   createIslandFragment,
   fragmentDescription,
@@ -15,7 +15,7 @@ import {
   rotateIslandCard,
   rotatedFragmentCells,
   syncIslandGhost
-} from './island-fragments.js?v=model-layout-1';
+} from './island-fragments.js?v=resource-proportions-1';
 
 const $=s=>document.querySelector(s);
 const canvas=$('#game');
@@ -1274,7 +1274,7 @@ function fieldAdjacencySignature(t){
 }
 function createLowPolyFieldBase(size,height,color){
   const mesh=new THREE.Mesh(
-    new RoundedBoxGeometry(size,height,size,3,.14),
+    new RoundedBoxGeometry(size,height,size,3,Math.min(.14,height*.45)),
     new THREE.MeshStandardMaterial({
       color,
       roughness:1,
@@ -1299,7 +1299,7 @@ function createFieldRidge(length,width,height,{westConnected=false,eastConnected
     const leftTaper=westConnected?1:Math.min(1,tx/.10);
     const rightTaper=eastConnected?1:Math.min(1,(1-tx)/.10);
     const endTaper=Math.sin(Math.min(1,leftTaper,rightTaper)*Math.PI*.5);
-    const longWobble=Math.sin((xi+seed*.71)*1.23)*.022;
+    const longWobble=Math.sin((xi+seed*.71)*1.23)*.006;
 
     for(let zi=0;zi<=zSegments;zi++){
       const tz=zi/zSegments;
@@ -1307,7 +1307,7 @@ function createFieldRidge(length,width,height,{westConnected=false,eastConnected
       const rounded=Math.sin(Math.PI*tz);
       const shoulder=Math.pow(rounded,.72);
       const facet=1+Math.sin((xi*3+zi*5+seed)*1.07)*.035;
-      const y=.292+height*shoulder*endTaper*facet+longWobble*rounded;
+      const y=.258+height*shoulder*endTaper*facet+longWobble*rounded;
       positions.push(x,y,z);
 
       const color=baseColor.clone().lerp(crestColor,Math.pow(rounded,1.15)*.68);
@@ -1359,12 +1359,12 @@ function addFieldClods(group,stage,tileSize,synergy=false){
     const px=((i*47+stage*19)%101)/100;
     const pz=((i*71+stage*13)%97)/96;
     const clod=new THREE.Mesh(
-      new THREE.IcosahedronGeometry(.045+(i%3)*.015,0),
+      new THREE.IcosahedronGeometry(.025+(i%3)*.008,0),
       material
     );
     clod.position.set(
       THREE.MathUtils.lerp(-half,half,px),
-      .335+(i%2)*.008,
+      .278+(i%2)*.004,
       THREE.MathUtils.lerp(-half,half,pz)
     );
     clod.rotation.set((i%5)*.27,(i%7)*.39,(i%3)*.18);
@@ -1388,16 +1388,16 @@ function fieldVisual(stage,synergy=false,tile=null){
   const tileSize=GRID.tileSize+seamOverlap*2;
   const soilColors=[0x5f3f20,0x644421,0x6a4925,0x714f29];
   const soil=createLowPolyFieldBase(
-    tileSize,.16,
+    tileSize,.08,
     synergy?0x734e29:soilColors[safeStage-1]
   );
-  soil.position.y=.23;
+  soil.position.y=.22;
   g.add(soil);
 
-  const ridgeCount=5;
+  const ridgeCount=8;
   const rowSpacing=GRID.tileSize/ridgeCount;
-  const ridgeWidth=.72;
-  const ridgeHeight=[.15,.17,.19,.21][safeStage-1];
+  const ridgeWidth=.40;
+  const ridgeHeight=[.045,.05,.055,.06][safeStage-1];
   const ridgeLength=tileSize+.02;
   const firstZ=-GRID.tileSize*.5+rowSpacing*.5;
 
@@ -1413,7 +1413,7 @@ function fieldVisual(stage,synergy=false,tile=null){
     g.add(ridge);
 
     const row=createWheatRow(safeStage,r,synergy);
-    row.position.set(0,.425+ridgeHeight*.56,z);
+    row.position.set(0,.258+ridgeHeight+.008,z);
     row.scale.x=Math.max(1,(GRID.tileSize-.38)/3.05);
     g.add(row);
     g.userData.cropRows.push(row);

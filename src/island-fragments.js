@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { GRID } from './config.js?v=model-layout-1';
-import './territory-card-preview.js?v=model-layout-1';
+import { GRID } from './config.js?v=resource-proportions-1';
+import './territory-card-preview.js?v=resource-proportions-1';
 
 export const ISLAND_FRAGMENT_SHAPES=[
   {id:'single',label:'1×1',weight:8,cells:[[0,0]]},
