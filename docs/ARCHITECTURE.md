@@ -59,3 +59,5 @@ Visual water, shoreline foam and territory ghost previews are not gameplay hit t
 Only assets with clear redistribution/use terms are accepted. Provenance is documented in `THIRD_PARTY_NOTICES.md` and related docs.
 
 When an asset, module or fallback is replaced, the obsolete path/code is removed in the same change rather than left dormant.
+
+`src/model-layout.js` anchors geometry inside a separate placement pivot. All local RTS models share a 1.5 world scale; the external Pirate Kit sawmill is fitted to 2.6 × 2.4 world limits. Tile translations and rotations apply only to the pivot, preserving the centred footprint and ground contact. Card framing has a separate size limit.

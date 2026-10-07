@@ -1,7 +1,8 @@
+import { createWorldModel } from './model-layout.js?v=model-layout-1';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { GRID } from './config.js?v=selected-models-1';
-import { ASSETS, assetVariant } from './models.js?v=selected-models-1';
+import { GRID } from './config.js?v=model-layout-1';
+import { ASSETS, assetVariant } from './models.js?v=model-layout-1';
 import { buildTerrainTile, disposeTerrainTile } from './terrain.js?v=water-v2-1';
 
 const WIDTH=420;
@@ -62,26 +63,13 @@ function prepareModel(root){
   });
 }
 
-function fitModel(root,maxXZ,maxY=maxXZ*1.5){
-  root.updateMatrixWorld(true);
-  let box=new THREE.Box3().setFromObject(root);
-  const size=box.getSize(new THREE.Vector3());
-  const scale=Math.min(maxXZ/Math.max(size.x,size.z,.001),maxY/Math.max(size.y,.001));
-  root.scale.multiplyScalar(scale);
-  root.updateMatrixWorld(true);
-  box=new THREE.Box3().setFromObject(root);
-  const center=box.getCenter(new THREE.Vector3());
-  root.position.set(root.position.x-center.x,root.position.y-box.min.y,root.position.z-center.z);
-}
-
 async function realResourceModel(cell){
   if(cell.content!=='tree'&&cell.content!=='rock')return null;
   const tree=cell.content==='tree';
   const variant=assetVariant(tree?'tree':'rock',cell.x,cell.z);
   const source=await loadAsset(variant);
-  const model=source.clone(true);
+  const model=createWorldModel(source.clone(true),variant);
   prepareModel(model);
-  fitModel(model,tree?2.6:2.4,tree?4.0:2.8);
   model.rotation.y=tree?(cell.x*.9+cell.z*1.4):(cell.x*1.3-cell.z);
   model.position.set(cell.x*GRID.tileSize,.12,cell.z*GRID.tileSize);
   return model;

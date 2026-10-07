@@ -2,10 +2,11 @@ import * as THREE from 'three';
 import { MapControls } from 'three/addons/controls/MapControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { CARD_DEFS, DECK_WEIGHTS, DIRECTIONS, GRID } from './config.js?v=selected-models-1';
-import { ASSETS, assetVariant } from './models.js?v=selected-models-1';
+import { CARD_DEFS, DECK_WEIGHTS, DIRECTIONS, GRID } from './config.js?v=model-layout-1';
+import { createWorldModel, fitModelToBounds } from './model-layout.js?v=model-layout-1';
+import { ASSETS, assetVariant } from './models.js?v=model-layout-1';
 import { buildTerrainTile, buildShoreWater, disposeTerrainTile } from './terrain.js?v=water-v2-1';
-import { createBoatVisual, createLighthouseVisual } from './marine-visuals.js?v=selected-models-1';
+import { createBoatVisual, createLighthouseVisual } from './marine-visuals.js?v=model-layout-1';
 import {
   createIslandFragment,
   fragmentDescription,
@@ -14,7 +15,7 @@ import {
   rotateIslandCard,
   rotatedFragmentCells,
   syncIslandGhost
-} from './island-fragments.js?v=selected-models-1';
+} from './island-fragments.js?v=model-layout-1';
 
 const $=s=>document.querySelector(s);
 const canvas=$('#game');
@@ -643,29 +644,16 @@ function shadows(root){
     }
   });
 }
-function fit(root,maxXZ,maxY=maxXZ*1.5){
-  root.updateMatrixWorld(true);
-  let b=new THREE.Box3().setFromObject(root);
-  const s=b.getSize(new THREE.Vector3());
-  const k=Math.min(maxXZ/Math.max(s.x,s.z,.001),maxY/Math.max(s.y,.001));
-  root.scale.multiplyScalar(k);
-  root.updateMatrixWorld(true);
-  b=new THREE.Box3().setFromObject(root);
-  const c=b.getCenter(new THREE.Vector3());
-  root.position.set(root.position.x-c.x,root.position.y-b.min.y,root.position.z-c.z);
-}
-
-function cloneLoadedAsset(assetKey,maxXZ,maxY=maxXZ*1.5){
+function cloneLoadedAsset(assetKey){
   const source=resolvedAssets.get(ASSETS[assetKey]);
   if(!source)throw new Error(`Required asset is not loaded: ${assetKey}`);
   const model=source.clone(true);
   shadows(model);
-  fit(model,maxXZ,maxY);
-  return model;
+  return createWorldModel(model,assetKey);
 }
 function createPierVisual(yaw=0,x=0,z=0){
   const root=new THREE.Group();
-  const pier=cloneLoadedAsset(assetVariant('pier',x,z),3.85,4.4);
+  const pier=cloneLoadedAsset(assetVariant('pier',x,z));
   root.add(pier);
   const boat=createBoatVisual();
   boat.position.set(2.3,-.02,.56);boat.rotation.y=-.18;root.add(boat);
@@ -674,7 +662,7 @@ function createPierVisual(yaw=0,x=0,z=0){
   return root;
 }
 function createStorageVisual(){
-  return cloneLoadedAsset('storage',3.45,3.45);
+  return cloneLoadedAsset('storage');
 }
 
 const CARD_PREVIEW_ASSET={
@@ -713,9 +701,9 @@ async function previewObjectFor(type){
 }
 async function renderCardPreview(type){
   try{
-    const object=await previewObjectFor(type);
+    let object=await previewObjectFor(type);
     if(!object)return null;
-    fit(object,type==='island'?3.8:3.25,4.2);
+    object=fitModelToBounds(object,type==='island'?3.8:3.25,4.2);
     object.rotation.y=type==='clear'?-.28:.42;
 
     const previewScene=new THREE.Scene();
@@ -1245,8 +1233,7 @@ function cloneWheatStage(stage){
   const crop=source.clone(true);
   shadows(crop);
   const height=[.34,.48,.64,.82][safeStage-1];
-  fit(crop,.48,height);
-  return crop;
+  return fitModelToBounds(crop,.48,height);
 }
 
 function createWheatRow(stage,rowIndex,synergy=false){
@@ -1466,10 +1453,9 @@ function updateFieldMotion(time){
     }
   }
 }
-async function modelOn(t,id,size,yaw=0,animated=false){
-  const m=(await load(ASSETS[id])).clone(true);
-  shadows(m);
-  fit(m,size);
+async function modelOn(t,id,yaw=0,animated=false){
+  await load(ASSETS[id]);
+  const m=cloneLoadedAsset(id);
   m.rotation.y=yaw;
   m.position.y=.12;
   t.visual.add(m);
@@ -1484,20 +1470,19 @@ async function setTree(t,animated=false){
   clearContent(t);
   t.type='tree';
   t.resourceSources=new Set();
-  await modelOn(t,assetVariant('tree',t.x,t.z),2.6,t.x*.9+t.z*1.4,animated);
+  await modelOn(t,assetVariant('tree',t.x,t.z),t.x*.9+t.z*1.4,animated);
 }
 async function setRock(t,animated=false){
   clearContent(t);
   t.type='rock';
   t.resourceSources=new Set();
-  await modelOn(t,assetVariant('rock',t.x,t.z),2.4,t.x*1.3-t.z,animated);
+  await modelOn(t,assetVariant('rock',t.x,t.z),t.x*1.3-t.z,animated);
 }
 const BUILDING_ASSET={house:'house',market:'market',lumbermill:'lumbermill',quarry:'quarry'};
-const BUILDING_SIZE={house:3.45,market:3.75,lumbermill:3.9,quarry:3.55};
 async function setBuilding(t,type,animated=false){
   clearContent(t);
   t.type=type;
-  const m=await modelOn(t,type==='house'?assetVariant('house',t.x,t.z):BUILDING_ASSET[type],BUILDING_SIZE[type],(t.x*17+t.z*11)*.13,false);
+  const m=await modelOn(t,type==='house'?assetVariant('house',t.x,t.z):BUILDING_ASSET[type],(t.x*17+t.z*11)*.13,false);
   if(animated)await animateBuildingConstruction(t,type,m);
   registerBuildingAmbient(t,type,m);
   t.type=type;
@@ -1916,7 +1901,7 @@ async function setMill(t){
   clearContent(t);
   state.millCell=t.key;
   t.type='mill';
-  const m=await modelOn(t,'windmill',3.55,Math.PI*.25,false);
+  const m=await modelOn(t,'windmill',Math.PI*.25,false);
   const blades=m.getObjectByName('corepolis_windmill_rotor');
   state.millBlades=blades?[blades]:[];
   t.type='mill';

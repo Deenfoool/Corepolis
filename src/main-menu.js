@@ -1,6 +1,7 @@
+import { createWorldModel, fitModelToBounds } from './model-layout.js?v=model-layout-1';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { ASSETS, ASSET_VARIANTS, assetVariant } from './models.js?v=selected-models-1';
+import { ASSETS, ASSET_VARIANTS, assetVariant } from './models.js?v=model-layout-1';
 import { clearSave, hasCompatibleSave, readSave } from './session-state.js?v=1';
 
 const root=document.querySelector('#main-menu');
@@ -220,12 +221,11 @@ async function initScene(){
   if(!running||!root?.isConnected)return;
 
   const windmillFans=[];
-  const addModel=async(key,position,size,yaw=0)=>{
+  const addModel=async(key,position,yaw=0)=>{
     const source=await load(key).catch(()=>null);
     if(!source)return null;
-    const visual=source.clone(true);
+    const visual=createWorldModel(source.clone(true),key);
     prepareModel(visual);
-    fitModel(visual,size);
     const holder=new THREE.Group();
     holder.position.set(position[0],1.72,position[1]);
     holder.rotation.y=yaw;
@@ -242,12 +242,12 @@ async function initScene(){
     [-8,-3,.25],[-5,-6,-.55],[-2,-7,.6],[2,-7,-.25],[6,-5,.5],[8,-2,-.4],
     [7,2,.15],[4,5,-.5],[1,6,.3],[-3,6,-.15],[-7,4,.55],[-9,1,-.35]
   ];
-  await Promise.all(homes.map(([x,z,yaw])=>addModel(assetVariant('house',x,z),[x,z],2.55,yaw)));
+  await Promise.all(homes.map(([x,z,yaw])=>addModel(assetVariant('house',x,z),[x,z],yaw)));
   await Promise.all([
-    addModel('market',[0,-3],3.05,.18),
-    addModel('windmill',[-4,1],3.35,.55),
-    addModel('lumbermill',[5,1],3.1,-.38),
-    addModel('quarry',[8,5],3.0,.3)
+    addModel('market',[0,-3],.18),
+    addModel('windmill',[-4,1],.55),
+    addModel('lumbermill',[5,1],-.38),
+    addModel('quarry',[8,5],.3)
   ]);
 
   const trees=[
@@ -255,19 +255,18 @@ async function initScene(){
     [12,1],[11,-4],[9,-8],[6,-10],[2,-11],[-3,-10],[-7,-9],[-10,-7],[-12,-5],
     [-6,2],[-7,0],[5,6],[7,6],[7,-1]
   ];
-  await Promise.all(trees.map(([x,z],index)=>addModel(assetVariant('tree',x,z),[x,z],1.75+(index%3)*.12,(index*.73)%6.28)));
+  await Promise.all(trees.map(([x,z],index)=>addModel(assetVariant('tree',x,z),[x,z],(index*.73)%6.28)));
 
   const rocks=[[-13,0],[-11,7],[-6,11],[6,10],[11,6],[12,-5],[7,-10],[-9,-8]];
-  await Promise.all(rocks.map(([x,z],index)=>addModel(assetVariant('rock',x,z),[x,z],1.65+(index%3)*.16,index*.61)));
+  await Promise.all(rocks.map(([x,z],index)=>addModel(assetVariant('rock',x,z),[x,z],index*.61)));
 
   const wheat=await load('wheat4').catch(()=>null);
   if(wheat){
     const farmCenters=[[-2,1],[1,1],[-1,4],[2,4]];
     for(let i=0;i<farmCenters.length;i++){
       const [x,z]=farmCenters[i];
-      const crop=wheat.clone(true);
+      const crop=fitModelToBounds(wheat.clone(true),2.55,1.4);
       prepareModel(crop);
-      fitModel(crop,2.55,1.4);
       const holder=new THREE.Group();
       holder.position.set(x,1.82,z);
       holder.rotation.y=(i%2)*Math.PI*.5;
@@ -315,19 +314,6 @@ function prepareModel(root){
       if(material?.map)material.map.colorSpace=THREE.SRGBColorSpace;
     }
   });
-}
-
-function fitModel(root,maxXZ,maxY=maxXZ*1.7){
-  root.position.set(0,0,0);
-  root.updateMatrixWorld(true);
-  let box=new THREE.Box3().setFromObject(root);
-  const size=box.getSize(new THREE.Vector3());
-  const scale=Math.min(maxXZ/Math.max(size.x,size.z,.001),maxY/Math.max(size.y,.001));
-  root.scale.multiplyScalar(scale);
-  root.updateMatrixWorld(true);
-  box=new THREE.Box3().setFromObject(root);
-  const center=box.getCenter(new THREE.Vector3());
-  root.position.set(-center.x,-box.min.y,-center.z);
 }
 
 function addMountains(island){
