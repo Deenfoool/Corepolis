@@ -11,3 +11,7 @@ Original Corepolis model, authored specifically for this game. It does not reuse
 - Preview: `corepolis-lighthouse-preview.png`
 - Authoring script: `scripts/create-lighthouse.mjs` (Node.js with `three@0.180.0` installed)
 - Final export optimized with glTF Transform 4.2.1: weld, dedup, prune
+
+## Low-poly fields
+
+The field base and angular furrows are authored procedurally in `src/main.js`; Quaternius wheat meshes are reused in instanced clusters. Four stages are shown in `corepolis-field-preview.png`. Borders appear only on exposed sides; joined soil edges stay square.

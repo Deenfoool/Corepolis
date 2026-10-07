@@ -1,15 +1,15 @@
-import { freshResearch, hasResearch, navigationRange, canTrade } from './research.js?v=research-1';
-import { STARTING_DECK, promoteReserve, replacementType, hasPlayableCard, canBulldoze } from './card-economy.js?v=research-1';
-import { collectMillFieldGroups } from './mill-fields.js?v=research-1';
+import { freshResearch, hasResearch, navigationRange, canTrade } from './research.js?v=lowpoly-fields-1';
+import { STARTING_DECK, promoteReserve, replacementType, hasPlayableCard, canBulldoze } from './card-economy.js?v=lowpoly-fields-1';
+import { collectMillFieldGroups } from './mill-fields.js?v=lowpoly-fields-1';
 import * as THREE from 'three';
 import { MapControls } from 'three/addons/controls/MapControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { CARD_DEFS, DECK_WEIGHTS, DIRECTIONS, GRID } from './config.js?v=research-1';
-import { createWorldModel, fitModelToBounds } from './model-layout.js?v=research-1';
-import { ASSETS, assetVariant } from './models.js?v=research-1';
+import { CARD_DEFS, DECK_WEIGHTS, DIRECTIONS, GRID } from './config.js?v=lowpoly-fields-1';
+import { createWorldModel, fitModelToBounds } from './model-layout.js?v=lowpoly-fields-1';
+import { ASSETS, assetVariant } from './models.js?v=lowpoly-fields-1';
 import { buildTerrainTile, buildShoreWater, disposeTerrainTile } from './terrain.js?v=water-v2-1';
-import { createBoatVisual, attachLighthouseBeam } from './marine-visuals.js?v=research-1';
+import { createBoatVisual, attachLighthouseBeam } from './marine-visuals.js?v=lowpoly-fields-1';
 import {
   createIslandFragment,
   fragmentDescription,
@@ -18,7 +18,7 @@ import {
   rotateIslandCard,
   rotatedFragmentCells,
   syncIslandGhost
-} from './island-fragments.js?v=research-1';
+} from './island-fragments.js?v=lowpoly-fields-1';
 
 const $=s=>document.querySelector(s);
 const canvas=$('#game');
@@ -1232,8 +1232,20 @@ function waterStructureInfo(structure){
   }
   ui.tileInfo.classList.remove('hidden');
 }
+function disposeFieldVisual(field){
+  const geometries=new Set(),materials=new Set();
+  field.traverse(object=>{
+    if(object.isInstancedMesh){object.dispose();return;}
+    if(!object.isMesh)return;
+    geometries.add(object.geometry);
+    for(const material of(Array.isArray(object.material)?object.material:[object.material]))materials.add(material);
+  });
+  for(const geometry of geometries)geometry.dispose();
+  for(const material of materials)material.dispose();
+}
 function clearContent(t){
   if(t.content){
+    if(t.content.userData.isField)disposeFieldVisual(t.content);
     if(t.content.parent)t.content.parent.remove(t.content);
     t.content=null;
   }
@@ -1296,28 +1308,44 @@ function cloneWheatStage(stage){
 
   const crop=source.clone(true);
   shadows(crop);
-  const height=[.34,.48,.64,.82][safeStage-1];
-  return fitModelToBounds(crop,.48,height);
+  const height=[.20,.40,.65,.90][safeStage-1];
+  const width=[.20,.30,.38,.44][safeStage-1];
+  return fitModelToBounds(crop,width,height);
 }
 
 function createWheatRow(stage,rowIndex,synergy=false){
   const row=new THREE.Group();
   const safeStage=Math.max(1,Math.min(4,stage));
-  const count=[4,5,6,8][safeStage-1];
-  const spacing=3.05/Math.max(1,count-1);
-
-  for(let i=0;i<count;i++){
-    const crop=cloneWheatStage(safeStage);
-    if(!crop)continue;
-
-    const jitter=(((i*7+rowIndex*11+safeStage*3)%7)-3)*.014;
-    const size=.9+(((i*13+rowIndex*5)%5)-2)*.025;
-    crop.position.set(-1.525+i*spacing,0,jitter);
-    crop.rotation.y=((i*17+rowIndex*23)%24)/24*Math.PI*2;
-    crop.scale.multiplyScalar(size);
-    row.add(crop);
+  const count=[4,6,9,13][safeStage-1];
+  const clusterCount=[1,2,3,4][safeStage-1];
+  const length=GRID.tileSize-.68;
+  const spacing=length/Math.max(1,count-1);
+  const template=cloneWheatStage(safeStage);
+  if(template){
+    template.updateMatrixWorld(true);
+    const transforms=[];
+    for(let i=0;i<count;i++)for(let j=0;j<clusterCount;j++){
+      const x=-length/2+i*spacing+(clusterCount>1?(j%2?1:-1)*.065:0);
+      const z=clusterCount>2?(j<2?-.11:.11):(j-.5)*.09;
+      const size=.90+((i*13+rowIndex*5+j*3)%5)*.025;
+      const yaw=((i*17+rowIndex*23+j*7)%24)/24*Math.PI*2;
+      const matrix=new THREE.Matrix4().compose(
+        new THREE.Vector3(x,0,z),
+        new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,1,0),yaw),
+        new THREE.Vector3(size,size,size)
+      );
+      transforms.push(matrix);
+    }
+    template.traverse(mesh=>{
+      if(!mesh.isMesh)return;
+      const instances=new THREE.InstancedMesh(mesh.geometry,mesh.material,transforms.length);
+      instances.name='LowPoly_Wheat_Clusters';
+      transforms.forEach((matrix,i)=>instances.setMatrixAt(i,matrix.clone().multiply(mesh.matrixWorld)));
+      instances.instanceMatrix.needsUpdate=true;
+      instances.castShadow=instances.receiveShadow=true;
+      row.add(instances);
+    });
   }
-
   row.userData.swayPhase=rowIndex*.72+safeStage*.31;
   row.userData.swayAmount=(safeStage>=3?.028:.015)*(synergy?1.12:1);
   return row;
@@ -1336,79 +1364,82 @@ function fieldAdjacencySignature(t){
   const a=fieldAdjacency(t);
   return `${a.north?1:0}${a.east?1:0}${a.south?1:0}${a.west?1:0}`;
 }
-function createLowPolyFieldBase(size,height,color){
-  const mesh=new THREE.Mesh(
-    new RoundedBoxGeometry(size,height,size,3,Math.min(.14,height*.45)),
-    new THREE.MeshStandardMaterial({
-      color,
-      roughness:1,
-      flatShading:true
-    })
-  );
-  mesh.castShadow=mesh.receiveShadow=true;
-  return mesh;
-}
-function createFieldRidge(length,width,height,{westConnected=false,eastConnected=false,seed=0,synergy=false}={}){
-  const xSegments=12;
-  const zSegments=6;
-  const positions=[];
-  const colors=[];
-  const indices=[];
-  const baseColor=new THREE.Color(synergy?0x8f6334:0x83572d);
-  const crestColor=new THREE.Color(synergy?0xb07b40:0xa46d37);
-
-  for(let xi=0;xi<=xSegments;xi++){
-    const tx=xi/xSegments;
-    const x=(tx-.5)*length;
-    const leftTaper=westConnected?1:Math.min(1,tx/.10);
-    const rightTaper=eastConnected?1:Math.min(1,(1-tx)/.10);
-    const endTaper=Math.sin(Math.min(1,leftTaper,rightTaper)*Math.PI*.5);
-    const longWobble=Math.sin((xi+seed*.71)*1.23)*.006;
-
-    for(let zi=0;zi<=zSegments;zi++){
-      const tz=zi/zSegments;
-      const z=(tz-.5)*width;
-      const rounded=Math.sin(Math.PI*tz);
-      const shoulder=Math.pow(rounded,.72);
-      const facet=1+Math.sin((xi*3+zi*5+seed)*1.07)*.035;
-      const y=.258+height*shoulder*endTaper*facet+longWobble*rounded;
-      positions.push(x,y,z);
-
-      const color=baseColor.clone().lerp(crestColor,Math.pow(rounded,1.15)*.68);
-      const shade=((xi*17+zi*11+seed*13)%5-2)*.016;
-      color.offsetHSL(0,0,shade);
-      colors.push(color.r,color.g,color.b);
-    }
+function createLowPolyFieldBase(size,height,color,adjacency={}){
+  const half=size/2;
+  const corners=[
+    [half,half,!adjacency.east&&!adjacency.south],
+    [-half,half,!adjacency.west&&!adjacency.south],
+    [-half,-half,!adjacency.west&&!adjacency.north],
+    [half,-half,!adjacency.east&&!adjacency.north]
+  ];
+  const outline=[];
+  for(let i=0;i<4;i++){
+    const [x,z,beveled]=corners[i],previous=corners[(i+3)%4],next=corners[(i+1)%4];
+    const cut=beveled?.10:0;
+    if(cut){
+      outline.push([x+Math.sign(previous[0]-x)*cut,z+Math.sign(previous[1]-z)*cut]);
+      outline.push([x+Math.sign(next[0]-x)*cut,z+Math.sign(next[1]-z)*cut]);
+    }else outline.push([x,z]);
   }
-
-  const row=zSegments+1;
-  for(let xi=0;xi<xSegments;xi++)for(let zi=0;zi<zSegments;zi++){
-    const a=xi*row+zi;
-    const b=(xi+1)*row+zi;
-    const c=(xi+1)*row+zi+1;
-    const d=xi*row+zi+1;
-    indices.push(a,d,b,b,d,c);
+  const positions=[],colors=[];
+  const earth=new THREE.Color(color);
+  function triangle(a,b,c,shade){
+    const tint=earth.clone().multiplyScalar(shade);
+    for(const vertex of [a,b,c]){positions.push(...vertex);colors.push(tint.r,tint.g,tint.b);}
   }
-
+  for(let i=0;i<outline.length;i++){
+    const a=outline[i],b=outline[(i+1)%outline.length];
+    const topA=[a[0],height/2,a[1]],topB=[b[0],height/2,b[1]];
+    const bottomA=[a[0],-height/2,a[1]],bottomB=[b[0],-height/2,b[1]];
+    triangle([0,height/2,0],topB,topA,.94+(i%3)*.045);
+    triangle(topA,topB,bottomA,.76);triangle(topB,bottomB,bottomA,.76);
+    triangle([0,-height/2,0],bottomA,bottomB,.70);
+  }
   const geometry=new THREE.BufferGeometry();
   geometry.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));
   geometry.setAttribute('color',new THREE.Float32BufferAttribute(colors,3));
-  geometry.setIndex(indices);
   geometry.computeVertexNormals();
-  geometry.computeBoundingBox();
-  geometry.computeBoundingSphere();
-
-  const mesh=new THREE.Mesh(
-    geometry,
-    new THREE.MeshStandardMaterial({
-      vertexColors:true,
-      roughness:1,
-      flatShading:true,
-      side:THREE.FrontSide
-    })
-  );
-  mesh.castShadow=mesh.receiveShadow=true;
-  return mesh;
+  const mesh=new THREE.Mesh(geometry,new THREE.MeshStandardMaterial({vertexColors:true,roughness:1,flatShading:true}));
+  mesh.name='LowPoly_Field_Soil';mesh.castShadow=mesh.receiveShadow=true;return mesh;
+}
+function createFieldRidge(length,width,height,{westConnected=false,eastConnected=false,seed=0,synergy=false}={}){
+  const positions=[],colors=[];
+  const earth=new THREE.Color(synergy?0xa4713d:0x946132);
+  const sections=6;
+  function section(i){
+    const t=i/sections;
+    const taper=Math.min(1,westConnected?1:t/.12,eastConnected?1:(1-t)/.12);
+    const rise=height*taper+(i>0&&i<sections?Math.sin(i*2.1+seed)*.006:0);
+    return [[(t-.5)*length,.258,-width/2],[(t-.5)*length,.258+rise,0],[(t-.5)*length,.258,width/2]];
+  }
+  function triangle(a,b,c,shade){
+    const tint=earth.clone().multiplyScalar(shade);
+    for(const vertex of[a,b,c]){positions.push(...vertex);colors.push(tint.r,tint.g,tint.b);}
+  }
+  for(let i=0;i<sections;i++){
+    const a=section(i),b=section(i+1);
+    for(let j=0;j<2;j++){
+      const shade=j===0?1.07:.92;
+      triangle(a[j],a[j+1],b[j],shade);triangle(b[j],a[j+1],b[j+1],shade);
+    }
+  }
+  const geometry=new THREE.BufferGeometry();
+  geometry.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));
+  geometry.setAttribute('color',new THREE.Float32BufferAttribute(colors,3));
+  geometry.computeVertexNormals();
+  const mesh=new THREE.Mesh(geometry,new THREE.MeshStandardMaterial({vertexColors:true,roughness:1,flatShading:true}));
+  mesh.name='Angular_Field_Furrow';mesh.castShadow=mesh.receiveShadow=true;return mesh;
+}
+function addFieldBorders(group,adjacency){
+  const wood=new THREE.MeshStandardMaterial({color:0xa27645,roughness:1,flatShading:true});
+  const half=GRID.tileSize/2-.045;
+  for(const side of ['north','east','south','west']){
+    if(adjacency[side])continue;
+    const horizontal=side==='north'||side==='south';
+    const rail=new THREE.Mesh(new THREE.BoxGeometry(horizontal?GRID.tileSize:.09,.075,horizontal?.09:GRID.tileSize),wood);
+    rail.position.set(side==='east'?half:side==='west'?-half:0,.296,side==='south'?half:side==='north'?-half:0);
+    rail.name=`field_border_${side}`;rail.castShadow=rail.receiveShadow=true;group.add(rail);
+  }
 }
 function addFieldClods(group,stage,tileSize,synergy=false){
   const material=new THREE.MeshStandardMaterial({
@@ -1453,15 +1484,15 @@ function fieldVisual(stage,synergy=false,tile=null){
   const soilColors=[0x5f3f20,0x644421,0x6a4925,0x714f29];
   const soil=createLowPolyFieldBase(
     tileSize,.08,
-    synergy?0x734e29:soilColors[safeStage-1]
+    synergy?0x734e29:soilColors[safeStage-1],adjacency
   );
   soil.position.y=.22;
   g.add(soil);
 
-  const ridgeCount=8;
+  const ridgeCount=6;
   const rowSpacing=GRID.tileSize/ridgeCount;
-  const ridgeWidth=.40;
-  const ridgeHeight=[.045,.05,.055,.06][safeStage-1];
+  const ridgeWidth=.50;
+  const ridgeHeight=[.055,.065,.065,.065][safeStage-1];
   const ridgeLength=tileSize+.02;
   const firstZ=-GRID.tileSize*.5+rowSpacing*.5;
 
@@ -1477,13 +1508,13 @@ function fieldVisual(stage,synergy=false,tile=null){
     g.add(ridge);
 
     const row=createWheatRow(safeStage,r,synergy);
-    row.position.set(0,.258+ridgeHeight+.008,z);
-    row.scale.x=Math.max(1,(GRID.tileSize-.38)/3.05);
+    row.position.set(0,.258+ridgeHeight+.002,z);
     g.add(row);
     g.userData.cropRows.push(row);
   }
 
   addFieldClods(g,safeStage,GRID.tileSize,synergy);
+  addFieldBorders(g,adjacency);
   g.position.y=-.12;
   return g;
 }
@@ -1925,6 +1956,7 @@ async function collapseFields(group){
     }
   },t=>t);
   for(const m of moving){
+    if(m.object.userData.isField)disposeFieldVisual(m.object);
     if(m.object.parent)m.object.parent.remove(m.object);
     m.t.content=null; m.t.type='empty'; m.t.stage=0; m.t.fieldOrder=null;
   }

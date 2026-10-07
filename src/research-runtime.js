@@ -1,5 +1,5 @@
-import { DECK_WEIGHTS } from './config.js?v=research-1';
-import {RESEARCH,hasResearch,prepareResearch,learnResearch,canTrade,pickTradeTypes} from './research.js?v=research-1';
+import { DECK_WEIGHTS } from './config.js?v=lowpoly-fields-1';
+import {RESEARCH,hasResearch,prepareResearch,learnResearch,canTrade,pickTradeTypes} from './research.js?v=lowpoly-fields-1';
 const runtime=window.__corepolisRuntime;
 const {state,ui,draw,renderHand,refillHand,status,refreshLucide,islandResearchChoices,fragmentMiniMapMarkup}=runtime;
 let active=false,busy=false;

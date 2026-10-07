@@ -1,4 +1,4 @@
-import { freshResearch, normalizeResearch } from './research.js?v=research-1';
+import { freshResearch, normalizeResearch } from './research.js?v=lowpoly-fields-1';
 import { clearSave, readSave, writeSave } from './session-state.js?v=1';
 
 const runtime=window.__corepolisRuntime;
