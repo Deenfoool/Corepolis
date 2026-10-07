@@ -45,7 +45,7 @@ export function attachLighthouseBeam(root){
       blending:THREE.AdditiveBlending,side:THREE.DoubleSide
     })
   );
-  beam.rotation.z=-Math.PI/2;
+  beam.rotation.z=Math.PI/2;
   beam.position.x=2.56;
   beamPivot.add(beam);
   root.add(beamPivot);

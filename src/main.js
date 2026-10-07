@@ -6,7 +6,7 @@ import { CARD_DEFS, DECK_WEIGHTS, DIRECTIONS, GRID } from './config.js?v=lightho
 import { createWorldModel, fitModelToBounds } from './model-layout.js?v=lighthouse-2';
 import { ASSETS, assetVariant } from './models.js?v=lighthouse-2';
 import { buildTerrainTile, buildShoreWater, disposeTerrainTile } from './terrain.js?v=water-v2-1';
-import { createBoatVisual, attachLighthouseBeam } from './marine-visuals.js?v=lighthouse-2';
+import { createBoatVisual, attachLighthouseBeam } from './marine-visuals.js?v=lighthouse-beam-3';
 import {
   createIslandFragment,
   fragmentDescription,
