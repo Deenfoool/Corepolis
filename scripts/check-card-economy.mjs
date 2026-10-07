@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import{STARTING_DECK,promoteReserve,replacementType,hasPlayableCard}from '../src/card-economy.js';
+import{STARTING_DECK,promoteReserve,replacementType,hasPlayableCard,canBulldoze}from '../src/card-economy.js';
 assert.equal(STARTING_DECK.length,24);
 const reserve=STARTING_DECK.map((type,id)=>({type,id})),hand=[];let spent=0;
 promoteReserve(hand,reserve);assert.equal(hand.length,5);assert.equal(reserve.length,19);
@@ -13,8 +13,13 @@ const ctx={get land(){return land;},millBuilt:true,millUnlocked:true,marketUnloc
 const play=type=>hasPlayableCard([{type}],ctx);
 assert.ok(play('field'));assert.ok(!play('market'));assert.ok(!play('mill'));ready=true;assert.ok(play('mill'));
 affordable=false;assert.ok(!play('field'));affordable=true;
-land=new Map([['0,0',{type:'lumbermill'}]]);assert.ok(play('lumbermill'));assert.ok(!play('field'));assert.ok(!play('clear'));
+land=new Map([['0,0',{type:'lumbermill'}]]);assert.ok(play('lumbermill'));assert.ok(!play('field'));assert.ok(play('clear'));
 land=new Map([['0,0',{type:'rock'}]]);assert.ok(play('clear'));assert.ok(!play('house'));
 assert.ok(!play('island'));water=true;assert.ok(play('island'));assert.ok(play('pier'));assert.ok(play('lighthouse'));
 assert.ok(!hasPlayableCard([],ctx));
 console.log('Finite economy: 24-card exhaustion, reserve promotion, warehouse count/type replacement, affordability and land/water move checks passed.');
+
+for(const type of ['tree','rock','field','mill','house','market','quarry','lumbermill','fishingShop','pier'])assert.ok(canBulldoze(type));
+for(const type of ['empty','island','lighthouse'])assert.ok(!canBulldoze(type));
+land=new Map([['0,0',{type:'lighthouse'}]]);water=false;assert.ok(!play('clear'));water=true;assert.ok(play('clear'));
+console.log('Bulldozer targets: all buildings/resources, protected islands/lighthouses, marine move availability passed.');

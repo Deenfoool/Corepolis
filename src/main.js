@@ -1,14 +1,14 @@
-import { STARTING_DECK, promoteReserve, replacementType, hasPlayableCard } from './card-economy.js?v=finite-cards-1';
-import { collectMillFieldGroups } from './mill-fields.js?v=finite-cards-1';
+import { STARTING_DECK, promoteReserve, replacementType, hasPlayableCard, canBulldoze } from './card-economy.js?v=bulldozer-1';
+import { collectMillFieldGroups } from './mill-fields.js?v=bulldozer-1';
 import * as THREE from 'three';
 import { MapControls } from 'three/addons/controls/MapControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { CARD_DEFS, DECK_WEIGHTS, DIRECTIONS, GRID } from './config.js?v=finite-cards-1';
-import { createWorldModel, fitModelToBounds } from './model-layout.js?v=finite-cards-1';
-import { ASSETS, assetVariant } from './models.js?v=finite-cards-1';
+import { CARD_DEFS, DECK_WEIGHTS, DIRECTIONS, GRID } from './config.js?v=bulldozer-1';
+import { createWorldModel, fitModelToBounds } from './model-layout.js?v=bulldozer-1';
+import { ASSETS, assetVariant } from './models.js?v=bulldozer-1';
 import { buildTerrainTile, buildShoreWater, disposeTerrainTile } from './terrain.js?v=water-v2-1';
-import { createBoatVisual, attachLighthouseBeam } from './marine-visuals.js?v=finite-cards-1';
+import { createBoatVisual, attachLighthouseBeam } from './marine-visuals.js?v=bulldozer-1';
 import {
   createIslandFragment,
   fragmentDescription,
@@ -17,7 +17,7 @@ import {
   rotateIslandCard,
   rotatedFragmentCells,
   syncIslandGhost
-} from './island-fragments.js?v=finite-cards-1';
+} from './island-fragments.js?v=bulldozer-1';
 
 const $=s=>document.querySelector(s);
 const canvas=$('#game');
@@ -698,14 +698,32 @@ function createStorageVisual(){
 const CARD_PREVIEW_ASSET={
   tree:'treeA',
   rock:'rockA',
-  clear:'treeA',
   mill:'windmill',
   house:'house',
   market:'market',
   lumbermill:'lumbermill',
   quarry:'quarry'
 };
+function createBulldozerPreview(){
+  const root=new THREE.Group();
+  const yellow=new THREE.MeshStandardMaterial({color:0xe6ae35,roughness:.9});
+  const dark=new THREE.MeshStandardMaterial({color:0x35413c,roughness:1});
+  const steel=new THREE.MeshStandardMaterial({color:0xadb3aa,roughness:.7});
+  function block(size,position,material){
+    const mesh=new THREE.Mesh(new THREE.BoxGeometry(...size),material);
+    mesh.position.set(...position);root.add(mesh);
+  }
+  for(const x of [-.47,.47])block([.24,.28,1.32],[x,.14,0],dark);
+  block([.77,.34,1.05],[0,.42,-.08],yellow);
+  block([.59,.55,.57],[0,.83,-.20],dark);
+  block([.71,.10,.68],[0,1.14,-.20],yellow);
+  for(const x of [-.28,.28])block([.08,.53,.08],[x,.85,.08],yellow);
+  block([1.35,.46,.13],[0,.31,.85],steel);
+  for(const x of [-.30,.30])block([.09,.09,.61],[x,.27,.53],yellow);
+  shadows(root);return root;
+}
 async function previewObjectFor(type){
+  if(type==='clear')return createBulldozerPreview();
   if(type==='field')return fieldVisual(2,false);
   if(type==='island'){
     const preview=new THREE.Group();
@@ -2016,6 +2034,7 @@ function hasAvailableMove(){
     land:state.land,millBuilt:!!millTile(),millUnlocked:state.unlocks.mill,
     marketUnlocked:state.unlocks.market,ready,canAfford,
     hasWaterMove:card=>{
+      if(card.type==='clear')return [...state.waterStructures.values()].some(s=>canBulldoze(s.type));
       for(let x=-GRID.maxRadius;x<=GRID.maxRadius;x++)for(let z=-GRID.maxRadius;z<=GRID.maxRadius;z++){
         if(card.type==='pier'&&canPlacePier(x,z))return true;
         if(card.type==='lighthouse'&&canPlaceRemoteLighthouse(x,z))return true;
@@ -2347,6 +2366,34 @@ async function harvest(){
   state.inputLocked=false;
 }
 
+async function bulldoze(card,target,isWater=false){
+  if(!target||!canBulldoze(target.type))return toast('Бульдозер не удаляет острова и маяки. Выберите объект для сноса.');
+  state.inputLocked=true;
+  const position=target.visual.position.clone();
+  const object=isWater?target.visual:target.content;
+  if(object){
+    const scale=object.scale.clone();
+    await tween(.28,p=>object.scale.copy(scale).multiplyScalar(Math.max(.02,1-p)));
+  }
+  if(isWater){
+    const removed=new Set();target.visual.traverse(o=>removed.add(o));
+    target.visual.removeFromParent();
+    state.waterStructures.delete(target.key);
+    state.marineActors=state.marineActors.filter(actor=>!removed.has(actor.object));
+    for(const route of [...state.seaRoutes])if(route.split('|').includes(target.key))state.seaRoutes.delete(route);
+  }else{
+    if(target.type==='mill'){state.millCell=null;state.millBlades=[];state.bladeBoost=0;}
+    clearContent(target);
+    await syncMillFieldStages({animated:false});
+    await syncAllNormalFieldStages(false);
+  }
+  spend(card.id);
+  spawnBurst(position,0xd5c99f,12);spawnRing(position,0xd5c99f);
+  ui.tileInfo.classList.add('hidden');
+  state.inputLocked=false;status();
+  toast('Объект снесён. Остров сохранён, ресурсы не возвращаются.');
+}
+
 async function apply(card,t){
   if(card.type==='field'){
     if(t.type!=='empty'){
@@ -2414,17 +2461,7 @@ async function apply(card,t){
     return;
   }
 
-  if(card.type==='clear'){
-    if(!['tree','rock'].includes(t.type))return toast('Расчистка убирает деревья и камни.');
-    const p=t.visual.position.clone();
-    if(t.content)await tween(.25,v=>t.content.scale.setScalar(Math.max(.03,1-v)));
-    clearContent(t);
-    spawnBurst(p,0xd5c99f,8);
-    spawnRing(p,0xd5c99f);
-    spend(card.id);
-    status();
-    return;
-  }
+  if(card.type==='clear')return bulldoze(card,t);
 
   if(card.type==='mill'){
     if(!state.unlocks.mill)return toast('Мельница ещё не открыта.');
@@ -2577,6 +2614,12 @@ async function handleBoardClick(e){
     return structureHit?waterStructureInfo(waterStructureOf(structureHit.object)):tileInfo(null);
   }
 
+  if(card.type==='clear'){
+    const hit=hits.find(h=>tileOf(h.object)||waterStructureOf(h.object));
+    const structure=hit&&waterStructureOf(hit.object);
+    if(structure)return bulldoze(card,structure,true);
+  }
+
   if(card.type==='pier'||card.type==='island'){
     const cell=snappedWaterCell(hits);
     if(!cell)return toast('Эту карту нужно поставить на воду.');
@@ -2609,6 +2652,17 @@ renderer.domElement.onpointermove=e=>{
   const tileHit=hits.find(h=>tileOf(h.object));
   const t=tileHit?tileOf(tileHit.object):null;
 
+  if(card?.type==='clear'){
+    const hit=hits.find(h=>tileOf(h.object)||waterStructureOf(h.object));
+    const structure=hit&&waterStructureOf(hit.object);
+    if(structure){
+      hoverMarker.visible=true;
+      hoverMarker.position.copy(structure.visual.position).setY(-.45);
+      hoverMarker.material.color.setHex(canBulldoze(structure.type)?0xf6df86:0xd97b6f);
+      hoverMarker.material.opacity=.24;
+      clearIslandGhost();return;
+    }
+  }
   if(card?.type==='island'){
     const cell=snappedWaterCell(hits);
     hoverMarker.visible=false;
@@ -2632,7 +2686,7 @@ renderer.domElement.onpointermove=e=>{
   if(t){
     hoverMarker.visible=true;
     hoverMarker.position.set(t.visual.position.x,.17,t.visual.position.z);
-    const valid=!card||card.type==='clear'?true:
+    const valid=!card?true:card.type==='clear'?canBulldoze(t.type):
       card.type==='lighthouse'?t.type==='empty':
       card.type==='fishingShop'?t.type==='empty':
       t.type==='empty'||card.type==='field'&&t.type==='field'||

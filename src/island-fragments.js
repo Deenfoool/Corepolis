@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { buildTerrainTile, disposeTerrainTile } from './terrain.js?v=water-v2-1';
-import { GRID } from './config.js?v=finite-cards-1';
-import './territory-card-preview.js?v=finite-cards-1';
+import { GRID } from './config.js?v=bulldozer-1';
+import './territory-card-preview.js?v=bulldozer-1';
 
 export const ISLAND_FRAGMENT_SHAPES=[
   {id:'single',label:'1×1',weight:8,cells:[[0,0]]},

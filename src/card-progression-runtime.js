@@ -1,4 +1,4 @@
-import { CARD_DEFS, DECK_WEIGHTS } from './config.js?v=finite-cards-1';
+import { CARD_DEFS, DECK_WEIGHTS } from './config.js?v=bulldozer-1';
 
 const STORAGE_KEY='corepolis:card-progression:v1';
 const STORAGE_VERSION=1;
@@ -17,7 +17,7 @@ if(!runtime)throw new Error('Corepolis runtime is not available for card progres
 const {state,draw,addCard,renderHand,status,refreshLucide,resetStartingDeck}=runtime;
 
 const RULES={
-  clear:{icon:'axe',label:'Расчистка',hint:'Освойте первое производство ресурсов.',reason:'Первое производство запущено. Теперь можно расчищать занятые клетки.',test:()=>productionEvidence('wood')||productionEvidence('stone')},
+  clear:{icon:'construction',label:'Бульдозер',hint:'Освойте первое производство ресурсов.',reason:'Первое производство запущено. Бульдозер сносит объекты, сохраняя острова и маяки.',test:()=>productionEvidence('wood')||productionEvidence('stone')},
   pier:{icon:'anchor',label:'Причал',grantFirst:true,hint:'Развитая деревообработка позволит выйти к морю.',reason:'Получена первая древесина. Поселение научилось строить причалы.',test:()=>productionEvidence('wood')},
   mill:{icon:'wind',label:'Мельница',hint:'Несколько связанных полей могут открыть новую сельскохозяйственную постройку.',reason:'Комбо из четырёх полей открыло Мельницу.',test:()=>!!state.unlocks?.mill},
   market:{icon:'store',label:'Рынок',hint:'Развивайте плотный жилой район.',reason:'Связный квартал из шести домов открыл Рынок.',test:()=>!!state.unlocks?.market},

@@ -1,3 +1,4 @@
+export const canBulldoze=type=>!!type&&!['empty','island','lighthouse'].includes(type);
 export const STARTING_DECK=[
   'lumbermill','quarry','field','field','house','field','tree','field',
   'quarry','lumbermill','rock','house','field','field','house','island',
@@ -22,7 +23,7 @@ export function hasPlayableCard(cards,{land,millBuilt,millUnlocked,marketUnlocke
     if(['pier','island'].includes(card.type))return hasWaterMove(card);
     if(card.type==='lighthouse')return [...land.values()].some(t=>t.type==='empty')||hasWaterMove(card);
     if(card.type==='mill')return millUnlocked&&(millBuilt?ready():[...land.values()].some(t=>t.type==='empty'));
-    if(card.type==='clear')return [...land.values()].some(t=>['tree','rock'].includes(t.type));
+    if(card.type==='clear')return [...land.values()].some(t=>canBulldoze(t.type))||hasWaterMove(card);
     if(card.type==='market'&&!marketUnlocked)return false;
     return [...land.values()].some(t=>t.type==='empty'||(['lumbermill','quarry'].includes(card.type)&&t.type===card.type));
   });
