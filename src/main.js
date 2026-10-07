@@ -2,11 +2,11 @@ import * as THREE from 'three';
 import { MapControls } from 'three/addons/controls/MapControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { CARD_DEFS, DECK_WEIGHTS, DIRECTIONS, GRID } from './config.js?v=resource-proportions-1';
-import { createWorldModel, fitModelToBounds } from './model-layout.js?v=resource-proportions-1';
-import { ASSETS, assetVariant } from './models.js?v=resource-proportions-1';
+import { CARD_DEFS, DECK_WEIGHTS, DIRECTIONS, GRID } from './config.js?v=island-ghost-1';
+import { createWorldModel, fitModelToBounds } from './model-layout.js?v=island-ghost-1';
+import { ASSETS, assetVariant } from './models.js?v=island-ghost-1';
 import { buildTerrainTile, buildShoreWater, disposeTerrainTile } from './terrain.js?v=water-v2-1';
-import { createBoatVisual, createLighthouseVisual } from './marine-visuals.js?v=resource-proportions-1';
+import { createBoatVisual, createLighthouseVisual } from './marine-visuals.js?v=island-ghost-1';
 import {
   createIslandFragment,
   fragmentDescription,
@@ -15,7 +15,7 @@ import {
   rotateIslandCard,
   rotatedFragmentCells,
   syncIslandGhost
-} from './island-fragments.js?v=resource-proportions-1';
+} from './island-fragments.js?v=island-ghost-1';
 
 const $=s=>document.querySelector(s);
 const canvas=$('#game');
@@ -925,7 +925,16 @@ function canPlaceIsland(card,x,z){
 function showIslandGhost(card,cell){
   islandGhostAnchor=cell;
   const valid=canPlaceIsland(card,cell.x,cell.z);
-  syncIslandGhost(islandGhostRoot,card,cell,valid);
+  syncIslandGhost(islandGhostRoot,card,cell,valid,{
+    hasLand:(x,z)=>state.land.has(key(x,z)),
+    createResource:cell=>{
+      if(cell.content!=='tree'&&cell.content!=='rock')return null;
+      const model=cloneLoadedAsset(assetVariant(cell.content,cell.x,cell.z));
+      model.rotation.y=cell.content==='tree'?cell.x*.9+cell.z*1.4:cell.x*1.3-cell.z;
+      model.position.y=.12;
+      return model;
+    }
+  });
   return valid;
 }
 function nearestLandDistance(x,z){
@@ -2608,6 +2617,7 @@ ui.marineChoice.addEventListener('click',e=>{
 });
 
 window.onkeydown=e=>{
+  if(e.defaultPrevented||e.ctrlKey||e.altKey||e.metaKey||e.target?.closest?.('input,textarea,select,[contenteditable="true"]'))return;
   if(e.key==='Escape'){
     state.selectedCardId=null;
     clearIslandGhost();
@@ -2616,18 +2626,18 @@ window.onkeydown=e=>{
     return;
   }
 
-  const keyName=e.key.toLowerCase();
+  const rotationDirection=e.code==='KeyE'?1:e.code==='KeyQ'?-1:0;
   const selected=state.hand.find(card=>card.id===state.selectedCardId);
-  if((keyName==='q'||keyName==='e')&&selected?.type==='island'){
+  if(rotationDirection&&selected?.type==='island'){
+    if(e.repeat)return;
     e.preventDefault();
-    rotateIslandCard(selected,keyName==='e'?1:-1);
+    rotateIslandCard(selected,rotationDirection);
     renderHand();
     ui.selectionHint.textContent=`Фрагмент ${selected.fragment?.label||''} · Q/E — повернуть`;
     if(islandGhostAnchor)showIslandGhost(selected,islandGhostAnchor);
     return;
   }
-  if(keyName==='q')rotate(.13);
-  if(keyName==='e')rotate(-.13);
+  if(rotationDirection){e.preventDefault();rotate(-rotationDirection*.13);}
 };
 
 let previousFrame=performance.now();

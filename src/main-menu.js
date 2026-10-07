@@ -1,7 +1,7 @@
-import { createWorldModel, fitModelToBounds } from './model-layout.js?v=resource-proportions-1';
+import { createWorldModel, fitModelToBounds } from './model-layout.js?v=island-ghost-1';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { ASSETS, ASSET_VARIANTS, assetVariant } from './models.js?v=resource-proportions-1';
+import { ASSETS, ASSET_VARIANTS, assetVariant } from './models.js?v=island-ghost-1';
 import { clearSave, hasCompatibleSave, readSave } from './session-state.js?v=1';
 
 const root=document.querySelector('#main-menu');

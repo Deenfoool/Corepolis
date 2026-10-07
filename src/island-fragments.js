@@ -1,7 +1,7 @@
 import * as THREE from 'three';
-import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { GRID } from './config.js?v=resource-proportions-1';
-import './territory-card-preview.js?v=resource-proportions-1';
+import { buildTerrainTile, disposeTerrainTile } from './terrain.js?v=water-v2-1';
+import { GRID } from './config.js?v=island-ghost-1';
+import './territory-card-preview.js?v=island-ghost-1';
 
 export const ISLAND_FRAGMENT_SHAPES=[
   {id:'single',label:'1×1',weight:8,cells:[[0,0]]},
@@ -96,55 +96,29 @@ export function fragmentMiniMapMarkup(){
   return'';
 }
 
-const ghostCliffGeometry=new RoundedBoxGeometry(GRID.tileSize*.94,.70,GRID.tileSize*.94,2,.16);
-const ghostTopGeometry=new RoundedBoxGeometry(GRID.tileSize*.88,.10,GRID.tileSize*.88,2,.14);
-const ghostShadowGeometry=new THREE.PlaneGeometry(GRID.tileSize*.90,GRID.tileSize*.90);
-const ghostTreeGeometry=new THREE.ConeGeometry(.48,.92,7);
-const ghostTreeUpperGeometry=new THREE.ConeGeometry(.35,.72,7);
-const ghostTrunkGeometry=new THREE.CylinderGeometry(.10,.13,.42,6);
-const ghostRockGeometry=new THREE.IcosahedronGeometry(.42,0);
 const ghostAnchorGeometry=new THREE.TorusGeometry(.40,.055,6,28);
-
-const validCliffMaterial=new THREE.MeshStandardMaterial({color:0x708773,emissive:0x183b2c,emissiveIntensity:.34,roughness:.92,transparent:true,opacity:.58,depthWrite:false});
-const validTopMaterial=new THREE.MeshStandardMaterial({color:0x8ad277,emissive:0x315c35,emissiveIntensity:.42,roughness:.82,transparent:true,opacity:.76,depthWrite:false});
-const invalidCliffMaterial=new THREE.MeshStandardMaterial({color:0x9a625c,emissive:0x5a201c,emissiveIntensity:.42,roughness:.92,transparent:true,opacity:.56,depthWrite:false});
-const invalidTopMaterial=new THREE.MeshStandardMaterial({color:0xe17c70,emissive:0x6f251f,emissiveIntensity:.52,roughness:.82,transparent:true,opacity:.72,depthWrite:false});
-const validShadowMaterial=new THREE.MeshBasicMaterial({color:0x295947,transparent:true,opacity:.15,depthWrite:false});
-const invalidShadowMaterial=new THREE.MeshBasicMaterial({color:0x7d302b,transparent:true,opacity:.17,depthWrite:false});
-const ghostTreeMaterial=new THREE.MeshStandardMaterial({color:0x5ea75f,emissive:0x214c2a,emissiveIntensity:.22,roughness:.86,transparent:true,opacity:.92,depthWrite:false});
-const ghostTreeUpperMaterial=new THREE.MeshStandardMaterial({color:0x72bd69,emissive:0x27552d,emissiveIntensity:.22,roughness:.86,transparent:true,opacity:.94,depthWrite:false});
-const ghostTrunkMaterial=new THREE.MeshStandardMaterial({color:0x8d6544,roughness:1,transparent:true,opacity:.88,depthWrite:false});
-const ghostRockMaterial=new THREE.MeshStandardMaterial({color:0xb9c1bd,emissive:0x34403d,emissiveIntensity:.12,roughness:.94,transparent:true,opacity:.94,depthWrite:false});
 const validOutlineMaterial=new THREE.LineBasicMaterial({color:0xc7ffb8,transparent:true,opacity:.94,depthTest:false});
 const invalidOutlineMaterial=new THREE.LineBasicMaterial({color:0xffb0a6,transparent:true,opacity:.96,depthTest:false});
 const anchorMaterial=new THREE.MeshBasicMaterial({color:0xffdfa0,transparent:true,opacity:.94,depthTest:false});
 
-function resourceGhost(content){
-  if(content==='tree'){
-    const group=new THREE.Group();
-    const trunk=new THREE.Mesh(ghostTrunkGeometry,ghostTrunkMaterial);
-    trunk.position.y=.28;
-    const crown=new THREE.Mesh(ghostTreeGeometry,ghostTreeMaterial);
-    crown.position.y=.83;
-    const upper=new THREE.Mesh(ghostTreeUpperGeometry,ghostTreeUpperMaterial);
-    upper.position.y=1.20;
-    group.add(trunk,crown,upper);
-    return group;
-  }
-  if(content==='rock'){
-    const group=new THREE.Group();
-    const main=new THREE.Mesh(ghostRockGeometry,ghostRockMaterial);
-    main.scale.set(1.45,.92,1.18);
-    main.position.set(-.08,.43,.02);
-    main.rotation.set(.08,.45,-.08);
-    const chip=new THREE.Mesh(ghostRockGeometry,ghostRockMaterial);
-    chip.scale.set(.72,.55,.62);
-    chip.position.set(.43,.30,-.28);
-    chip.rotation.set(-.12,-.35,.16);
-    group.add(main,chip);
-    return group;
-  }
-  return null;
+function ghostAppearance(object,valid,cloneMaterials=false){
+  object.traverse(mesh=>{
+    if(!mesh.isMesh)return;
+    mesh.castShadow=false;
+    mesh.receiveShadow=false;
+    mesh.renderOrder=8;
+    if(cloneMaterials)mesh.material=Array.isArray(mesh.material)
+      ?mesh.material.map(material=>material.clone()):mesh.material.clone();
+    for(const material of(Array.isArray(mesh.material)?mesh.material:[mesh.material])){
+      if(!material.userData.ghostBaseColor)material.userData.ghostBaseColor=material.color.clone();
+      material.color.copy(material.userData.ghostBaseColor);
+      if(!valid)material.color.lerp(new THREE.Color(0xea6659),.60);
+      material.transparent=true;
+      material.opacity=valid?.76:.60;
+      material.depthWrite=false;
+      if(material.emissive){material.emissive.set(valid?0x23482b:0x6f201b);material.emissiveIntensity=.16;}
+    }
+  });
 }
 
 function perimeterGeometry(cells,anchor){
@@ -169,44 +143,60 @@ function perimeterGeometry(cells,anchor){
 }
 
 function clearGhost(root){
-  root.userData.perimeterGeometry?.dispose?.();
+  for(const terrain of root.userData.ghostTerrains||[])disposeTerrainTile(terrain);
+  for(const resource of root.userData.ghostResources||[]){
+    // Resource geometry and textures belong to the loaded model cache.
+    const materials=new Set();
+    resource.traverse(mesh=>{if(mesh.isMesh)for(const material of(Array.isArray(mesh.material)?mesh.material:[mesh.material]))materials.add(material);});
+    for(const material of materials)material.dispose();
+  }
+  root.userData.perimeterGeometry?.dispose();
   root.userData.perimeterGeometry=null;
+  root.userData.ghostTerrains=[];
+  root.userData.ghostResources=[];
+  root.userData.signature=null;
   root.clear();
 }
 
-export function syncIslandGhost(root,card,anchor,valid){
-  clearGhost(root);
+export function syncIslandGhost(root,card,anchor,valid,{hasLand=()=>false,createResource=()=>null}={}){
   if(!card||card.type!=='island'||!anchor){
+    clearGhost(root);
     root.visible=false;
     return;
   }
 
   const cells=rotatedFragmentCells(card);
-  const cliffMaterial=valid?validCliffMaterial:invalidCliffMaterial;
-  const topMaterial=valid?validTopMaterial:invalidTopMaterial;
-  const shadowMaterial=valid?validShadowMaterial:invalidShadowMaterial;
+  const absolute=cells.map(cell=>({...cell,x:anchor.x+cell.x,z:anchor.z+cell.z}));
+  const occupied=new Set(absolute.map(cell=>`${cell.x},${cell.z}`));
+  const landAt=(x,z)=>occupied.has(`${x},${z}`)||hasLand(x,z);
+  const neighbours=absolute.map(cell=>{
+    let mask='';
+    for(let dx=-1;dx<=1;dx++)for(let dz=-1;dz<=1;dz++)mask+=landAt(cell.x+dx,cell.z+dz)?'1':'0';
+    return mask;
+  });
+  const signature=JSON.stringify([card.id,absolute,neighbours]);
+  if(root.userData.signature===signature){
+    if(root.userData.valid!==!!valid){
+      for(const object of [...root.userData.ghostTerrains,...root.userData.ghostResources])ghostAppearance(object,valid);
+      root.userData.outline.material=valid?validOutlineMaterial:invalidOutlineMaterial;
+    }
+    root.userData.valid=!!valid;
+    root.visible=true;
+    return;
+  }
+  clearGhost(root);
 
-  for(const cell of cells){
+  for(const cell of absolute){
     const group=new THREE.Group();
-    group.position.set((anchor.x+cell.x)*GRID.tileSize,-.24,(anchor.z+cell.z)*GRID.tileSize);
-
-    const shadow=new THREE.Mesh(ghostShadowGeometry,shadowMaterial);
-    shadow.rotation.x=-Math.PI/2;
-    shadow.position.y=-.34;
-    shadow.renderOrder=7;
-
-    const cliff=new THREE.Mesh(ghostCliffGeometry,cliffMaterial);
-    cliff.renderOrder=8;
-
-    const top=new THREE.Mesh(ghostTopGeometry,topMaterial);
-    top.position.y=.40;
-    top.renderOrder=9;
-
-    group.add(shadow,cliff,top);
-    const resource=resourceGhost(cell.content);
+    group.position.set(cell.x*GRID.tileSize,.025,cell.z*GRID.tileSize);
+    const terrain=buildTerrainTile({x:cell.x,z:cell.z,tileSize:GRID.tileSize,cellKey:`ghost:${cell.x},${cell.z}`,hasLand:landAt});
+    ghostAppearance(terrain,valid);
+    root.userData.ghostTerrains.push(terrain);
+    group.add(terrain);
+    const resource=createResource(cell);
     if(resource){
-      resource.position.y=.42;
-      resource.traverse(object=>{if(object.isMesh)object.renderOrder=10;});
+      ghostAppearance(resource,valid,true);
+      root.userData.ghostResources.push(resource);
       group.add(resource);
     }
     root.add(group);
@@ -216,6 +206,7 @@ export function syncIslandGhost(root,card,anchor,valid){
   root.userData.perimeterGeometry=geometry;
   const outline=new THREE.LineSegments(geometry,valid?validOutlineMaterial:invalidOutlineMaterial);
   outline.renderOrder=20;
+  root.userData.outline=outline;
   root.add(outline);
 
   const anchorRing=new THREE.Mesh(ghostAnchorGeometry,anchorMaterial);
@@ -224,6 +215,7 @@ export function syncIslandGhost(root,card,anchor,valid){
   anchorRing.renderOrder=21;
   root.add(anchorRing);
 
+  root.userData.signature=signature;
   root.userData.valid=!!valid;
   root.userData.cellCount=cells.length;
   root.visible=true;
