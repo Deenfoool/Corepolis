@@ -56,3 +56,7 @@ Corepolis — браузерный **3D island card-builder / spatial puzzle**. 
 - GLTF / GLB assets
 
 Подробности: `docs/GAME_DESIGN.md`, `docs/ARCHITECTURE.md`, `docs/ROADMAP.md`.
+
+## Выбор моделей
+
+[Каталог Quaternius](https://deenfoool.github.io/Corepolis/model-catalog.html) — превью всех загруженных моделей, фильтры по типу, эпохе и уровню, просмотр с вращением и выбор зданий для игровых ролей. Выбор сохраняется в браузере; кнопка «Скопировать выбор» готовит список для подключения. Сам каталог не меняет здания в игре и загружает превью по мере прокрутки.
