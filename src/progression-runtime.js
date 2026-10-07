@@ -365,7 +365,7 @@ function showCapitalFinale(m){
 }
 
 function evaluate(){
-  if(!sessionActive||milestoneLocked)return;
+  if(!sessionActive||milestoneLocked||state.actionPending||state.researchChoiceOpen||state.gameOver)return;
   const m=metrics();
   persist();
   renderProgress();

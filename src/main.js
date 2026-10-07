@@ -1,14 +1,15 @@
-import { STARTING_DECK, promoteReserve, replacementType, hasPlayableCard, canBulldoze } from './card-economy.js?v=bulldozer-1';
-import { collectMillFieldGroups } from './mill-fields.js?v=bulldozer-1';
+import { freshResearch, hasResearch, navigationRange, canTrade } from './research.js?v=research-1';
+import { STARTING_DECK, promoteReserve, replacementType, hasPlayableCard, canBulldoze } from './card-economy.js?v=research-1';
+import { collectMillFieldGroups } from './mill-fields.js?v=research-1';
 import * as THREE from 'three';
 import { MapControls } from 'three/addons/controls/MapControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { CARD_DEFS, DECK_WEIGHTS, DIRECTIONS, GRID } from './config.js?v=bulldozer-1';
-import { createWorldModel, fitModelToBounds } from './model-layout.js?v=bulldozer-1';
-import { ASSETS, assetVariant } from './models.js?v=bulldozer-1';
+import { CARD_DEFS, DECK_WEIGHTS, DIRECTIONS, GRID } from './config.js?v=research-1';
+import { createWorldModel, fitModelToBounds } from './model-layout.js?v=research-1';
+import { ASSETS, assetVariant } from './models.js?v=research-1';
 import { buildTerrainTile, buildShoreWater, disposeTerrainTile } from './terrain.js?v=water-v2-1';
-import { createBoatVisual, attachLighthouseBeam } from './marine-visuals.js?v=bulldozer-1';
+import { createBoatVisual, attachLighthouseBeam } from './marine-visuals.js?v=research-1';
 import {
   createIslandFragment,
   fragmentDescription,
@@ -17,7 +18,7 @@ import {
   rotateIslandCard,
   rotatedFragmentCells,
   syncIslandGhost
-} from './island-fragments.js?v=bulldozer-1';
+} from './island-fragments.js?v=research-1';
 
 const $=s=>document.querySelector(s);
 const canvas=$('#game');
@@ -239,6 +240,8 @@ const state={
   reserve:[],
   selectedCardId:null,
   nextCardId:1,
+  research:freshResearch(),
+  researchChoiceOpen:false,
   actionPending:false,
   gameOver:false,
   nextFieldOrder:1,
@@ -952,7 +955,7 @@ function canPlacePier(x,z){
 function lighthouseRangeAllows(x,z){
   for(const tile of state.land.values()){
     if(tile.type!=='lighthouse')continue;
-    if(Math.hypot(tile.x-x,tile.z-z)<=3.25)return true;
+    if(Math.hypot(tile.x-x,tile.z-z)<=navigationRange(state))return true;
   }
   return false;
 }
@@ -1112,6 +1115,7 @@ function awardSeaRoute(newPier){
     const route=[newPier.key,other.key].sort().join('|');
     if(state.seaRoutes.has(route))continue;
     state.seaRoutes.add(route);
+    state.research.seaRouteReached=true;
     state.harvestScore+=125;
     state.comboCount++;
     grantCards(2);
@@ -1163,6 +1167,9 @@ async function placePier(card,x,z){
   }
 }
 async function placeIsland(card,x,z){
+  if(hasResearch(state,'cartography')&&!card.surveyed){
+    await window.__corepolisResearchRuntime.chooseIsland(card);
+  }
   if(!canPlaceIsland(card,x,z)){
     return toast('Весь фрагмент должен помещаться на свободной воде и касаться суши либо целиком находиться в радиусе маяка.');
   }
@@ -1208,7 +1215,7 @@ async function placeRemoteLighthouse(card,x,z){
   state.inputLocked=false;
   status();
   tileInfo(tile);
-  toast('Маяк основан вдали. Фрагменты территории можно ставить в радиусе 3 клеток вокруг него.');
+  toast(`Маяк основан вдали. Радиус строительства: ${hasResearch(state,'navigation')?5:3} клеток.`);
 }
 function waterStructureInfo(structure){
   if(!structure){
@@ -1631,6 +1638,9 @@ async function depleteResource(resourceTile,producerTile,producerType){
   resourceTile.resourceSources=new Set();
   state.harvestScore+=45;
   spawnRing(resourceTile.visual.position.clone(),cfg.color);
+  if(producerType==='lumbermill'&&hasResearch(state,'reforestation')){
+    addCard(draw('tree'));renderHand();
+  }
   return 1;
 }
 async function processProducerPlacement(producerTile,producerType){
@@ -2019,7 +2029,7 @@ function refillHand(){
 }
 function resetStartingDeck(){
   state.hand=[];state.reserve=[];state.selectedCardId=null;
-  state.gameOver=false;state.actionPending=false;
+  state.gameOver=false;state.actionPending=false;state.research=freshResearch();state.researchChoiceOpen=false;
   state.knownHandCardIds.clear();
   for(const type of STARTING_DECK)addCard(draw(type));
 }
@@ -2029,7 +2039,12 @@ function rerollWarehouseHand(){
   clearIslandGhost();
   renderHand();
 }
+function islandResearchChoices(card){
+  if(!card.fragmentChoices)card.fragmentChoices=[card.fragment,createIslandFragment(state.resources),createIslandFragment(state.resources)];
+  return card.fragmentChoices;
+}
 function hasAvailableMove(){
+  if(canTrade(state))return true;
   return hasPlayableCard(state.hand,{
     land:state.land,millBuilt:!!millTile(),millUnlocked:state.unlocks.mill,
     marketUnlocked:state.unlocks.market,ready,canAfford,
@@ -2038,8 +2053,11 @@ function hasAvailableMove(){
       for(let x=-GRID.maxRadius;x<=GRID.maxRadius;x++)for(let z=-GRID.maxRadius;z<=GRID.maxRadius;z++){
         if(card.type==='pier'&&canPlacePier(x,z))return true;
         if(card.type==='lighthouse'&&canPlaceRemoteLighthouse(x,z))return true;
-        if(card.type==='island')for(let rotation=0;rotation<4;rotation++){
-          if(canPlaceIsland({...card,rotation},x,z))return true;
+        if(card.type==='island'){
+          const fragments=hasResearch(state,'cartography')&&!card.surveyed?islandResearchChoices(card):[card.fragment];
+          for(const fragment of fragments)for(let rotation=0;rotation<4;rotation++){
+            if(canPlaceIsland({...card,fragment,rotation},x,z))return true;
+          }
         }
       }
       return false;
@@ -2313,8 +2331,10 @@ function tileInfo(t){
       const group=connectedNormalFields(t);
       ui.tileCopy.textContent=`Связное поле: ${group.length} ${group.length===1?'часть':'части'}. Стадия ${t.stage}/4 растёт при добавлении соседнего поля по стороне.`;
     }
+  }else if(t.type==='market'&&hasResearch(state,'trade')){
+    ui.tileCopy.innerHTML='Торговые договоры: обменяйте 3 карты на одну выбранную.<br><button type="button" id="research-trade">Обменять карты</button>';
   }else if(t.type==='lighthouse'){
-    ui.tileCopy.textContent='Маяк освещает море в радиусе 3 клеток. В этом радиусе фрагменты территории можно ставить без соприкосновения с существующей сушей.';
+    ui.tileCopy.textContent=`Маяк открывает строительство в радиусе ${hasResearch(state,'navigation')?5:3} клеток. Фрагменты можно ставить без соприкосновения с сушей.`;
   }else if(t.type==='fishingShop'){
     const houses=nearby(t,'house');
     const piers=nearbyPiers(t);
@@ -2352,9 +2372,10 @@ async function harvest(){
     ...fields.map(t=>pulse(t.content,.5,.2))
   ]);
   state.harvestScore+=150*state.millLevel*fields.length;
+  const retained=hasResearch(state,'cropRotation')?millFieldGroups().map(group=>group.fields[0]).reduce((a,b)=>a.fieldOrder<b.fieldOrder?a:b):null;
   for(const t of fields){
     spawnBurst(t.visual.position.clone(),0xe5bd55,10);
-    clearContent(t);
+    if(t!==retained)clearContent(t);
   }
   // The played mill card replaces the old building for the next harvest cycle.
   await setMill(mill);
@@ -2491,7 +2512,7 @@ async function apply(card,t){
     spend(card.id);
     state.inputLocked=false;
     status();
-    return toast('Маяк зажжён. Он открывает удалённое строительство островов в радиусе 3 клеток.');
+    return toast(`Маяк зажжён. Радиус строительства: ${hasResearch(state,'navigation')?5:3} клеток.`);
   }
 
   if(card.type==='fishingShop'){
@@ -2769,7 +2790,7 @@ window.__corepolisRuntime={
   updateResourceMarker,createPierVisual,renderHand,status,
   clearIslandGhost,refreshLucide,toast,openMarineChoice,
   seed,decorate,draw,addCard,syncAllNormalFieldStages,syncMillFieldStages,
-  waterKey,resetStartingDeck,hasAvailableMove,refillHand
+  waterKey,resetStartingDeck,hasAvailableMove,refillHand,createIslandFragment,fragmentMiniMapMarkup,islandResearchChoices
 };
 window.dispatchEvent(new CustomEvent('corepolis:runtime-ready'));
 

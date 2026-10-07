@@ -1,3 +1,4 @@
+import { freshResearch, normalizeResearch } from './research.js?v=research-1';
 import { clearSave, readSave, writeSave } from './session-state.js?v=1';
 
 const runtime=window.__corepolisRuntime;
@@ -57,6 +58,8 @@ function serializeCard(card){
   if(card.type==='island'){
     result.rotation=((integer(card.rotation,0)%4)+4)%4;
     result.fragment=cloneFragment(card.fragment);
+    result.surveyed=!!card.surveyed;
+    if(card.fragmentChoices)result.fragmentChoices=card.fragmentChoices.slice(0,3).map(cloneFragment);
   }
   return result;
 }
@@ -78,6 +81,7 @@ function serializeTile(tile){
 }
 function serializeState(){
   return{
+    research:normalizeResearch(state.research),
     nextCardId:state.nextCardId,
     nextFieldOrder:state.nextFieldOrder,
     harvestScore:state.harvestScore,
@@ -171,6 +175,7 @@ function normalizeSnapshot(raw){
   return{
     nextCardId:Math.max(integer(raw.nextCardId,1),maxCardId+1),
     nextFieldOrder:Math.max(integer(raw.nextFieldOrder,1),maxFieldOrder+1),
+    research:normalizeResearch(raw.research),
     harvestScore:finiteNonNegative(raw.harvestScore,0),
     resources:{
       wood:finiteNonNegative(resources.wood,0),
@@ -205,7 +210,7 @@ function resetRuntimeState(){
   world.clear();
 
   state.land.clear();
-  state.gameOver=false;state.actionPending=false;
+  state.gameOver=false;state.actionPending=false;state.research=freshResearch();state.researchChoiceOpen=false;
   state.hand=[];
   state.reserve=[];
   state.selectedCardId=null;
@@ -264,6 +269,7 @@ async function restoreSnapshot(raw){
   const snapshot=normalizeSnapshot(raw);
   resetRuntimeState();
 
+  state.research=normalizeResearch(snapshot.research);
   state.nextCardId=snapshot.nextCardId;
   state.nextFieldOrder=snapshot.nextFieldOrder;
   state.harvestScore=snapshot.harvestScore;

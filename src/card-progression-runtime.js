@@ -1,4 +1,4 @@
-import { CARD_DEFS, DECK_WEIGHTS } from './config.js?v=bulldozer-1';
+import { CARD_DEFS, DECK_WEIGHTS } from './config.js?v=research-1';
 
 const STORAGE_KEY='corepolis:card-progression:v1';
 const STORAGE_VERSION=1;
@@ -188,7 +188,7 @@ function unlock(type,{silent=false}={}){
   return true;
 }
 function evaluateUnlocks({silent=false}={}){
-  if(!sessionActive)return;
+  if(!sessionActive||state.actionPending||state.researchChoiceOpen||state.gameOver)return;
   for(const type of DISCOVERY_ORDER){
     if(isUnlocked(type))continue;
     let ready=false;try{ready=!!RULES[type]?.test?.();}catch{}

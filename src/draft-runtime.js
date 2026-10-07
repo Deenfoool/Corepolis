@@ -187,7 +187,7 @@ function createDraft(level){
   clearTimeout(openingTimer);
   openingTimer=setTimeout(()=>{
     openingTimer=null;
-    if(draft.pending)renderDraft();
+    if(draft.pending&&!modalBusy())renderDraft();
   },350);
 }
 
@@ -211,6 +211,7 @@ function chooseCard(cardId){
 
 function modalBusy(){
   return!!(
+    state.researchChoiceOpen||state.actionPending||state.gameOver||
     document.querySelector('#capital-finale.open')||
     document.querySelector('#marine-choice:not(.hidden)')||
     document.querySelector('#pause-menu.open')||
