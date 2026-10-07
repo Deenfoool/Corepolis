@@ -14,4 +14,4 @@ Original Corepolis model, authored specifically for this game. It does not reuse
 
 ## Low-poly fields
 
-The field base and angular furrows are authored procedurally in `src/main.js`; Quaternius wheat meshes are reused in instanced clusters. Four stages are shown in `corepolis-field-preview.png`. Borders appear only on exposed sides; joined soil edges stay square.
+The field base and angular furrows are authored procedurally in `src/main.js`; Quaternius wheat meshes are reused in instanced clusters. Four stages are shown in `corepolis-field-preview.png`. A low wooden fence with posts and two rails appears only on exposed sides; joined soil edges stay square. Furrows have a raised, convex six-point cross-section.

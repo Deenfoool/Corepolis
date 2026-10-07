@@ -1,4 +1,4 @@
-import { CARD_DEFS, DECK_WEIGHTS } from './config.js?v=lowpoly-fields-1';
+import { CARD_DEFS, DECK_WEIGHTS } from './config.js?v=field-fence-1';
 
 const STORAGE_KEY='corepolis:card-progression:v1';
 const STORAGE_VERSION=1;

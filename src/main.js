@@ -1,15 +1,15 @@
-import { freshResearch, hasResearch, navigationRange, canTrade } from './research.js?v=lowpoly-fields-1';
-import { STARTING_DECK, promoteReserve, replacementType, hasPlayableCard, canBulldoze } from './card-economy.js?v=lowpoly-fields-1';
-import { collectMillFieldGroups } from './mill-fields.js?v=lowpoly-fields-1';
+import { freshResearch, hasResearch, navigationRange, canTrade } from './research.js?v=field-fence-1';
+import { STARTING_DECK, promoteReserve, replacementType, hasPlayableCard, canBulldoze } from './card-economy.js?v=field-fence-1';
+import { collectMillFieldGroups } from './mill-fields.js?v=field-fence-1';
 import * as THREE from 'three';
 import { MapControls } from 'three/addons/controls/MapControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { CARD_DEFS, DECK_WEIGHTS, DIRECTIONS, GRID } from './config.js?v=lowpoly-fields-1';
-import { createWorldModel, fitModelToBounds } from './model-layout.js?v=lowpoly-fields-1';
-import { ASSETS, assetVariant } from './models.js?v=lowpoly-fields-1';
+import { CARD_DEFS, DECK_WEIGHTS, DIRECTIONS, GRID } from './config.js?v=field-fence-1';
+import { createWorldModel, fitModelToBounds } from './model-layout.js?v=field-fence-1';
+import { ASSETS, assetVariant } from './models.js?v=field-fence-1';
 import { buildTerrainTile, buildShoreWater, disposeTerrainTile } from './terrain.js?v=water-v2-1';
-import { createBoatVisual, attachLighthouseBeam } from './marine-visuals.js?v=lowpoly-fields-1';
+import { createBoatVisual, attachLighthouseBeam } from './marine-visuals.js?v=field-fence-1';
 import {
   createIslandFragment,
   fragmentDescription,
@@ -18,7 +18,7 @@ import {
   rotateIslandCard,
   rotatedFragmentCells,
   syncIslandGhost
-} from './island-fragments.js?v=lowpoly-fields-1';
+} from './island-fragments.js?v=field-fence-1';
 
 const $=s=>document.querySelector(s);
 const canvas=$('#game');
@@ -1410,7 +1410,8 @@ function createFieldRidge(length,width,height,{westConnected=false,eastConnected
     const t=i/sections;
     const taper=Math.min(1,westConnected?1:t/.12,eastConnected?1:(1-t)/.12);
     const rise=height*taper+(i>0&&i<sections?Math.sin(i*2.1+seed)*.006:0);
-    return [[(t-.5)*length,.258,-width/2],[(t-.5)*length,.258+rise,0],[(t-.5)*length,.258,width/2]];
+    const profile=[[-.50,0],[-.36,.64],[-.20,1],[.20,1],[.36,.64],[.50,0]];
+    return profile.map(([z,y])=>[(t-.5)*length,.258+rise*y,z*width]);
   }
   function triangle(a,b,c,shade){
     const tint=earth.clone().multiplyScalar(shade);
@@ -1418,8 +1419,8 @@ function createFieldRidge(length,width,height,{westConnected=false,eastConnected
   }
   for(let i=0;i<sections;i++){
     const a=section(i),b=section(i+1);
-    for(let j=0;j<2;j++){
-      const shade=j===0?1.07:.92;
+    for(let j=0;j<5;j++){
+      const shade=[.84,1.01,1.10,.96,.78][j];
       triangle(a[j],a[j+1],b[j],shade);triangle(b[j],a[j+1],b[j+1],shade);
     }
   }
@@ -1432,13 +1433,35 @@ function createFieldRidge(length,width,height,{westConnected=false,eastConnected
 }
 function addFieldBorders(group,adjacency){
   const wood=new THREE.MeshStandardMaterial({color:0xa27645,roughness:1,flatShading:true});
-  const half=GRID.tileSize/2-.045;
+  const capMaterial=new THREE.MeshStandardMaterial({color:0xba8d55,roughness:1,flatShading:true});
+  const half=GRID.tileSize/2;
+  const posts=new Set();
+  function addPost(fence,x,z){
+    const id=`${x},${z}`;if(posts.has(id))return;posts.add(id);
+    const post=new THREE.Mesh(new THREE.BoxGeometry(.10,.37,.10),wood);
+    post.position.set(x,.258+.185,z);post.name='Fence_Post';
+    post.castShadow=post.receiveShadow=true;fence.add(post);
+    const cap=new THREE.Mesh(new THREE.ConeGeometry(.073,.07,4),capMaterial);
+    cap.rotation.y=Math.PI/4;cap.position.set(x,.258+.37+.035,z);
+    cap.castShadow=cap.receiveShadow=true;fence.add(cap);
+  }
   for(const side of ['north','east','south','west']){
     if(adjacency[side])continue;
+    const fence=new THREE.Group();fence.name=`field_border_${side}`;
     const horizontal=side==='north'||side==='south';
-    const rail=new THREE.Mesh(new THREE.BoxGeometry(horizontal?GRID.tileSize:.09,.075,horizontal?.09:GRID.tileSize),wood);
-    rail.position.set(side==='east'?half:side==='west'?-half:0,.296,side==='south'?half:side==='north'?-half:0);
-    rail.name=`field_border_${side}`;rail.castShadow=rail.receiveShadow=true;group.add(rail);
+    const offset=(side==='north'||side==='west')?-half:half;
+    for(const y of [.258+.13,.258+.28]){
+      const rail=new THREE.Mesh(new THREE.BoxGeometry(horizontal?GRID.tileSize:.055,.065,horizontal?.055:GRID.tileSize),wood);
+      rail.position.set(horizontal?0:offset,y,horizontal?offset:0);
+      rail.name='Fence_Rail';rail.castShadow=rail.receiveShadow=true;fence.add(rail);
+    }
+    for(let i=0;i<=4;i++){
+      // The preceding neighboring field owns the shared endpoint post.
+      if(i===0&&(horizontal?adjacency.west:adjacency.north))continue;
+      const along=-half+GRID.tileSize*i/4;
+      addPost(fence,horizontal?along:offset,horizontal?offset:along);
+    }
+    group.add(fence);
   }
 }
 function addFieldClods(group,stage,tileSize,synergy=false){
@@ -1491,8 +1514,8 @@ function fieldVisual(stage,synergy=false,tile=null){
 
   const ridgeCount=6;
   const rowSpacing=GRID.tileSize/ridgeCount;
-  const ridgeWidth=.50;
-  const ridgeHeight=[.055,.065,.065,.065][safeStage-1];
+  const ridgeWidth=.61;
+  const ridgeHeight=.19;
   const ridgeLength=tileSize+.02;
   const firstZ=-GRID.tileSize*.5+rowSpacing*.5;
 
