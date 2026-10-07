@@ -22,7 +22,7 @@ function clear(view){if(view.object){view.scene.remove(view.object);dispose(view
 function frame(view,object) {
  clear(view);view.object=object;
  object.updateMatrixWorld(true);const box=new THREE.Box3().setFromObject(object);const size=box.getSize(new THREE.Vector3()),center=box.getCenter(new THREE.Vector3());
- object.position.sub(center);const scale=2/Math.max(size.x,size.y,size.z,.001);object.scale.multiplyScalar(scale);view.scene.add(object);
+ object.position.sub(center);const scale=2/Math.max(size.x,size.y,size.z,.001);const group=new THREE.Group();group.add(object);group.scale.setScalar(scale);view.object=group;view.scene.add(group);
  view.camera.position.set(3.4,2.6,4.3);view.camera.near=.01;view.camera.far=100;view.camera.lookAt(0,0,0);view.camera.updateProjectionMatrix();
 }
 let thumb,preview,controls;
@@ -46,7 +46,7 @@ $('close').onclick=()=>$('viewer').close();$('viewer').addEventListener('close',
 $('reset').onclick=()=>{if(!preview)return;preview.camera.position.set(3.4,2.6,4.3);controls.target.set(0,0,0);controls.update();};
 for(const family of [...new Set(models.map(f=>f.split('_')[0].replace('.gltf','')))].sort()){const o=document.createElement('option');o.value=family;o.textContent=labels[family]||family;$('family').append(o);}
 const placeholder='data:image/svg+xml,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="320" height="256"><text x="160" y="128" text-anchor="middle" fill="#57685d" font-family="sans-serif" font-size="16">Загружаем превью…</text></svg>');
-for(const file of models){const card=document.createElement('button');card.type='button';card.className='model';card.dataset.file=file;const img=document.createElement('img');img.src=placeholder;img.alt=thumb?'Превью '+file:'Для 3D-превью нужен WebGL';const name=document.createElement('span');name.textContent=file;card.append(img,name);card.onclick=()=>open(file);cards.set(file,card);$('grid').append(card);if(thumb)observer.observe(card);}
+for(const file of models){const card=document.createElement('button');card.type='button';card.className='model';card.dataset.file=file;const img=document.createElement('img');img.src=thumb?placeholder:placeholder.replace(encodeURIComponent('Загружаем превью…'),encodeURIComponent('Для превью нужен WebGL'));img.alt=thumb?'Превью '+file:'Для 3D-превью нужен WebGL';const name=document.createElement('span');name.textContent=file;card.append(img,name);card.onclick=()=>open(file);cards.set(file,card);$('grid').append(card);if(thumb)observer.observe(card);}
 function filter(){let count=0;for(const [file,card]of cards){card.hidden=!(file.toLowerCase().includes($('search').value.trim().toLowerCase()) && (!$('family').value||file.split('_')[0].replace('.gltf','')===$('family').value) && (!$('age').value||file.includes($('age').value)) && (!$('level').value||file.includes($('level').value)));if(!card.hidden)count++;} $('count').textContent=`Показано ${count} из ${models.length} моделей`;}
 for(const id of ['search','family','age','level'])$(id).addEventListener('input',filter);
 function selectionText(){return Object.entries(selection).map(([role,file])=>`${roles[role]}: ${file}`).join('\n');}
