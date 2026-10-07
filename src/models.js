@@ -1,11 +1,11 @@
 const RTS_ROOT = './assets/quaternius/ultimate-fantasy-rts';
 const PIRATE_MIRROR_COMMIT = 'c850a2840081a30442f252d6e2ce9db4d02362ee';
 const PIRATE_ROOT = `https://raw.githubusercontent.com/eitan567/VerdantIsle/${PIRATE_MIRROR_COMMIT}/models/Pirate%20kit-glb`;
-const rts = file => `${RTS_ROOT}/${file}.gltf?v=lighthouse-2`;
+const rts = file => `${RTS_ROOT}/${file}.gltf?v=harbor-1`;
 
 export const ASSETS = {
   windmill: rts('Windmill_SecondAge'),
-  lighthouse: './assets/models/corepolis-lighthouse.glb?v=lighthouse-2',
+  lighthouse: './assets/models/corepolis-lighthouse.glb?v=harbor-1',
   treeA: rts('Resource_PineTree_Group'),
   treeB: rts('Resource_Tree_Group'),
   rockA: rts('Resource_Rock_1'),
@@ -16,7 +16,7 @@ export const ASSETS = {
   house3: rts('Houses_SecondAge_2_Level1'),
   house4: rts('Houses_SecondAge_2_Level2'),
   pier: rts('Port_FirstAge_Level3'),
-  pier2: rts('Dock_FirstAge'),
+  dock: rts('Dock_FirstAge'),
   pier3: rts('Port_SecondAge_Level2'),
   pier4: rts('Port_SecondAge_Level3'),
   storage: rts('Storage_SecondAge_Level2'),
@@ -31,7 +31,7 @@ export const ASSETS = {
 
 export const ASSET_VARIANTS = {
   house: ['house', 'house2', 'house3', 'house4'],
-  pier: ['pier', 'pier2', 'pier3', 'pier4'],
+  pier: ['pier', 'pier3', 'pier4'],
   tree: ['treeA', 'treeB'],
   rock: ['rockA', 'rockB', 'rockC'],
 };

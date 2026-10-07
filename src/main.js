@@ -2,11 +2,11 @@ import * as THREE from 'three';
 import { MapControls } from 'three/addons/controls/MapControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { CARD_DEFS, DECK_WEIGHTS, DIRECTIONS, GRID } from './config.js?v=lighthouse-2';
-import { createWorldModel, fitModelToBounds } from './model-layout.js?v=lighthouse-2';
-import { ASSETS, assetVariant } from './models.js?v=lighthouse-2';
+import { CARD_DEFS, DECK_WEIGHTS, DIRECTIONS, GRID } from './config.js?v=harbor-1';
+import { createWorldModel, fitModelToBounds } from './model-layout.js?v=harbor-1';
+import { ASSETS, assetVariant } from './models.js?v=harbor-1';
 import { buildTerrainTile, buildShoreWater, disposeTerrainTile } from './terrain.js?v=water-v2-1';
-import { createBoatVisual, attachLighthouseBeam } from './marine-visuals.js?v=lighthouse-beam-3';
+import { createBoatVisual, attachLighthouseBeam } from './marine-visuals.js?v=harbor-1';
 import {
   createIslandFragment,
   fragmentDescription,
@@ -15,7 +15,7 @@ import {
   rotateIslandCard,
   rotatedFragmentCells,
   syncIslandGhost
-} from './island-fragments.js?v=lighthouse-2';
+} from './island-fragments.js?v=harbor-1';
 
 const $=s=>document.querySelector(s);
 const canvas=$('#game');
@@ -307,7 +307,7 @@ const LOADING_ASSET_STATUS={
   wheat3:'Выращиваем поля',
   wheat4:'Доводим урожай до зрелости',
   pier:'Собираем причалы',
-  pier2:'Добавляем деревянный настил',
+  dock:'Соединяем порт с берегом',
   pier3:'Обустраиваем порт',
   pier4:'Ставим портовые постройки',
   storage:'Готовим портовый склад',
@@ -658,9 +658,31 @@ function createLighthouseVisual(){
 function createPierVisual(yaw=0,x=0,z=0){
   const root=new THREE.Group();
   const pier=cloneLoadedAsset(assetVariant('pier',x,z));
+  // Source piles now extend below the water; the deck sits below the shore.
+  pier.position.set(0,-.42,.55);
   root.add(pier);
+  root.updateMatrixWorld(true);
+  const pierBounds=new THREE.Box3().setFromObject(pier);
+  const shoreEdge=-GRID.tileSize/2-.16;
+  const portEdge=pierBounds.min.z+.32;
+  const bridgeLength=portEdge-shoreEdge;
+  const dockTemplate=cloneLoadedAsset('dock');
+  const dockSize=new THREE.Box3().setFromObject(dockTemplate).getSize(new THREE.Vector3());
+  // Dock's walking surface is 0.433 source units above its lowest pile.
+  const dockDeck=.433*1.5;
+  for(let i=0;i<4;i++){
+    const dock=dockTemplate.clone(true);
+    dock.scale.x=1.12;
+    dock.scale.y=1.22;
+    dock.scale.z=(bridgeLength/4+.12)/dockSize.z;
+    const deck=THREE.MathUtils.lerp(.62,.24,i/3);
+    dock.position.set(0,deck-dockDeck*dock.scale.y,shoreEdge+bridgeLength*(i+.5)/4);
+    root.add(dock);
+  }
   const boat=createBoatVisual();
-  boat.position.set(2.3,-.02,.56);boat.rotation.y=-.18;root.add(boat);
+  boat.position.set(pierBounds.max.x+.70,-.06,.65);
+  boat.rotation.y=-.18;
+  root.add(boat);
   root.userData.boat=boat;
   root.rotation.y=yaw;
   return root;
@@ -1042,8 +1064,8 @@ function animateSeaRoute(from,to){
   if(!from?.visual||!to?.visual)return;
   const boat=createBoatVisual();
   shadows(boat);
-  const start=from.visual.position.clone().add(new THREE.Vector3(0,.04,0));
-  const end=to.visual.position.clone().add(new THREE.Vector3(0,.04,0));
+  const start=from.visual.position.clone().add(new THREE.Vector3(0,-.06,0));
+  const end=to.visual.position.clone().add(new THREE.Vector3(0,-.06,0));
   boat.position.copy(start);
   world.add(boat);
   tween(1.25,p=>{
@@ -1475,7 +1497,7 @@ async function modelOn(t,id,yaw=0,animated=false){
   t.content=m;
   if(animated){
     spawnRing(t.visual.position.clone(),0xe7d47b);
-    animatePop(m);
+    await animatePop(m);
   }
   return m;
 }

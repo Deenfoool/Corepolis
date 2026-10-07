@@ -67,3 +67,5 @@ Fields keep the full tile footprint with eight 0.4-unit-wide ridges. Soil thickn
 Island placement ghosts use the runtime coastline generator and the same coordinate-based resource models as placed land. The preview accounts for both fragment cells and existing neighbours, caches unchanged cells, and disposes only its own terrain geometry and cloned resource materials. Q/E rotation uses KeyboardEvent.code (KeyQ/KeyE) independently of keyboard layout.
 
 The lighthouse uses an original local GLB in `assets/models/`, authored in world units and merged into eight material meshes. The runtime attaches a rotating beam to the named light origin; save restoration and card previews consume the same model.
+
+Причалы используют три варианта Port; Dock_FirstAge служит только четырёхступенчатым переходом от берега к пониженному настилу. Сваи порта и перехода погружены в воду, лодка имеет открытый корпус и отдельную ватерлинию. При восстановлении сохранения используется тот же сборщик причала. Анимация появления ресурсов завершается до запуска импульса добывающего здания, чтобы промежуточный масштаб не становился постоянным.
