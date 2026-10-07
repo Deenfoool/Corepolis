@@ -2,10 +2,10 @@ import * as THREE from 'three';
 import { MapControls } from 'three/addons/controls/MapControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { CARD_DEFS, DECK_WEIGHTS, DIRECTIONS, GRID } from './config.js';
-import { ASSETS } from './models.js?v=tideline-sample-1';
+import { CARD_DEFS, DECK_WEIGHTS, DIRECTIONS, GRID } from './config.js?v=selected-models-1';
+import { ASSETS, assetVariant } from './models.js?v=selected-models-1';
 import { buildTerrainTile, buildShoreWater, disposeTerrainTile } from './terrain.js?v=water-v2-1';
-import { createBoatVisual, createLighthouseVisual } from './marine-visuals.js?v=tideline-sample-1';
+import { createBoatVisual, createLighthouseVisual } from './marine-visuals.js?v=selected-models-1';
 import {
   createIslandFragment,
   fragmentDescription,
@@ -14,7 +14,7 @@ import {
   rotateIslandCard,
   rotatedFragmentCells,
   syncIslandGhost
-} from './island-fragments.js?v=1';
+} from './island-fragments.js?v=selected-models-1';
 
 const $=s=>document.querySelector(s);
 const canvas=$('#game');
@@ -304,16 +304,15 @@ const LOADING_ASSET_STATUS={
   wheat2:'Поднимаем первые ростки',
   wheat3:'Выращиваем поля',
   wheat4:'Доводим урожай до зрелости',
-  tidelineBoardingPlank:'Собираем настил причала',
-  tidelineRailing:'Ставим портовые перила',
-  tidelineBollard:'Крепим швартовые тумбы',
-  tidelineAnchor:'Готовим якорь',
-  tidelineBuoyGarland:'Развешиваем портовые буи',
-  tidelineBellStand:'Ставим портовый колокол',
-  tidelineDockChair:'Обживаем причал',
-  tidelineBoatHouse:'Готовим рыбацкую лавку',
-  tidelineBaitBox:'Раскладываем снасти',
-  tidelineCargoBarrel:'Подвозим портовый груз'
+  pier:'Собираем причалы',
+  pier2:'Добавляем деревянный настил',
+  pier3:'Обустраиваем порт',
+  pier4:'Ставим портовые постройки',
+  storage:'Готовим портовый склад',
+  house2:'Добавляем дома',
+  house3:'Разнообразим жилой квартал',
+  house4:'Завершаем жилой квартал',
+  rockB:'Добавляем каменные залежи'
 };
 let loadingPhraseIndex=1;
 let loadingPhraseTimer=null;
@@ -664,38 +663,18 @@ function cloneLoadedAsset(assetKey,maxXZ,maxY=maxXZ*1.5){
   fit(model,maxXZ,maxY);
   return model;
 }
-function createTidelinePierVisual(yaw=0){
+function createPierVisual(yaw=0,x=0,z=0){
   const root=new THREE.Group();
-  const deck=cloneLoadedAsset('tidelineBoardingPlank',3.85,1.1);
-  deck.rotation.y=Math.PI*.5;deck.position.z=.05;root.add(deck);
-  const leftRail=cloneLoadedAsset('tidelineRailing',2.65,.9);
-  leftRail.rotation.y=Math.PI*.5;leftRail.position.set(-.92,.17,.05);root.add(leftRail);
-  const rightRail=cloneLoadedAsset('tidelineRailing',2.65,.9);
-  rightRail.rotation.y=-Math.PI*.5;rightRail.position.set(.92,.17,-.18);root.add(rightRail);
-  const bollard=cloneLoadedAsset('tidelineBollard',.58,.75);
-  bollard.position.set(.72,.12,1.46);root.add(bollard);
-  const anchor=cloneLoadedAsset('tidelineAnchor',.72,.72);
-  anchor.position.set(-.92,.12,1.25);anchor.rotation.y=.36;root.add(anchor);
-  const bell=cloneLoadedAsset('tidelineBellStand',.78,1.25);
-  bell.position.set(-.78,.12,-1.25);root.add(bell);
-  const chair=cloneLoadedAsset('tidelineDockChair',.70,.82);
-  chair.position.set(.72,.12,-1.08);chair.rotation.y=-.45;root.add(chair);
-  const garland=cloneLoadedAsset('tidelineBuoyGarland',1.15,.72);
-  garland.position.set(1.02,.08,.72);garland.rotation.y=.28;root.add(garland);
+  const pier=cloneLoadedAsset(assetVariant('pier',x,z),3.85,4.4);
+  root.add(pier);
   const boat=createBoatVisual();
-  boat.position.set(1.62,-.02,.56);boat.rotation.y=-.18;root.add(boat);
+  boat.position.set(2.3,-.02,.56);boat.rotation.y=-.18;root.add(boat);
   root.userData.boat=boat;
   root.rotation.y=yaw;
   return root;
 }
-function createTidelineFishingShopVisual(){
-  const root=new THREE.Group();
-  const house=cloneLoadedAsset('tidelineBoatHouse',3.45,3.45);root.add(house);
-  const bait=cloneLoadedAsset('tidelineBaitBox',.72,.66);
-  bait.position.set(1.12,.08,.92);bait.rotation.y=-.22;root.add(bait);
-  const barrel=cloneLoadedAsset('tidelineCargoBarrel',.62,.78);
-  barrel.position.set(-1.02,.08,.82);barrel.rotation.y=.18;root.add(barrel);
-  return root;
+function createStorageVisual(){
+  return cloneLoadedAsset('storage',3.45,3.45);
 }
 
 const CARD_PREVIEW_ASSET={
@@ -718,8 +697,8 @@ async function previewObjectFor(type){
     }));
     return preview;
   }
-  if(type==='pier')return createTidelinePierVisual(.18);
-  if(type==='fishingShop')return createTidelineFishingShopVisual();
+  if(type==='pier')return createPierVisual(.18);
+  if(type==='fishingShop')return createStorageVisual();
   if(type==='lighthouse'){
     const visual=createLighthouseVisual();
     shadows(visual);
@@ -1020,7 +999,7 @@ async function setLighthouse(tile,animated=true){
 async function setFishingShop(tile,animated=true){
   clearContent(tile);
   tile.type='fishingShop';
-  const visual=createTidelineFishingShopVisual();
+  const visual=createStorageVisual();
   visual.position.y=.11;
   setMarineObjectCellKey(visual,tile);
   tile.visual.add(visual);
@@ -1055,8 +1034,8 @@ function resolveMarineChoice(choice){
   state.inputLocked=false;
   status();
   toast(choice==='lighthouse'
-    ?'Экспедиция выбрала маяк: +1 маяк, +2 фрагмента территории. Рыболовный магазин тоже открыт.'
-    :'Экспедиция нашла архипелаг: +7 фрагментов территории. Рыболовный магазин тоже открыт.');
+    ?'Экспедиция выбрала маяк: +1 маяк, +2 фрагмента территории. Портовый склад тоже открыт.'
+    :'Экспедиция нашла архипелаг: +7 фрагментов территории. Портовый склад тоже открыт.');
 }
 function animateSeaRoute(from,to){
   if(!from?.visual||!to?.visual)return;
@@ -1103,7 +1082,7 @@ function awardSeaRoute(newPier){
 async function placePier(card,x,z){
   if(!canPlacePier(x,z))return toast('Причал ставится на свободную воду вплотную к берегу.');
   const shore=adjacentLandForWater(x,z)[0];
-  const visual=createTidelinePierVisual(shore.yaw);
+  const visual=createPierVisual(shore.yaw,x,z);
   visual.position.set(x*GRID.tileSize,-.48,z*GRID.tileSize);
   const wk=waterKey(x,z);
   visual.userData.waterKey=wk;
@@ -1505,20 +1484,20 @@ async function setTree(t,animated=false){
   clearContent(t);
   t.type='tree';
   t.resourceSources=new Set();
-  await modelOn(t,((t.x+t.z)&1)?'treeA':'treeB',2.6,t.x*.9+t.z*1.4,animated);
+  await modelOn(t,assetVariant('tree',t.x,t.z),2.6,t.x*.9+t.z*1.4,animated);
 }
 async function setRock(t,animated=false){
   clearContent(t);
   t.type='rock';
   t.resourceSources=new Set();
-  await modelOn(t,((t.x-t.z)&1)?'rockA':'rockC',2.4,t.x*1.3-t.z,animated);
+  await modelOn(t,assetVariant('rock',t.x,t.z),2.4,t.x*1.3-t.z,animated);
 }
 const BUILDING_ASSET={house:'house',market:'market',lumbermill:'lumbermill',quarry:'quarry'};
 const BUILDING_SIZE={house:3.45,market:3.75,lumbermill:3.9,quarry:3.55};
 async function setBuilding(t,type,animated=false){
   clearContent(t);
   t.type=type;
-  const m=await modelOn(t,BUILDING_ASSET[type],BUILDING_SIZE[type],(t.x*17+t.z*11)*.13,false);
+  const m=await modelOn(t,type==='house'?assetVariant('house',t.x,t.z):BUILDING_ASSET[type],BUILDING_SIZE[type],(t.x*17+t.z*11)*.13,false);
   if(animated)await animateBuildingConstruction(t,type,m);
   registerBuildingAmbient(t,type,m);
   t.type=type;
@@ -1938,7 +1917,7 @@ async function setMill(t){
   state.millCell=t.key;
   t.type='mill';
   const m=await modelOn(t,'windmill',3.55,Math.PI*.25,false);
-  const blades=m.getObjectByName('building_windmill_top_fan_green');
+  const blades=m.getObjectByName('corepolis_windmill_rotor');
   state.millBlades=blades?[blades]:[];
   t.type='mill';
 
@@ -2262,7 +2241,7 @@ function tileInfo(t){
   const names={
     empty:'Свободная земля',tree:'Лес',rock:'Камни',field:'Поле',mill:'Мельница',
     house:'Дом',market:'Рынок',lumbermill:'Лесопилка',quarry:'Каменоломня',
-    lighthouse:'Маяк',fishingShop:'Рыболовный магазин'
+    lighthouse:'Маяк',fishingShop:'Портовый склад'
   };
   ui.tileTitle.textContent=names[t.type];
   if(t.type==='field'){
@@ -2278,7 +2257,7 @@ function tileInfo(t){
   }else if(t.type==='fishingShop'){
     const houses=nearby(t,'house');
     const piers=nearbyPiers(t);
-    ui.tileCopy.textContent=`Рыболовный магазин · домов рядом: ${houses}, причалов рядом: ${piers}. Сочетание порта и поселения даёт максимальную карточную награду.`;
+    ui.tileCopy.textContent=`Портовый склад · домов рядом: ${houses}, причалов рядом: ${piers}. Сочетание порта и поселения даёт максимальную карточную награду.`;
   }else if(t.type==='tree'||t.type==='rock'){
     const progress=t.resourceSources?.size||0;
     ui.tileCopy.textContent=`${t.type==='tree'?'Лес':'Камни'}: обработка ${progress}/2. Первая обработка даёт ресурс, вторая освобождает клетку.`;
@@ -2436,7 +2415,7 @@ async function apply(card,t){
   }
 
   if(card.type==='fishingShop'){
-    if(t.type!=='empty')return toast('Рыболовному магазину нужна свободная клетка суши.');
+    if(t.type!=='empty')return toast('Портовому складу нужна свободная клетка суши.');
     state.inputLocked=true;
     await setFishingShop(t,true);
     spend(card.id);
@@ -2460,7 +2439,7 @@ async function apply(card,t){
     if(nearPier&&nearHomes)return toast(`Портовый квартал! +${score} очков и +3 карты за причал и жилой район.`);
     if(nearPier)return toast(`Магазин у причала: +${score} очков и +1 карта.`);
     if(nearHomes)return toast(`Магазин у жилого квартала: +${score} очков и +1 карта.`);
-    return toast(`Рыболовный магазин открыт, но без причала и жилого района пока не даёт карты. +${score} очков.`);
+    return toast(`Портовый склад открыт, но без причала и жилого района пока не даёт карты. +${score} очков.`);
   }
 
   if(['house','market','lumbermill','quarry'].includes(card.type)){
@@ -2692,7 +2671,7 @@ window.__corepolisRuntime={
   state,world,shoreWaterByCell,ui,camera,controls,GRID,CARD_DEFS,
   addLand,refreshAllTerrain,disposeTerrainTile,disposeShoreWaterTile,
   setTree,setRock,setField,setBuilding,setMill,setLighthouse,setFishingShop,
-  updateResourceMarker,createTidelinePierVisual,renderHand,status,
+  updateResourceMarker,createPierVisual,renderHand,status,
   clearIslandGhost,refreshLucide,toast,openMarineChoice,
   seed,decorate,draw,addCard,syncAllNormalFieldStages,syncMillFieldStages,
   waterKey

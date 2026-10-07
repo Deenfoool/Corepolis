@@ -206,7 +206,7 @@ function requirementsFor(level,m){
     req('Земля',m.land,42),
     req('Дома',m.houses,10),
     req('Большие урожаи',m.harvests,3),
-    boolReq('Рыболовный магазин',m.fishingShopBuilt),
+    boolReq('Портовый склад',m.fishingShopBuilt),
     req('Морские маршруты',m.routes,1),
     boolReq('Маяк',m.lighthouseBuilt)
   ];

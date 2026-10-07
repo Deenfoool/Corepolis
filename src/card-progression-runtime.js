@@ -1,4 +1,4 @@
-import { CARD_DEFS, DECK_WEIGHTS } from './config.js';
+import { CARD_DEFS, DECK_WEIGHTS } from './config.js?v=selected-models-1';
 
 const STORAGE_KEY='corepolis:card-progression:v1';
 const STORAGE_VERSION=1;
@@ -21,7 +21,7 @@ const RULES={
   pier:{icon:'anchor',label:'Причал',grantFirst:true,hint:'Развитая деревообработка позволит выйти к морю.',reason:'Получена первая древесина. Поселение научилось строить причалы.',test:()=>productionEvidence('wood')},
   mill:{icon:'wind',label:'Мельница',hint:'Несколько связанных полей могут открыть новую сельскохозяйственную постройку.',reason:'Комбо из четырёх полей открыло Мельницу.',test:()=>!!state.unlocks?.mill},
   market:{icon:'store',label:'Рынок',hint:'Развивайте плотный жилой район.',reason:'Связный квартал из шести домов открыл Рынок.',test:()=>!!state.unlocks?.market},
-  fishingShop:{icon:'fish',label:'Рыболовный магазин',hint:'Сначала поселению нужен настоящий выход к морю.',reason:'Первый причал открыл портовую торговлю и Рыболовный магазин.',test:()=>!!state.unlocks?.fishingShop||boardCount('pier')>0},
+  fishingShop:{icon:'warehouse',label:'Портовый склад',hint:'Сначала поселению нужен настоящий выход к морю.',reason:'Первый причал открыл портовую торговлю и Портовый склад.',test:()=>!!state.unlocks?.fishingShop||boardCount('pier')>0},
   lighthouse:{icon:'scan-line',label:'Маяк',hint:'Особая морская экспедиция может открыть дальнюю навигацию.',reason:'Морская экспедиция открыла Маяк.',test:()=>hasCardAnywhere('lighthouse')||boardCount('lighthouse')>0}
 };
 const DISCOVERY_ORDER=['mill','market','clear','pier','fishingShop','lighthouse'];

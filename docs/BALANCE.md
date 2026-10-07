@@ -17,7 +17,7 @@ This guarantees access to both Wood and Stone production paths without depending
 
 ## Early random deck
 
-Before Market and Fishing Shop are unlocked, the early deck contains free economy / expansion cards and resource-gated strategic cards.
+Before Market and Port Warehouse are unlocked, the early deck contains free economy / expansion cards and resource-gated strategic cards.
 
 The share of free or economy-enabling cards remains intentionally close across every biome:
 
@@ -37,7 +37,7 @@ Biome modifiers create direction without replacing the core deck:
 - Verdant Coast raises Tree and Lumbermill frequency.
 - Stone Ridges raises Rock and Quarry frequency.
 - Golden Lowlands raises Field and House frequency.
-- Windy Archipelago raises Island, Pier and Fishing Shop frequency.
+- Windy Archipelago raises Island, Pier and Port Warehouse frequency.
 
 No biome removes a card family or makes a single early card type exceed roughly 36% of its available early deck.
 

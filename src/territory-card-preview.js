@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { GRID } from './config.js';
-import { ASSETS } from './models.js?v=tideline-sample-1';
+import { GRID } from './config.js?v=selected-models-1';
+import { ASSETS, assetVariant } from './models.js?v=selected-models-1';
 import { buildTerrainTile, disposeTerrainTile } from './terrain.js?v=water-v2-1';
 
 const WIDTH=420;
@@ -77,9 +77,7 @@ function fitModel(root,maxXZ,maxY=maxXZ*1.5){
 async function realResourceModel(cell){
   if(cell.content!=='tree'&&cell.content!=='rock')return null;
   const tree=cell.content==='tree';
-  const variant=tree
-    ?(((cell.x+cell.z)&1)?'treeA':'treeB')
-    :(((cell.x-cell.z)&1)?'rockA':'rockC');
+  const variant=assetVariant(tree?'tree':'rock',cell.x,cell.z);
   const source=await loadAsset(variant);
   const model=source.clone(true);
   prepareModel(model);

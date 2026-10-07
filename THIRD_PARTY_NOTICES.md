@@ -2,62 +2,35 @@
 
 ## Quaternius Ultimate Fantasy RTS
 
-Corepolis uses selected 3D models from **Ultimate Fantasy RTS**, created by **Quaternius**.
+Corepolis uses locally uploaded models from **Ultimate Fantasy RTS**, created by **Quaternius**.
 
 - Source: https://quaternius.com/packs/ultimatefantasyrts.html
 - License: **Creative Commons Zero (CC0) 1.0 Universal**
-- Runtime mirror: `wangfumin1/Latticefolk`
-- Pinned runtime mirror commit: `cb9626aa06933a7d7993b76f8934838ef31de731`
-- Attribution: not required by the license; retained here for provenance.
+- Local files: `assets/quaternius/ultimate-fantasy-rts/`
+- Attribution is not required; provenance is retained here.
 
-Selected models currently used by Corepolis include:
+Selected runtime models:
 
-- `Houses_SecondAge_1_Level3.gltf`
-- `Market_FirstAge_Level3.gltf`
-- `Mine.gltf`
-- `Windmill_FirstAge.gltf`
+- Ports: `Port_FirstAge_Level3.gltf`, `Dock_FirstAge.gltf`, `Port_SecondAge_Level2.gltf`, `Port_SecondAge_Level3.gltf`
+- Homes: `Houses_SecondAge_1_Level2.gltf`, `Houses_SecondAge_1_Level1.gltf`, `Houses_SecondAge_2_Level1.gltf`, `Houses_SecondAge_2_Level2.gltf`
+- Market: `Market_SecondAge_Level3.gltf`
+- Quarry: `Mine.gltf`
+- Rocks: `Resource_Rock_1.gltf`, `Resource_Rock_2.gltf`, `Resource_Rock_3.gltf`
+- Trees: `Resource_PineTree_Group.gltf`, `Resource_Tree_Group.gltf`
+- Mill: `Windmill_SecondAge.gltf`
+- Port warehouse: `Storage_SecondAge_Level2.gltf`
 
-The runtime mirror is pinned to a commit so model URLs cannot silently change underneath a published build.
-
-## Quaternius Cube World
-
-Corepolis uses selected nature models from **Cube World**, created by **Quaternius**.
-
-- Creator: Quaternius
-- Source: https://quaternius.com/
-- License: **Creative Commons Zero (CC0) 1.0 Universal**
-- Runtime mirror: `wangfumin1/Latticefolk`
-- Pinned runtime mirror commit: `cb9626aa06933a7d7993b76f8934838ef31de731`
-
-Used models:
-
-- `Tree_1.gltf`
-- `Tree_3.gltf`
+The mill has been adapted locally: rotor fabric and wooden blades/hub are separated from the static structure into a pivot node for rotation. Original materials and vertex positions are preserved.
 
 ## Quaternius Pirate Kit
 
-Corepolis uses selected harbor, fishing, resource, and nature models from the **Quaternius Pirate Kit**.
+Corepolis retains the **Sawmill.glb** model from the Quaternius Pirate Kit.
 
 - Creator: Quaternius
 - Source: https://quaternius.com/
 - License: **Creative Commons Zero (CC0) 1.0 Universal**
 - Runtime mirror: `eitan567/VerdantIsle`
-- Pinned runtime mirror commit: `c850a2840081a30442f252d6e2ce9db4d02362ee`
-- Attribution: not required by the license; retained here for provenance.
-
-Selected models currently used by Corepolis include:
-
-- `Dock.glb`
-- `Sawmill.glb`
-- `House.glb`
-- `Bucket of Fish.glb`
-- `Barrel.glb`
-- `Anchor.glb`
-- `Post.glb`
-- `Rock.glb`
-- `Rock-6cytS1cPiL.glb`
-
-The Pirate Kit models replace the previous TIDELINE harbor sample and complete the missing marine/resource structures while keeping the world in a consistent stylized low-poly family.
+- Pinned commit: `c850a2840081a30442f252d6e2ce9db4d02362ee`
 
 ## Quaternius Ultimate Crops Pack
 

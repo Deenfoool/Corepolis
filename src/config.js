@@ -39,8 +39,8 @@ export const CARD_DEFS = {
   },
   fishingShop: {
     category: 'ПОРТ',
-    name: 'Рыболовный магазин',
-    icon: 'fish',
+    name: 'Портовый склад',
+    icon: 'warehouse',
     cost: { wood: 2 },
     tone: 'blue',
     description: 'Открывается после выхода к морю. Получает карты за соседние причалы и жилые дома.',

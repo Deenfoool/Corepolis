@@ -11,7 +11,7 @@
 - [x] Lumbermill / Quarry two-step extraction
 - [x] Wood / Stone economy and real card costs
 - [x] Seamless organic terrain autotiling
-- [x] Maritime branch with Pier, Lighthouse, Fishing Shop and sea routes
+- [x] Maritime branch with Pier, Lighthouse, Port Warehouse and sea routes
 - [x] Low-poly animated water
 - [x] Free shaped territory fragments
 - [x] Territory rotation with Q / E
@@ -96,7 +96,7 @@ Advanced cards must be earned by developing the island rather than appearing imm
 - [x] First resource production unlocks Clear
 - [x] Four connected Fields unlock Mill through the existing milestone
 - [x] Six connected Houses unlock Market through the existing milestone
-- [x] First Pier opens Fishing Shop through the marine branch
+- [x] First Pier opens Port Warehouse through the marine branch
 - [x] Lighthouse remains a milestone / expedition card instead of a normal random draw
 - [x] Card unlock state persists through Continue and resets with New Run
 - [x] Visible unlock presentation
@@ -106,7 +106,7 @@ Advanced cards must be earned by developing the island rather than appearing imm
 - [x] Replace fixed global draw weights with live run-aware weights
 - [x] Exclude locked cards from random draws
 - [x] Duplicate suppression from Hand + Reserve counts
-- [x] Specialized unsent-card caps for Fishing Shop / Market / Pier / Clear
+- [x] Specialized unsent-card caps for Port Warehouse / Market / Pier / Clear
 - [x] Recent-draw repeat protection
 - [x] Situational usefulness gates for production / housing / maritime cards
 - [x] Resource scarcity assistance for Forest / Rocks

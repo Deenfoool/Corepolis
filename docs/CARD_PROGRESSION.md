@@ -30,7 +30,7 @@ Advanced buildings are absent from the normal draw pool until unlocked.
 | Produce the first Wood or Stone | Clear | enters the pool |
 | Connect four Fields | Mill | existing milestone reward |
 | Connect six Houses | Market | existing milestone reward |
-| Build the first Pier / open the marine branch | Fishing Shop | existing marine reward |
+| Build the first Pier / open the marine branch | Port Warehouse | existing marine reward |
 | Choose the lighthouse expedition | Lighthouse | unique expedition reward |
 
 The graph should grow when new buildings are added. Unlocks must remain spatial and understandable rather than becoming an abstract XP tree.
@@ -64,7 +64,7 @@ Recently drawn types also receive a temporary repeat penalty.
 
 Examples:
 
-- Fishing Shop has zero random weight while no Pier exists;
+- Port Warehouse has zero random weight while no Pier exists;
 - Market has zero random weight while there is no meaningful housing cluster;
 - Lumbermill is strongly deprioritized if there is no Forest to process;
 - Quarry is strongly deprioritized if there are no Rocks;

@@ -7,7 +7,7 @@ const {
   state,world,shoreWaterByCell,ui,GRID,CARD_DEFS,
   addLand,refreshAllTerrain,disposeTerrainTile,disposeShoreWaterTile,
   setTree,setRock,setField,setBuilding,setMill,setLighthouse,setFishingShop,
-  updateResourceMarker,createTidelinePierVisual,renderHand,status,
+  updateResourceMarker,createPierVisual,renderHand,status,
   clearIslandGhost,refreshLucide,toast,openMarineChoice,
   seed,decorate,draw,addCard,syncAllNormalFieldStages,syncMillFieldStages,
   waterKey
@@ -234,7 +234,7 @@ async function restorePier(structureData){
   const seaDx=structureData.x-shore.x;
   const seaDz=structureData.z-shore.z;
   const yaw=Math.atan2(seaDx,seaDz);
-  const visual=createTidelinePierVisual(yaw);
+  const visual=createPierVisual(yaw,structureData.x,structureData.z);
   visual.position.set(structureData.x*GRID.tileSize,-.48,structureData.z*GRID.tileSize);
   const wk=waterKey(structureData.x,structureData.z);
   visual.userData.waterKey=wk;

@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { ASSETS } from './models.js?v=tideline-sample-1';
+import { ASSETS, ASSET_VARIANTS, assetVariant } from './models.js?v=selected-models-1';
 import { clearSave, hasCompatibleSave, readSave } from './session-state.js?v=1';
 
 const root=document.querySelector('#main-menu');
@@ -215,7 +215,7 @@ async function initScene(){
     return promise;
   };
 
-  const modelKeys=['house','market','windmill','lumbermill','quarry','treeA','treeB','rockA','rockC','wheat4'];
+  const modelKeys=[...ASSET_VARIANTS.house,'market','windmill','lumbermill','quarry',...ASSET_VARIANTS.tree,...ASSET_VARIANTS.rock,'wheat4'];
   await Promise.all(modelKeys.map(key=>load(key).catch(()=>null)));
   if(!running||!root?.isConnected)return;
 
@@ -232,7 +232,7 @@ async function initScene(){
     holder.add(visual);
     island.add(holder);
     if(key==='windmill'){
-      const fan=visual.getObjectByName('building_windmill_top_fan_green');
+      const fan=visual.getObjectByName('corepolis_windmill_rotor');
       if(fan)windmillFans.push(fan);
     }
     return holder;
@@ -242,7 +242,7 @@ async function initScene(){
     [-8,-3,.25],[-5,-6,-.55],[-2,-7,.6],[2,-7,-.25],[6,-5,.5],[8,-2,-.4],
     [7,2,.15],[4,5,-.5],[1,6,.3],[-3,6,-.15],[-7,4,.55],[-9,1,-.35]
   ];
-  await Promise.all(homes.map(([x,z,yaw])=>addModel('house',[x,z],2.55,yaw)));
+  await Promise.all(homes.map(([x,z,yaw])=>addModel(assetVariant('house',x,z),[x,z],2.55,yaw)));
   await Promise.all([
     addModel('market',[0,-3],3.05,.18),
     addModel('windmill',[-4,1],3.35,.55),
@@ -255,10 +255,10 @@ async function initScene(){
     [12,1],[11,-4],[9,-8],[6,-10],[2,-11],[-3,-10],[-7,-9],[-10,-7],[-12,-5],
     [-6,2],[-7,0],[5,6],[7,6],[7,-1]
   ];
-  await Promise.all(trees.map(([x,z],index)=>addModel(index%2?'treeA':'treeB',[x,z],1.75+(index%3)*.12,(index*.73)%6.28)));
+  await Promise.all(trees.map(([x,z],index)=>addModel(assetVariant('tree',x,z),[x,z],1.75+(index%3)*.12,(index*.73)%6.28)));
 
   const rocks=[[-13,0],[-11,7],[-6,11],[6,10],[11,6],[12,-5],[7,-10],[-9,-8]];
-  await Promise.all(rocks.map(([x,z],index)=>addModel(index%2?'rockA':'rockC',[x,z],1.65+(index%3)*.16,index*.61)));
+  await Promise.all(rocks.map(([x,z],index)=>addModel(assetVariant('rock',x,z),[x,z],1.65+(index%3)*.16,index*.61)));
 
   const wheat=await load('wheat4').catch(()=>null);
   if(wheat){

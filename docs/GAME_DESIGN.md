@@ -42,7 +42,7 @@ The central rule is simple: **space is the puzzle**. Resources matter, but they 
 - **House** is the basic settlement building.
 - The first connected group of six Houses unlocks **Market**.
 - **Market** scores from nearby Houses.
-- **Fishing Shop** rewards combinations of housing and port infrastructure.
+- **Port Warehouse** rewards combinations of housing and port infrastructure.
 
 Locked progression buildings are excluded from random draws until their unlock condition is met.
 
@@ -178,7 +178,7 @@ Fields use full-tile rounded low-poly farmland:
 - Pier targets a water grid cell touching land by an edge.
 - It automatically faces away from the connected shore.
 - A boat appears beside it.
-- The first Pier unlocks the Fishing Shop and opens a one-time expedition choice.
+- The first Pier unlocks the Port Warehouse and opens a one-time expedition choice.
 
 ### First expedition
 
@@ -189,13 +189,13 @@ Fields use full-tile rounded low-poly farmland:
 - receive 1 Lighthouse;
 - receive 2 generated Territory Fragment cards.
 
-Both choices also grant the first Fishing Shop card.
+Both choices also grant the first Port Warehouse card.
 
 ### Lighthouse
 
 A Lighthouse can be built on empty land or founded in nearby water. A water placement raises a one-cell Lighthouse island. Its range enables detached territory-fragment placement.
 
-### Fishing Shop
+### Port Warehouse
 
 - nearby Pier: +1 card;
 - at least 2 nearby Houses: +1 card;
@@ -238,9 +238,9 @@ Corepolis uses stylized low-poly animated water designed for static GitHub Pages
 
 ## Asset sources
 
-- KayKit — primary land/building environment assets;
+- Quaternius Ultimate Fantasy RTS and Pirate Kit — selected buildings and resources;
 - Quaternius — Wheat stages;
-- TIDELINE Coastal Harbor free sample — Pier/Fishing Shop pieces;
+- Quaternius Ultimate Fantasy RTS — selected port, warehouse, home and resource variants;
 - Three.js — rendering;
 - Lucide — UI icons.
 

@@ -24,7 +24,7 @@ The project stays build-tool free:
 ## Runtime modules
 
 - `src/config.js` — card definitions, deck weights and grid constants.
-- `src/models.js` — local and commit-pinned model locations.
+- `src/models.js` — selected local model locations, deterministic coordinate-based variants and the commit-pinned sawmill.
 - `src/terrain.js` — procedural island top, coast, cliffs, terrain variants and shoreline water effects.
 - `src/island-fragments.js` — territory shapes, 90° rotation, embedded Forest/Rock generation, adaptive resource bias, card mini-map and world ghost preview.
 - `src/marine-visuals.js` — isolated procedural boat/lighthouse visuals that can be replaced when final assets exist.
