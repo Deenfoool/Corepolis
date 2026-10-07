@@ -1,8 +1,8 @@
-import { createWorldModel } from './model-layout.js?v=lighthouse-1';
+import { createWorldModel } from './model-layout.js?v=lighthouse-2';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { GRID } from './config.js?v=lighthouse-1';
-import { ASSETS, assetVariant } from './models.js?v=lighthouse-1';
+import { GRID } from './config.js?v=lighthouse-2';
+import { ASSETS, assetVariant } from './models.js?v=lighthouse-2';
 import { buildTerrainTile, disposeTerrainTile } from './terrain.js?v=water-v2-1';
 
 const WIDTH=420;

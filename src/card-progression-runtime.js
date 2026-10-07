@@ -1,4 +1,4 @@
-import { CARD_DEFS, DECK_WEIGHTS } from './config.js?v=lighthouse-1';
+import { CARD_DEFS, DECK_WEIGHTS } from './config.js?v=lighthouse-2';
 
 const STORAGE_KEY='corepolis:card-progression:v1';
 const STORAGE_VERSION=1;

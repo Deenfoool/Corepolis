@@ -1,11 +1,11 @@
 const RTS_ROOT = './assets/quaternius/ultimate-fantasy-rts';
 const PIRATE_MIRROR_COMMIT = 'c850a2840081a30442f252d6e2ce9db4d02362ee';
 const PIRATE_ROOT = `https://raw.githubusercontent.com/eitan567/VerdantIsle/${PIRATE_MIRROR_COMMIT}/models/Pirate%20kit-glb`;
-const rts = file => `${RTS_ROOT}/${file}.gltf?v=lighthouse-1`;
+const rts = file => `${RTS_ROOT}/${file}.gltf?v=lighthouse-2`;
 
 export const ASSETS = {
   windmill: rts('Windmill_SecondAge'),
-  lighthouse: './assets/models/corepolis-lighthouse.glb?v=lighthouse-1',
+  lighthouse: './assets/models/corepolis-lighthouse.glb?v=lighthouse-2',
   treeA: rts('Resource_PineTree_Group'),
   treeB: rts('Resource_Tree_Group'),
   rockA: rts('Resource_Rock_1'),

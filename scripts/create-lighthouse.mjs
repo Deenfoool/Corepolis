@@ -16,18 +16,20 @@ const mats={
  glass:new THREE.MeshStandardMaterial({name:'Amber_Lantern',color:0xffd27c,emissive:0xffbf55,emissiveIntensity:1,roughness:.35,flatShading:true}),
 };
 const parts=new Map();
-function add(geometry,material,x=0,y=0,z=0,rotation=null){const mesh=new THREE.Mesh(geometry,mats[material]);mesh.position.set(x,y,z);if(rotation)mesh.rotation.set(...rotation);mesh.updateMatrixWorld(true);const baked=geometry.index?geometry.toNonIndexed():geometry.clone();baked.deleteAttribute('uv');baked.applyMatrix4(mesh.matrixWorld);if(!parts.has(material))parts.set(material,[]);parts.get(material).push(baked);}
+function add(geometry,material,x=0,y=0,z=0,rotation=null){const mesh=new THREE.Mesh(geometry,mats[material]);mesh.position.set(x,y,z);if(rotation)mesh.rotation.set(...rotation);mesh.updateMatrixWorld(true);const baked=geometry.index?geometry.toNonIndexed():geometry.clone();baked.deleteAttribute('uv');baked.applyMatrix4(mesh.matrixWorld);baked.computeVertexNormals();if(!parts.has(material))parts.set(material,[]);parts.get(material).push(baked);}
 const box=(x,y,z)=>new THREE.BoxGeometry(x,y,z);
 const cyl=(top,bottom,height,sides=12)=>new THREE.CylinderGeometry(top,bottom,height,sides);
 add(cyl(1.02,1.12,.18),'stone',0,.09);
 add(cyl(.86,.94,.14),'stoneLight',0,.25);
-const rings=[[.32,.62,.60,.77,'walls'],[1.09,.60,.53,.55,'walls'],[1.64,.53,.47,.54,'walls'],[2.18,.47,.42,.54,'walls']];
-for(const [base,bottom,top,height,mat]of rings)add(cyl(top,bottom,height,12),mat,0,base+height/2);
-for(const y of [.34,1.08,1.65,2.20,2.72]){const radius=.63-(y-.34)*.087;add(cyl(radius+.023,radius+.026,.065),'stoneLight',0,y);}
-// A masonry skirt and a narrow terracotta navigation stripe.
-add(cyl(.618,.654,.24),'stone',0,.43);
-add(cyl(.49,.505,.15),'roof',0,2.03);
-add(cyl(.48,.50,.045),'roofLight',0,2.13);
+// One continuous taper keeps every facade detail on the same surface.
+const towerRadius=y=>.64-(y-.32)*(.22/2.40);
+add(cyl(.42,.64,2.40,12),'walls',0,1.52);
+for(const y of [.35,1.09,1.65,2.20,2.70]){
+ const h=.055;
+ add(cyl(towerRadius(y+h/2)+.018,towerRadius(y-h/2)+.018,h),'stoneLight',0,y);
+}
+add(cyl(towerRadius(.56)+.012,towerRadius(.32)+.012,.24),'stone',0,.44);
+add(cyl(towerRadius(2.13)+.009,towerRadius(1.98)+.009,.15),'roof',0,2.055);
 // Door, lintel, handle and entrance steps facing +Z.
 add(box(.35,.63,.09),'wood',0,.64,.625);
 add(box(.065,.68,.10),'stoneLight',-.20,.65,.63);
@@ -35,10 +37,10 @@ add(box(.065,.68,.10),'stoneLight',.20,.65,.63);
 add(box(.46,.09,.12),'stoneLight',0,1.02,.63);
 for(const y of [.47,.68,.89])add(box(.31,.025,.028),'metal',0,y,.681);
 add(new THREE.SphereGeometry(.023,6,4),'metal',.095,.65,.696);
-for(let i=0;i<3;i++)add(box(.55,.08,.24),'stoneLight',0,.04+i*.08,1.0-i*.18);
+for(const [y,z,h] of [[.05,1.18,.10],[.15,1.00,.10],[.26,.82,.12]])add(box(.55,h,.26),'stoneLight',0,y,z);
 // Recessed-looking windows with timber frames at different tower heights.
 for(const [y,angle]of [[1.40,0],[2.40,Math.PI],[1.65,Math.PI/2]]){
- const radius=.63-(y-.34)*.087;const x=Math.sin(angle)*(radius+.028),z=Math.cos(angle)*(radius+.028);
+ const radius=towerRadius(y)*Math.cos(Math.PI/12);const x=Math.sin(angle)*(radius+.028),z=Math.cos(angle)*(radius+.028);
  add(box(.22,.34,.055),'wood',x,y,z,[0,angle,0]);
  add(box(.145,.25,.060),'metal',x+Math.sin(angle)*.024,y,z+Math.cos(angle)*.024,[0,angle,0]);
  add(box(.22,.045,.085),'stoneLight',x,y-.18,z,[0,angle,0]);
@@ -46,7 +48,7 @@ for(const [y,angle]of [[1.40,0],[2.40,Math.PI],[1.65,Math.PI/2]]){
 // Keepers' annex and a pitched tile roof.
 add(box(.86,.74,.85),'walls',.73,.58,-.10);
 add(box(.90,.12,.89),'stone',.73,.25,-.10);
-const roofGeo=new THREE.BufferGeometry();const verts=[-.51,0,-.5,.51,0,-.5,0,.35,-.5,-.51,0,.5,.51,0,.5,0,.35,.5];const indices=[0,2,1,3,4,5,0,3,5,0,5,2,2,5,4,2,4,1,0,1,4,0,4,3];roofGeo.setAttribute('position',new THREE.Float32BufferAttribute(verts,3));roofGeo.setIndex(indices);roofGeo.computeVertexNormals();add(roofGeo,'roof',.73,.98,-.10);
+const roofGeo=new THREE.BufferGeometry();const verts=[-.51,0,-.5,.51,0,-.5,0,.35,-.5,-.51,0,.5,.51,0,.5,0,.35,.5];const indices=[0,2,1,3,4,5,0,3,5,0,5,2,2,5,4,2,4,1,0,1,4,0,4,3];roofGeo.setAttribute('position',new THREE.Float32BufferAttribute(verts,3));roofGeo.setIndex(indices);const flatRoof=roofGeo.toNonIndexed();flatRoof.computeVertexNormals();add(flatRoof,'roof',.73,.98,-.10);
 add(box(1.07,.075,.085),'wood',.73,.98,.42);add(box(1.07,.075,.085),'wood',.73,.98,-.62);
 add(box(.08,.06,1.07),'roofLight',.73,1.335,-.10);
 add(box(.30,.29,.045),'wood',1.172,.66,-.10,[0,Math.PI/2,0]);add(box(.21,.20,.055),'metal',1.198,.66,-.10,[0,Math.PI/2,0]);
@@ -54,7 +56,13 @@ add(box(.30,.29,.045),'wood',1.172,.66,-.10,[0,Math.PI/2,0]);add(box(.21,.20,.05
 add(cyl(.73,.55,.12),'stoneLight',0,2.80);
 add(cyl(.75,.75,.085),'metal',0,2.90);
 for(let i=0;i<12;i++){const a=i*Math.PI/6;add(cyl(.019,.019,.26,5),'metal',Math.sin(a)*.67,3.07,Math.cos(a)*.67);}
-add(new THREE.TorusGeometry(.67,.025,4,12),'metal',0,3.19,0,[Math.PI/2,0,0]);
+for(let i=0;i<12;i++){
+ const a=i*Math.PI/6,b=(i+1)*Math.PI/6;
+ const start=new THREE.Vector3(Math.sin(a)*.67,3.19,Math.cos(a)*.67);
+ const end=new THREE.Vector3(Math.sin(b)*.67,3.19,Math.cos(b)*.67);
+ const center=start.clone().add(end).multiplyScalar(.5);
+ add(box(.035,.035,start.distanceTo(end)+.018),'metal',center.x,center.y,center.z,[0,(a+b)/2+Math.PI/2,0]);
+}
 add(cyl(.34,.34,.46,8),'glass',0,3.24);
 for(let i=0;i<8;i++){const a=i*Math.PI/4;add(cyl(.025,.025,.52,5),'metal',Math.sin(a)*.36,3.24,Math.cos(a)*.36);}
 add(cyl(.40,.40,.06,8),'metal',0,3.51);

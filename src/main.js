@@ -2,11 +2,11 @@ import * as THREE from 'three';
 import { MapControls } from 'three/addons/controls/MapControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { CARD_DEFS, DECK_WEIGHTS, DIRECTIONS, GRID } from './config.js?v=lighthouse-1';
-import { createWorldModel, fitModelToBounds } from './model-layout.js?v=lighthouse-1';
-import { ASSETS, assetVariant } from './models.js?v=lighthouse-1';
+import { CARD_DEFS, DECK_WEIGHTS, DIRECTIONS, GRID } from './config.js?v=lighthouse-2';
+import { createWorldModel, fitModelToBounds } from './model-layout.js?v=lighthouse-2';
+import { ASSETS, assetVariant } from './models.js?v=lighthouse-2';
 import { buildTerrainTile, buildShoreWater, disposeTerrainTile } from './terrain.js?v=water-v2-1';
-import { createBoatVisual, attachLighthouseBeam } from './marine-visuals.js?v=lighthouse-1';
+import { createBoatVisual, attachLighthouseBeam } from './marine-visuals.js?v=lighthouse-2';
 import {
   createIslandFragment,
   fragmentDescription,
@@ -15,7 +15,7 @@ import {
   rotateIslandCard,
   rotatedFragmentCells,
   syncIslandGhost
-} from './island-fragments.js?v=lighthouse-1';
+} from './island-fragments.js?v=lighthouse-2';
 
 const $=s=>document.querySelector(s);
 const canvas=$('#game');
