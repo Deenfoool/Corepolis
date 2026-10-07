@@ -1,8 +1,8 @@
-import { createWorldModel } from './model-layout.js?v=harbor-1';
+import { createWorldModel } from './model-layout.js?v=mill-groups-1';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { GRID } from './config.js?v=harbor-1';
-import { ASSETS, assetVariant } from './models.js?v=harbor-1';
+import { GRID } from './config.js?v=mill-groups-1';
+import { ASSETS, assetVariant } from './models.js?v=mill-groups-1';
 import { buildTerrainTile, disposeTerrainTile } from './terrain.js?v=water-v2-1';
 
 const WIDTH=420;
