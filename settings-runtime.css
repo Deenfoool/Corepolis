@@ -21,3 +21,9 @@ body.reduce-motion .core-quality button{transition:none}
   .core-range-wrap{grid-template-columns:minmax(80px,105px) 38px;min-width:132px}
   .pause-core-settings .pause-setting-row{gap:10px}
 }
+
+.core-language-select{max-width:180px;min-width:130px;padding:9px 12px;border:1px solid #9ba991;border-radius:10px;color:#354b39;background:#faf8eb;font:600 13px/1.3 system-ui,sans-serif}
+.core-setting-row label{flex:1;font-size:12px;font-weight:700}
+html[lang="de"] .card b{overflow-wrap:anywhere}
+html[lang="zh-CN"] .menu-kicker,html[lang="zh-CN"] .eyebrow{letter-spacing:.08em}
+@media(max-width:620px){.core-language-select{min-width:110px;max-width:140px}.core-setting-row{flex-wrap:wrap}.core-quality{max-width:100%}}

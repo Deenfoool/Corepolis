@@ -1,3 +1,4 @@
+import { translate, getLocale } from './i18n.js?v=languages-1';
 import { createWorldModel, fitModelToBounds } from './model-layout.js?v=field-fence-1';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
@@ -57,7 +58,7 @@ function syncContinueButton(){
   }
   if(continueNote){
     continueNote.textContent=available
-      ?`СОХРАНЕНО ${new Date(save.savedAt).toLocaleDateString('ru-RU')}`
+      ?`СОХРАНЕНО ${new Date(save.savedAt).toLocaleDateString(getLocale())}`
       :'НЕТ СОХРАНЕНИЯ';
   }
 }
@@ -73,6 +74,7 @@ settingsPanel?.addEventListener('click',event=>{
   if(event.target===settingsPanel)setSettingsOpen(false);
 });
 window.addEventListener('corepolis:save-changed',syncContinueButton);
+window.addEventListener('corepolis:language-changed',syncContinueButton);
 window.addEventListener('keydown',event=>{
   if(event.key==='Escape'&&settingsPanel?.classList.contains('open')){
     event.stopPropagation();
@@ -83,7 +85,7 @@ window.addEventListener('keydown',event=>{
 function leaveMenu(mode='new'){
   if(!root||root.classList.contains('leaving'))return;
   if(mode==='new'&&hasCompatibleSave()){
-    const replace=window.confirm('Начать новую игру? Текущее сохранение будет удалено.');
+    const replace=window.confirm(translate('Начать новую игру? Текущее сохранение будет удалено.'));
     if(!replace)return;
     clearSave();
   }

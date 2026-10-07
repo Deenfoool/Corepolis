@@ -1,3 +1,4 @@
+import { translate } from './i18n.js?v=languages-1';
 import { clearSave } from './session-state.js?v=1';
 
 const pauseMenu=document.querySelector('#pause-menu');
@@ -67,7 +68,7 @@ function runWhenGameLoaded(callback){
 }
 
 function requestNewRun({confirm=true}={}){
-  if(confirm&&!window.confirm('Начать эту партию заново? Текущее сохранение будет удалено.'))return false;
+  if(confirm&&!window.confirm(translate('Начать эту партию заново? Текущее сохранение будет удалено.')))return false;
   sessionStorage.setItem(DISCARD_SAVE_KEY,'1');
   sessionStorage.setItem(AUTO_START_KEY,'new');
   location.reload();

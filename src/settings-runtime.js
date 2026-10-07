@@ -1,3 +1,5 @@
+import { LANGUAGES, getLanguage } from './i18n.js?v=languages-1';
+
 const SETTINGS_KEY='corepolis:settings:v1';
 const LEGACY_UI_MOTION_KEY='corepolis:ui-motion';
 
@@ -104,13 +106,17 @@ function rowMarkup(name,compact=false){
   return`<div class="setting-row core-setting-row"><div class="setting-copy"><strong>${meta.title}</strong><small>${meta.copy}</small></div>${control}</div>`;
 }
 
+function languageMarkup(compact=false){
+  return `<div class="${compact?'pause-setting-row':'setting-row'} core-setting-row"><label for="language-${compact?'pause':'menu'}"><strong>Язык интерфейса</strong></label><select id="language-${compact?'pause':'menu'}" class="core-language-select" data-language-select data-i18n-ignore>${Object.entries(LANGUAGES).map(([code,name])=>`<option value="${code}"${code===getLanguage()?' selected':''}>${name}</option>`).join('')}</select></div>`;
+}
+
 function mountSettingsUi(){
   const menuCard=document.querySelector('.menu-settings-card');
   if(menuCard&&!menuCard.querySelector('[data-core-settings="menu"]')){
     const section=document.createElement('div');
     section.dataset.coreSettings='menu';
     section.className='core-settings-section';
-    section.innerHTML=['graphics','shadows','waterMotion','cameraSensitivity','musicVolume','sfxVolume'].map(name=>rowMarkup(name,false)).join('');
+    section.innerHTML=languageMarkup(false)+['graphics','shadows','waterMotion','cameraSensitivity','musicVolume','sfxVolume'].map(name=>rowMarkup(name,false)).join('');
     menuCard.appendChild(section);
   }
 
@@ -119,7 +125,7 @@ function mountSettingsUi(){
     const section=document.createElement('div');
     section.dataset.coreSettings='pause';
     section.className='core-settings-section pause-core-settings';
-    section.innerHTML=['graphics','shadows','waterMotion','cameraSensitivity','musicVolume','sfxVolume'].map(name=>rowMarkup(name,true)).join('');
+    section.innerHTML=languageMarkup(true)+['graphics','shadows','waterMotion','cameraSensitivity','musicVolume','sfxVolume'].map(name=>rowMarkup(name,true)).join('');
     pause.appendChild(section);
   }
   syncControls();

@@ -1,3 +1,4 @@
+import { getLocale } from './i18n.js?v=languages-1';
 import { freshResearch, hasResearch, navigationRange, canTrade } from './research.js?v=field-fence-1';
 import { STARTING_DECK, promoteReserve, replacementType, hasPlayableCard, canBulldoze } from './card-economy.js?v=field-fence-1';
 import { collectMillFieldGroups } from './mill-fields.js?v=field-fence-1';
@@ -2300,9 +2301,9 @@ function renderHand(){
   refreshLucide();
 }
 function status(){
-  ui.harvestScore.textContent=state.harvestScore.toLocaleString('ru-RU');
-  if(ui.woodCount)ui.woodCount.textContent=state.resources.wood.toLocaleString('ru-RU');
-  if(ui.stoneCount)ui.stoneCount.textContent=state.resources.stone.toLocaleString('ru-RU');
+  ui.harvestScore.textContent=state.harvestScore.toLocaleString(getLocale());
+  if(ui.woodCount)ui.woodCount.textContent=state.resources.wood.toLocaleString(getLocale());
+  if(ui.stoneCount)ui.stoneCount.textContent=state.resources.stone.toLocaleString(getLocale());
   ui.comboCount.textContent=state.comboCount;
   ui.landCount.textContent=state.land.size;
   syncCardAffordability();
@@ -2877,3 +2878,5 @@ window.onresize=()=>{
   camera.updateProjectionMatrix();
   renderer.setSize(innerWidth,innerHeight);
 };
+
+window.addEventListener('corepolis:language-changed',()=>{status();renderHand();});

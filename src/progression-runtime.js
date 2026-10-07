@@ -1,3 +1,4 @@
+import { getLocale } from './i18n.js?v=languages-1';
 const STORAGE_KEY='corepolis:progression:v1';
 const STORAGE_VERSION=1;
 
@@ -335,7 +336,7 @@ function showMilestone(level){
 }
 
 function formatNumber(value){
-  return Math.round(finiteNonNegative(value)).toLocaleString('ru-RU');
+  return Math.round(finiteNonNegative(value)).toLocaleString(getLocale());
 }
 function resultStat(icon,label,value,detail=''){
   return`<div class="capital-stat"><i data-lucide="${icon}"></i><span>${label}</span><b>${value}</b>${detail?`<small>${detail}</small>`:''}</div>`;
